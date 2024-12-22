@@ -1,3 +1,13 @@
+fix-brew:
+    #!/usr/bin/env bash
+    # FIXME: get rid of this whenever we get a new ISO
+    echo "This is a temporary workaround for the broken brew installation on the current ISO"
+    pkexec sh <<EOF
+    rm -rf /home/linuxbrew/
+    rm /etc/.linuxbrew
+    systemctl start brew-setup.service
+    EOF
+
 install-system-flatpaks:
     @if ! flatpak remotes | grep -q flathub; then \
         flatpak remote-add --system flathub https://flathub.org/repo/flathub.flatpakrepo; \
