@@ -2,6 +2,10 @@
 
 set -ouex pipefail
 
+# Workarounds
+mkdir -p /var/home
+mkdir -p /var/roothome
+
 # Image Info
 OLD_PRETTY_NAME=$(bash -c 'source /usr/lib/os-release ; echo $NAME $VERSION')
 MAJOR_VERSION=$(bash -c 'source /usr/lib/os-release ; echo $VERSION_ID')
@@ -61,7 +65,6 @@ dnf -y remove \
     subscription-manager
 
 # Repos 
-
 dnf -y --enablerepo epel-testing install \
   gnome-shell-extension-blur-my-shell fastfetch
 
@@ -86,19 +89,26 @@ dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:che:nerd-fonts install \
   nerd-fonts
 
-# Convince the installer we are in CI
-touch /.dockerenv
+# UUPD while it doesnt have a COPR
+UUPD_INSTALL=$(mktemp -d)
+curl --retry 3 -Lo $UUPD_INSTALL/uupd.tar.gz https://github.com/ublue-os/uupd/releases/download/v0.5/uupd_Linux_x86_64.tar.gz
+tar xzf $UUPD_INSTALL/uupd.tar.gz -C $UUPD_INSTALL
+cp $UUPD_INSTALL/uupd /usr/bin/uupd
+rm -rf $UUPD_INSTALL
 
-# Workarounds
-mkdir -p /var/home
-mkdir -p /var/roothome
+# This is required so homebrew works indefinitely.
+# Symlinking it makes it so whenever another GCC version gets released it will break if the user has updated it without- 
+# the homebrew package getting updated through our builds.
+# We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
+dnf -y --setopt=install_weak_deps=False install gcc
 
 # Homebrew
+touch /.dockerenv
 curl --retry 3 -Lo /tmp/brew-install https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 chmod +x /tmp/brew-install
 /tmp/brew-install
-tar --zstd -cvf /usr/share/homebrew.tar.zst /home/linuxbrew/.linuxbrew
-
+/home/linuxbrew/.linuxbrew/bin/brew install gcc
+tar --zstd -cvf /usr/share/homebrew.tar.zst /home/linuxbrew
 rm -f /.dockerenv
 
 # Services
@@ -107,3 +117,5 @@ systemctl enable dconf-update.service
 systemctl enable brew-setup.service
 systemctl disable mcelog.service
 systemctl enable tailscaled.service
+systemctl enable uupd.timer
+systemctl disable bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service

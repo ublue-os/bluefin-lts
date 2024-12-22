@@ -1,10 +1,10 @@
 [Unit]
-Description=Timer for brew upgrade for on image brew
+Description=Auto Update System Timer For Universal Blue
 Wants=network-online.target
 
 [Timer]
-OnBootSec=30min
-OnUnitInactiveSec=8h
+OnBootSec=20min
+OnUnitInactiveSec=6h
 Persistent=true
 
 [Install]
