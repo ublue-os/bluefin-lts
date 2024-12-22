@@ -7,9 +7,13 @@ This is not a 1:1 recreation, it's a minimal product, see below for more informa
 
 ![image](https://github.com/user-attachments/assets/48985776-7a94-4138-bf00-d2df7824047d)
 
-### Scope and Caveats
+### Installation and Caveats
 
-- Flatpaks must be installed by hand with this workaround: `just -f ~/.just/justfile` on first boot- [incoming anaconda PR](https://github.com/rhinstaller/anaconda/pull/6056)
+1. Snag the ISO: [download.projectbluefin.io/achillobator.iso](download.projectbluefin.io/achillobator.iso)
+2. On first boot, install flatpaks: `just -f ~/.just/justfile`
+  
+[Incoming anaconda PR](https://github.com/rhinstaller/anaconda/pull/6056) for the flatpaks, also:
+
 - Do not rebase to this from an existing Fedora image, ain't no one testing that. Also the filesystems are going to be different, etc. We recommend a VM for now
 - Not working on nvidia, -dx, etc. at this time as we wait for packages to populate into the EPEL10 repos.
 - The URL _will change_ in the future, this is a temporary image, eventually will be pushed to `ublue-os/bluefin:lts`, but not any time soon.
