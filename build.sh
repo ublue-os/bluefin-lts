@@ -51,6 +51,9 @@ fi
 
 # Fix issues caused by ID no longer being rhel??? (FIXME: check if this is necessary)
 sed -i "s/^EFIDIR=.*/EFIDIR=\"rhel\"/" /usr/sbin/grub2-switch-to-blscfg
+# Temporary workaround to make podman not `WARN` all the time
+# FIXME: remove this once upstream fixes this.
+sed -i 's/pull_options.*//g' /usr/share/containers/storage.conf
 
 # Additions
 dnf -y install \
