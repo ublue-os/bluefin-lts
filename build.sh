@@ -84,10 +84,11 @@ dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:ublue-os:stagin
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
   gnome-shell-extension-logo-menu
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION}/che-nerd-fonts-centos-stream-${MAJOR_VERSION}.repo"
-dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:che:nerd-fonts install \
-  nerd-fonts
+# No Build for Stream10-ARM64 TODO: check if they add the build to the COPR
+#dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION}/che-nerd-fonts-centos-stream-${MAJOR_VERSION}.repo"
+#dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
+#dnf -y --enablerepo copr:copr.fedorainfracloud.org:che:nerd-fonts install \
+#  nerd-fonts
 
 # UUPD while it doesnt have a COPR
 UUPD_INSTALL=$(mktemp -d)
@@ -102,16 +103,20 @@ rm -rf $UUPD_INSTALL
 # We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
 dnf -y --setopt=install_weak_deps=False install gcc
 
-# Homebrew
-touch /.dockerenv
-curl --retry 3 -Lo /tmp/brew-install https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
-chmod +x /tmp/brew-install
-/tmp/brew-install
-tar --zstd -cvf /usr/share/homebrew.tar.zst /home/linuxbrew
-rm -f /.dockerenv
-# Clean up brew artifacts on the image.
-rm -rf /home/linuxbrew /root/.cache
+# TODO: Homebrew isn't support for now on ARM Homebrew on Linux is not supported on ARM processors.
+# https://docs.brew.sh/Homebrew-on-Linux#arm-unsupported
+# # Homebrew
+# touch /.dockerenv
+# curl --retry 3 -Lo /tmp/brew-install https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+# chmod +x /tmp/brew-install
+# /tmp/brew-install
+# tar --zstd -cvf /usr/share/homebrew.tar.zst /home/linuxbrew
+# rm -f /.dockerenv
+# # Clean up brew artifacts on the image.
+# rm -rf /home/linuxbrew /root/.cache
+sudo dnf update -y
 
+dnf remove -y $(dnf repoquery --installonly --latest-limit 1 -q)
 # Services
 systemctl enable dconf-update.service
 # Forcefully enable brew setup since the preset doesnt seem to work?
