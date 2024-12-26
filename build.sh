@@ -62,7 +62,8 @@ dnf -y install \
 
 # Removals
 dnf -y remove \
-    subscription-manager
+    subscription-manager \
+    rpm-ostree
 
 # Repos 
 dnf -y --enablerepo epel-testing install \
