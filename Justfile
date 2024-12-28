@@ -213,7 +213,7 @@ _run-vm $target_image $tag $type $config:
     run_args+=(--env "CPU_CORES=4")
     run_args+=(--env "RAM_SIZE=8G")
     run_args+=(--env "DISK_SIZE=64G")
-    # run_args+=(--env "BOOT_MODE=windows_secure")
+    run_args+=(--env "BOOT_MODE=windows_secure")
     run_args+=(--env "TPM=Y")
     run_args+=(--env "GPU=Y")
     run_args+=(--device=/dev/kvm)

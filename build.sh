@@ -63,7 +63,9 @@ dnf -y install \
     gnome-shell-extension-appindicator \
     gnome-shell-extension-dash-to-dock \
     gnome-tweaks \
-    tuned-ppd
+    tuned-ppd \
+    shim \
+    centos-sb-certs
 
 # Removals
 dnf -y remove \
