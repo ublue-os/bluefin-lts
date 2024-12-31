@@ -58,8 +58,10 @@ dnf -y install \
     gnome-shell-extension-appindicator \
     gnome-shell-extension-dash-to-dock \
     gnome-tweaks \
-    tuned-ppd \
-    systemd-container # uupd depends on machinectl
+    tuned-ppd
+
+# FIXME: temporarily removed because it breaks pkexec currently (systemd 257->256 downgrade).
+# dnf install -y systemd-container
 
 # Removals
 dnf -y remove \
