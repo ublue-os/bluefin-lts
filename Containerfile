@@ -8,10 +8,12 @@ ARG SHA_HEAD_SHORT="${SHA_HEAD_SHORT:-}"
 
 COPY system_files /
 COPY build.sh /tmp/build.sh
+COPY dx.sh /tmp/dx.sh
 
 RUN --mount=type=bind,from=config,src=/rpms,dst=/tmp/rpms ln -sf /run /var/run && \
     mkdir -p /var/lib/alternatives && \
     /tmp/build.sh && \
+    /tmp/dx.sh && \  
     dnf clean all && \
     ostree container commit 
 

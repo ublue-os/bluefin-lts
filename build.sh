@@ -15,7 +15,7 @@ HOME_URL="https://projectbluefin.io"
 DOCUMENTATION_URL="https://docs.projectbluefin.io"
 SUPPORT_URL="https://github.com/centos-workstatiom/achillobator/issues/"
 BUG_SUPPORT_URL="https://github.com/centos-workstation/achillobator/issues/"
-CODE_NAME="Dromaeosauridae"
+CODE_NAME="Droaeosauridae"
 
 IMAGE_INFO="/usr/share/ublue-os/image-info.json"
 IMAGE_REF="ostree-image-signed:docker://ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME"
@@ -54,6 +54,10 @@ fi
 # have strict NVR requirements.
 dnf config-manager --set-enabled baseos-compose,appstream-compose
 
+# Removals
+dnf -y remove \
+    subscription-manager
+
 # Additions
 dnf -y install \
     distrobox \
@@ -64,10 +68,6 @@ dnf -y install \
     fpaste \
     distribution-gpg-keys \
     systemd-container # uupd depends on machinectl
-
-# Removals
-dnf -y remove \
-    subscription-manager
 
 # Repos 
 dnf -y --enablerepo epel-testing install \
