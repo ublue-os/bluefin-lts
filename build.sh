@@ -15,7 +15,7 @@ HOME_URL="https://projectbluefin.io"
 DOCUMENTATION_URL="https://docs.projectbluefin.io"
 SUPPORT_URL="https://github.com/centos-workstatiom/achillobator/issues/"
 BUG_SUPPORT_URL="https://github.com/centos-workstation/achillobator/issues/"
-CODE_NAME="Droaeosauridae"
+CODE_NAME="Dromaeosauridae"
 
 IMAGE_INFO="/usr/share/ublue-os/image-info.json"
 IMAGE_REF="ostree-image-signed:docker://ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME"
