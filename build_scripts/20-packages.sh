@@ -65,6 +65,24 @@ dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:che:nerd-fonts install \
 	nerd-fonts
 
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/yalter/niri-git/repo/epel-${MAJOR_VERSION}/yalter-niri-git-epel-${MAJOR_VERSION}.repo"
+dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:yalter:niri-git
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:yalter:niri-git install \
+	niri
+
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/markupstart/xwayland-satellite//repo/epel-${MAJOR_VERSION}/markupstart-xwayland-satellite-epel-${MAJOR_VERSION}.repo"
+dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:markupstart:xwayland-satellite
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:markupstart:xwayland-satellite install \
+	xwayland-satellite
+ 
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/markupstart/sway//repo/epel-${MAJOR_VERSION}/markupstart-sway-epel-${MAJOR_VERSION}.repo"
+dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:markupstart:sway
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:markupstart:sway install \
+       	swaybg \
+ 	swaylock \
+  	swayidle \
+        mako
+
 # This is required so homebrew works indefinitely.
 # Symlinking it makes it so whenever another GCC version gets released it will break if the user has updated it without-
 # the homebrew package getting updated through our builds.
