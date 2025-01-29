@@ -11,6 +11,7 @@ dnf -y remove \
 
 dnf -y install \
 	-x gnome-extensions-app \
+ 	gnome-disk-utility \
 	distrobox \
  	distribution-gpg-keys \
   	fastfetch \
