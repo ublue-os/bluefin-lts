@@ -1,8 +1,7 @@
+My changes -- added Niri, xwayland-satellite, swaybg, swayidle, swaylock and mako.
+
 # Bluefin LTS (Alpha)
 *Achillobator giganticus*
-
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/13d42ded3cf54250a71ad05aca7d5961)](https://app.codacy.com/gh/ublue-os/bluefin-lts/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![Build Image](https://github.com/ublue-os/bluefin-lts/actions/workflows/build-image.yml/badge.svg)](https://github.com/ublue-os/bluefin-lts/actions/workflows/build-image.yml)
 
 Larger, more lethal [Bluefin](https://projectbluefin.io). `bluefin:lts` is built on CentOS Stream10.
 
