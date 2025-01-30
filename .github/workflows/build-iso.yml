@@ -38,25 +38,29 @@ jobs:
 
       - name: Build ISO
         id: build
-        uses: centos-workstation/bootc-image-builder-action@main
+        uses: bootc-warehouse/bootc-image-builder-action@main
         with:
           config-file: ./image-builder-iso.config.toml
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
 
+      - name: Extract ISO path
+        id: extract-iso-path
+        run: |
+          ISO_PATH=$(echo ${{ steps.build.outputs.output-paths }} | jq -r '.[] | select(.type == "bootiso") | .path')
+          echo "ISO_PATH=$ISO_PATH" >> $GITHUB_OUTPUTS
+
       - name: Patch ISO with our branding
         run: |
-          just patch-iso-branding 1 ${{ steps.build.outputs.output-path }}
+          just patch-iso-branding 1 ${{ steps.extract-iso-path.outputs.ISO_PATH }}
 
       - name: Rename ISO
         id: rename
         env:
-          OUTPUT_PATH: ${{ steps.build.outputs.output-path }}
+          OUTPUT_PATH: ${{ steps.extract-iso-path.outputs.ISO_PATH }}
           OUTPUT_DIRECTORY: ${{ steps.build.outputs.output-directory }}
-          CHECKSUM_PATH: ${{ steps.build.outputs.checksum-path }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
           mv $OUTPUT_PATH $OUTPUT_DIRECTORY/$IMAGE_NAME.iso
-          mv $CHECKSUM_PATH $OUTPUT_DIRECTORY/$IMAGE_NAME.iso-CHECKSUM
 
       - name: Upload to Job Artifacts
         if: inputs.upload-to-cloudflare == false
