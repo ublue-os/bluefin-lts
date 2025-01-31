@@ -22,7 +22,7 @@ copy_systemfiles_for() {
 	WHAT=$1
 	shift
 	printf "::group:: ===%s-file-copying===\n" "$WHAT"
-	rsync -rvK "/var/tmp/system_files_overrides/$WHAT/" /
+	cp -a "/var/tmp/system_files_overrides/$WHAT/." /
 	printf "::endgroup::\n"
 }
 
