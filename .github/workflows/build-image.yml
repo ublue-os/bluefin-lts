@@ -183,7 +183,7 @@ jobs:
     needs:
       - build_push
     container:
-      image: quay.io/centos/centos:stream10
+      image: redhat/ubi9:latest
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
@@ -195,8 +195,7 @@ jobs:
           dnf install -y \
             podman \
             jq \
-            git \
-            fuse-overlayfs
+            git
 
       - name: Get current date
         id: date
