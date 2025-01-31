@@ -11,6 +11,15 @@ set -euo pipefail
 MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
 export MAJOR_VERSION_NUMBER
 
+# Copy files before running scripts since the scripts often rely on files being present
+copy_systemfiles_for "$(arch)"
+if [ "$ENABLE_HWE" == "1" ]; then
+	copy_systemfiles_for hwe
+fi
+if [ "$ENABLE_DX" == "1" ]; then
+	copy_systemfiles_for dx
+fi
+
 # Specifically the dash here to indicate that we do not want to run this script again
 for script in /var/tmp/build_scripts/*-*.sh; do
 	printf "::group:: ===%s===\n" "$(basename "$script")"
@@ -36,16 +45,11 @@ copy_systemfiles_for() {
 	printf "::endgroup::\n"
 }
 
-copy_systemfiles_for "$(arch)"
 run_buildscripts_for "$(arch)"
-
 if [ "$ENABLE_HWE" == "1" ]; then
-	copy_systemfiles_for hwe
 	run_buildscripts_for hwe
 fi
-
 if [ "$ENABLE_DX" == "1" ]; then
-	copy_systemfiles_for dx
 	run_buildscripts_for dx
 fi
 
