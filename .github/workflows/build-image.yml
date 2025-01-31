@@ -190,7 +190,7 @@ jobs:
       id-token: write
     steps:
       - name: Install dependencies
-        run: dnf install -y podman
+        run: dnf install -y podman jq
 
       - name: Get current date
         id: date
