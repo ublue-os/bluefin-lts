@@ -277,10 +277,10 @@ jobs:
           done
 
           # Apply the labels to the manifest (separated by newlines)
-          for label in $LABELS; do
+          while IFS= read -r label; do
             echo "Applying label $label to manifest"
             podman manifest annotate --index --annotation "$label" $MANIFEST
-          done
+          done <<< "$LABELS"
 
       - name: Login to GHCR
         run: echo ${{ secrets.GITHUB_TOKEN }} | podman login -u ${{ github.actor }} --password-stdin ghcr.io
@@ -292,6 +292,6 @@ jobs:
           IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          for tag in $TAGS; do
+          while IFS= read -r tag; do
             podman manifest push --all=false $MANIFEST $IMAGE_REGISTRY/$IMAGE_NAME:$tag
-          done
+          done <<< "$TAGS"
