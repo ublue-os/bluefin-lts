@@ -191,7 +191,12 @@ jobs:
       id-token: write
     steps:
       - name: Install dependencies
-        run: dnf install -y podman jq
+        run: |
+          dnf install -y \
+            podman \
+            jq \
+            git \
+            fuse-overlayfs
 
       - name: Get current date
         id: date
