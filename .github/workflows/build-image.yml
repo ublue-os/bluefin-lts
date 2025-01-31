@@ -248,16 +248,8 @@ jobs:
 
       - name: Create Manifest
         id: create-manifest
-        env:
-          LABELS: ${{ steps.metadata.outputs.labels }}
         run: |
-          annotationFlags=""
-          for label in $(echo $LABELS | tr ' ' '\n'); do
-            annotationFlags="$annotationFlags --annotation $label"
-          done
-
-          podman manifest create $annotationFlags ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-
+          podman manifest create ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           echo "MANIFEST=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
 
       - name: Populate Manifest
@@ -272,6 +264,10 @@ jobs:
             digest=$(echo $DIGESTS | jq -r ".$platform")
             echo "Adding ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$digest for $platform"
             podman manifest add $MANIFEST ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$digest --arch $platform
+          done
+
+          for label in $(echo $LABELS | tr ' ' '\n'); do
+            buildah manifest annotate --index --annotation $label $MANIFEST
           done
 
       - name: Login to GHCR
