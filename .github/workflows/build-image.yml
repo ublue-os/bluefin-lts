@@ -16,7 +16,7 @@ on:
 
 env:
   IMAGE_NAME: "bluefin-test-multiarch" # the name of the image produced by this build, matches repo names
-  IMAGE_DESC: "Bluefin LTS, built on CentOS Stream with bootc "
+  IMAGE_DESC: "Bluefin LTS, built on CentOS Stream with bootc"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "lts"
   CENTOS_VERSION: "stream10"
@@ -235,8 +235,6 @@ jobs:
             io.artifacthub.package.maintainers=[{\"name\":\"tulilirockz\",\"email\":\"tulilirockz@outlook.com\"},{\"name\":\"castrojo\",\"email\":\"jorge.castro@gmail.com\"}]
             io.artifacthub.package.prerelease=true
             containers.bootc=1
-          sep-tags: " "
-          sep-annotations: " "
 
       - name: Fetch Build Outputs
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
@@ -278,8 +276,8 @@ jobs:
             podman manifest add $MANIFEST ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$digest --arch $platform
           done
 
-          # Apply the labels to the manifest
-          for label in $(echo $LABELS | tr ' ' '\n'); do
+          # Apply the labels to the manifest (separated by newlines)
+          for label in $LABELS; do
             echo "Applying label $label to manifest"
             podman manifest annotate --index --annotation "$label" $MANIFEST
           done
@@ -294,6 +292,6 @@ jobs:
           IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          for tag in $(echo $TAGS | tr ' ' '\n'); do
+          for tag in $TAGS; do
             podman manifest push --all=false $MANIFEST $IMAGE_REGISTRY/$IMAGE_NAME:$tag
           done
