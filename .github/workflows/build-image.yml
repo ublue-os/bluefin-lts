@@ -266,11 +266,6 @@ jobs:
             podman manifest add $MANIFEST ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$digest --arch $platform
           done
 
-          # Apply the labels to the manifest
-          for label in $(echo $LABELS | tr ' ' '\n'); do
-            podman manifest annotate --index --annotation=$label $MANIFEST
-          done
-
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
