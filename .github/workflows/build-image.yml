@@ -221,7 +221,7 @@ jobs:
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
-            org.opencontainers.image.description=${{ env.IMAGE_DESC }}
+            org.opencontainers.image.description="${{ env.IMAGE_DESC }}"
             org.opencontainers.image.documentation=https://docs.projectbluefin.io
             org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/main/Containerfile
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
