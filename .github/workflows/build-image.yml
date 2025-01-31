@@ -184,6 +184,7 @@ jobs:
       - build_push
     container:
       image: quay.io/centos/centos:stream10
+      options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
       packages: write
