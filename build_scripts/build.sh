@@ -20,11 +20,18 @@ done
 run_buildscripts_for() {
 	WHAT=$1
 	shift
-	for script in /var/tmp/build_scripts/overrides/$WHAT/*-*.sh; do
-		printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
-		$script
-		printf "::endgroup::\n"
-	done
+	SCRIPTS=(/var/tmp/build_scripts/overrides/$WHAT/*-*.sh)
+
+	# Check if there are any matching scripts
+	if [ -e "${SCRIPTS[0]}" ]; then
+		for script in "${SCRIPTS[@]}"; do
+			printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
+			"$script"
+			printf "::endgroup::\n"
+		done
+	else
+		echo "No build scripts found for $WHAT"
+	fi
 }
 
 copy_systemfiles_for() {
