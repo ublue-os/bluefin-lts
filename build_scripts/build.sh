@@ -8,16 +8,6 @@ set -euo pipefail
 # Do not rely on any of these scripts existing in a specific path
 # Make the names as descriptive as possible and everything that uses dnf for package installation/removal should have `packages-` as a prefix.
 
-MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
-export MAJOR_VERSION_NUMBER
-
-# Specifically the dash here to indicate that we do not want to run this script again
-for script in /var/tmp/build_scripts/*-*.sh; do
-	printf "::group:: ===%s===\n" "$(basename "$script")"
-	$script
-	printf "::endgroup::\n"
-done
-
 run_buildscripts_for() {
 	WHAT=$1
 	shift
@@ -32,20 +22,34 @@ copy_systemfiles_for() {
 	WHAT=$1
 	shift
 	printf "::group:: ===%s-file-copying===\n" "$WHAT"
-	rsync -rvK "/var/tmp/system_files_overrides/$WHAT/" /
+	cp -a "/var/tmp/system_files_overrides/$WHAT/." /
 	printf "::endgroup::\n"
 }
 
-copy_systemfiles_for "$(arch)"
-run_buildscripts_for "$(arch)"
+MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
+export MAJOR_VERSION_NUMBER
 
+# Copy files before running scripts since the scripts often rely on files being present
+copy_systemfiles_for "$(arch)"
 if [ "$ENABLE_HWE" == "1" ]; then
 	copy_systemfiles_for hwe
-	run_buildscripts_for hwe
 fi
-
 if [ "$ENABLE_DX" == "1" ]; then
 	copy_systemfiles_for dx
+fi
+
+# Specifically the dash here to indicate that we do not want to run this script again
+for script in /var/tmp/build_scripts/*-*.sh; do
+	printf "::group:: ===%s===\n" "$(basename "$script")"
+	$script
+	printf "::endgroup::\n"
+done
+
+run_buildscripts_for "$(arch)"
+if [ "$ENABLE_HWE" == "1" ]; then
+	run_buildscripts_for hwe
+fi
+if [ "$ENABLE_DX" == "1" ]; then
 	run_buildscripts_for dx
 fi
 
