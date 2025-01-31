@@ -280,7 +280,8 @@ jobs:
 
           # Apply the labels to the manifest
           for label in $(echo $LABELS | tr ' ' '\n'); do
-            podman manifest annotate --index --annotation=$label $MANIFEST
+            echo "Applying label $label to manifest"
+            podman manifest annotate --index --annotation "$label" $MANIFEST
           done
 
       - name: Login to GHCR
