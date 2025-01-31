@@ -248,8 +248,16 @@ jobs:
 
       - name: Create Manifest
         id: create-manifest
+        env:
+          LABELS: ${{ steps.metadata.outputs.labels }}
         run: |
-          podman manifest create ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          annotationFlags=""
+          for label in $(echo $LABELS | tr ' ' '\n'); do
+            annotationFlags="$annotationFlags --annotation $label"
+          done
+
+          podman manifest create $annotationFlags ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+
           echo "MANIFEST=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
 
       - name: Populate Manifest
