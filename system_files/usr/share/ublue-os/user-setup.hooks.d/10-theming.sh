@@ -9,7 +9,7 @@ if [[ ! -f "$PTYXIS_DIR/catppuccin-dynamic.palette" ]]; then
 	cp "$PTYXIS_THEME_DIR/catppuccin-dynamic.palette" "$PTYXIS_DIR/catppuccin-dynamic.palette"
 fi
 
-if [[ ":Framework:" =~ :$VEN_ID: ]]; then
+if [[ ":Framework:" =~ ":$VEN_ID:" ]]; then
 	if [[ ! -f "$UBLUE_CONFIG_DIR/framework-initialized" ]]; then
 		echo 'Setting Framework logo menu'
 		dconf write /org/gnome/shell/extensions/Logo-menu/symbolic-icon true

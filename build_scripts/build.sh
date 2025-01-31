@@ -8,7 +8,8 @@ set -euo pipefail
 # Do not rely on any of these scripts existing in a specific path
 # Make the names as descriptive as possible and everything that uses dnf for package installation/removal should have `packages-` as a prefix.
 
-export MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
+MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
+export MAJOR_VERSION_NUMBER
 
 # Specifically the dash here to indicate that we do not want to run this script again
 for script in /var/tmp/build_scripts/*-*.sh; do
@@ -20,35 +21,30 @@ done
 run_buildscripts_for() {
 	WHAT=$1
 	shift
-	SCRIPTS=(/var/tmp/build_scripts/overrides/$WHAT/*-*.sh)
-
-	# Check if there are any matching scripts
-	if [ -e "${SCRIPTS[0]}" ]; then
-		for script in "${SCRIPTS[@]}"; do
-			printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
-			"$script"
-			printf "::endgroup::\n"
-		done
-	else
-		echo "No build scripts found for $WHAT"
-	fi
+	find "/var/tmp/build_scripts/overrides/$WHAT" -iname "*-*.sh" | while read -r -d $'\0' script; do
+		printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
+		$script
+		printf "::endgroup::\n"
+	done
 }
 
 copy_systemfiles_for() {
 	WHAT=$1
 	shift
-	rsync -rvK /var/tmp/system_files_overrides/$WHAT/ /
+	printf "::group:: ===%s-file-copying===\n" "$WHAT"
+	rsync -rvK "/var/tmp/system_files_overrides/$WHAT/" /
+	printf "::endgroup::\n"
 }
 
-copy_systemfiles_for $(arch)
-run_buildscripts_for $(arch)
+copy_systemfiles_for "$(arch)"
+run_buildscripts_for "$(arch)"
 
-if [ $ENABLE_HWE == 1 ] ; then
+if [ "$ENABLE_HWE" == "1" ]; then
 	copy_systemfiles_for hwe
 	run_buildscripts_for hwe
 fi
 
-if [ $ENABLE_DX == 1 ] ; then
+if [ "$ENABLE_DX" == "1" ]; then
 	copy_systemfiles_for dx
 	run_buildscripts_for dx
 fi

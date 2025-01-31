@@ -3,7 +3,7 @@
 set -xeuo pipefail
 
 dnf -y remove \
-  setroubleshoot
+	setroubleshoot
 
 dnf -y install \
 	-x gnome-extensions-app \

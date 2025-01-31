@@ -5,7 +5,6 @@ set -euo pipefail
 # Image cleanup
 # Specifically called by build.sh
 
-
 # Hide Desktop Files. Hidden removes mime associations
 sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nHidden=true@g' /usr/share/applications/fish.desktop
 
