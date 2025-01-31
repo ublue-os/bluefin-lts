@@ -69,7 +69,7 @@ sudoif command *args:
     }
     sudoif {{ command }} {{ args }}
 
-build $target_image=image_name $tag=default_tag:
+build $target_image=image_name $tag=default_tag $dx="0" $hwe="0":
     #!/usr/bin/env bash
 
     # Get Version
@@ -79,6 +79,8 @@ build $target_image=image_name $tag=default_tag:
     BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${centos_version}")
     BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
     BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR=${repo_organization}")
+    BUILD_ARGS+=("--build-arg" "ENABLE_DX=${dx}")
+    BUILD_ARGS+=("--build-arg" "ENABLE_HWE=${hwe}")
     if [[ -z "$(git status -s)" ]]; then
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
     fi

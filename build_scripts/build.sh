@@ -9,8 +9,6 @@ set -euo pipefail
 # Make the names as descriptive as possible and everything that uses dnf for package installation/removal should have `packages-` as a prefix.
 
 export MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
-# This also works
-# export MAJOR_VERSION_NUMBER="$(tr -d -c 0-9 <<< ${MAJOR_VERSION})"
 
 # Specifically the dash here to indicate that we do not want to run this script again
 for script in /var/tmp/build_scripts/*-*.sh; do
@@ -19,8 +17,34 @@ for script in /var/tmp/build_scripts/*-*.sh; do
 	printf "::endgroup::\n"
 done
 
-set -x
+run_buildscripts_for() {
+	WHAT=$1
+	shift
+	for script in /var/tmp/build_scripts/overrides/$WHAT/*-*.sh; do
+		printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
+		$script
+		printf "::endgroup::\n"
+	done
+}
+
+copy_systemfiles_for() {
+	WHAT=$1
+	shift
+	rsync -rvK /var/tmp/system_files_overrides/$WHAT/ /
+}
+
+copy_systemfiles_for $(arch)
+run_buildscripts_for $(arch)
+
+if [ $ENABLE_HWE == 1 ] ; then
+	copy_systemfiles_for hwe
+	run_buildscripts_for hwe
+fi
+
+if [ $ENABLE_DX == 1 ] ; then
+	copy_systemfiles_for dx
+	run_buildscripts_for dx
+fi
 
 # Ensure these get run at the _end_ of the build no matter what
-ostree container commit # FIXME: Maybe will not be necessary in the future. Reassess in a few years.
-bootc container lint
+/var/tmp/build_scripts/cleanup.sh
