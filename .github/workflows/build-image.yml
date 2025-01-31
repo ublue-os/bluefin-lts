@@ -183,7 +183,7 @@ jobs:
     needs:
       - build_push
     container:
-      image: redhat/ubi9:latest
+      image: quay.io/fedora/fedora:41
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
@@ -193,9 +193,11 @@ jobs:
       - name: Install dependencies
         run: |
           dnf install -y \
-            podman \
             jq \
             git
+
+          dnf copr enable -y rhcontainerbot/podman-next
+          dnf install -y podman
 
       - name: Get current date
         id: date
