@@ -232,7 +232,7 @@ jobs:
             io.artifacthub.package.keywords=bootc,centos,bluefin,ublue,universal-blue
             io.artifacthub.package.license=Apache-2.0
             io.artifacthub.package.logo-url=https://avatars.githubusercontent.com/u/120078124?s=200&v=4
-            io.artifacthub.package.maintainers=[{\"name\":\"tulilirockz\",\"email\":\"tulilirockz@outlook.com\"},{\"name\":\"castrojo\", \"email\": \"jorge.castro@gmail.com\"}]
+            io.artifacthub.package.maintainers=[{\"name\":\"tulilirockz\",\"email\":\"tulilirockz@outlook.com\"},{\"name\":\"castrojo\",\"email\":\"jorge.castro@gmail.com\"}]
             io.artifacthub.package.prerelease=true
             containers.bootc=1
           sep-tags: " "
