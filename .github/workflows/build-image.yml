@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 1 * * TUE" #
+    - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
   merge_group:
   push:
     branches:
