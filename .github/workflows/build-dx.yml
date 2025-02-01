@@ -23,5 +23,4 @@ jobs:
     uses: ./.github/workflows/reusable-build-image.yml
     with:
       image-name: bluefin-dx
-      image-desc: "Bluefin LTS, built on CentOS Stream with bootc"
       flavor: dx
