@@ -1,40 +1,62 @@
 ---
 name: Build Image
 on:
-  pull_request:
-    branches:
-      - main
-  schedule:
-    - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
-  merge_group:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "**/README.md"
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      image-name:
+        description: "The name of the image to build"
+        required: true
+        type: string
+      image-desc:
+        description: "The description of the image to build"
+        required: true
+        type: string
+      flavor:
+        description: "The flavor of the image to build"
+        required: false
+        type: string
+        default: ""
+      platforms:
+        description: "The platforms to build the image for"
+        required: false
+        type: string
+        default: "amd64,arm64"
 
 env:
-  IMAGE_NAME: "bluefin" # the name of the image produced by this build, matches repo names
-  IMAGE_DESC: "Bluefin LTS, built on CentOS Stream with bootc"
+  IMAGE_NAME: ${{ inputs.image-name }}
+  IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "lts"
   CENTOS_VERSION: "stream10"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
-  cancel-in-progress: true
+  PLATFORMS: ${{ inputs.platforms }}
 
 jobs:
+  generate_matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          # turn the comma separated string into a list
+          platforms=()
+          IFS=',' read -r -a platforms <<< "${{ inputs.platforms }}"
+
+          MATRIX="{\"include\":[]}"
+          for platform in "${platforms[@]}"; do
+            MATRIX=$(echo $MATRIX | jq ".include += [{\"platform\": \"$platform\"}]")
+          done
+          echo "matrix=$(echo $MATRIX | jq -c '.')" >> $GITHUB_OUTPUT
+
   build_push:
     name: Build and push image
     runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     timeout-minutes: 30
+    needs: generate_matrix
     strategy:
       fail-fast: false
-      matrix:
-        platform: ["amd64", "arm64"]
-        flavor: ["","hwe", "dx", "hwe-dx"]
+      matrix: ${{fromJson(needs.generate_matrix.outputs.matrix)}}
     permissions:
       contents: read
       packages: write
@@ -67,22 +89,22 @@ jobs:
       - name: Build Image
         id: build-image
         shell: bash
+        env:
+          FLAVOR: ${{ inputs.flavor }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
           set -x
           just=$(which just)
-          IMAGE_NAME=$IMAGE_NAME
-          FLAVOR=${{ matrix.flavor }}
+
           ENABLE_DX=0
           ENABLE_HWE=0
           if [[ "$FLAVOR" =~ "dx" ]] ; then
             ENABLE_DX=1
-            IMAGE_NAME="${IMAGE_NAME}-dx"
           fi
           if [[ "$FLAVOR" =~ "hwe" ]] ; then
             ENABLE_HWE=1
-            IMAGE_NAME="${IMAGE_NAME}-hwe"
           fi
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+
           sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "$ENABLE_DX" "$ENABLE_HWE"
 
       - name: Run Rechunker
