@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 VEN_ID="$(cat /sys/devices/virtual/dmi/id/chassis_vendor)"
 
 # Ensure custom ptyxis theme is present
@@ -8,6 +9,9 @@ mkdir -p "$PTYXIS_DIR"
 if [[ ! -f "$PTYXIS_DIR/catppuccin-dynamic.palette" ]]; then
 	cp "$PTYXIS_THEME_DIR/catppuccin-dynamic.palette" "$PTYXIS_DIR/catppuccin-dynamic.palette"
 fi
+
+UBLUE_CONFIG_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ublue"
+mkdir -p "$UBLUE_CONFIG_DIR"
 
 if [[ ":Framework:" =~ ":$VEN_ID:" ]]; then
 	if [[ ! -f "$UBLUE_CONFIG_DIR/framework-initialized" ]]; then
