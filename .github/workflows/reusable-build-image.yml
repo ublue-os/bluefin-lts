@@ -210,7 +210,6 @@ jobs:
 
   manifest:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     needs:
       - build_push
     container:
@@ -268,6 +267,7 @@ jobs:
             containers.bootc=1
 
       - name: Fetch Build Outputs
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
         with:
           pattern: ${{ env.IMAGE_NAME }}-*
@@ -275,6 +275,7 @@ jobs:
           path: /tmp/artifacts
 
       - name: Load Outputs
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: load-outputs
         run: |
           DIGESTS_JSON=$(jq -n '{}')
@@ -288,12 +289,14 @@ jobs:
           echo "DIGESTS_JSON=$(echo $DIGESTS_JSON | jq -c '.')" >> $GITHUB_OUTPUT
 
       - name: Create Manifest
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: create-manifest
         run: |
           podman manifest create ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           echo "MANIFEST=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
 
       - name: Populate Manifest
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           MANIFEST: ${{ steps.create-manifest.outputs.MANIFEST }}
           DIGESTS_JSON: ${{ steps.load-outputs.outputs.DIGESTS_JSON }}
@@ -316,9 +319,11 @@ jobs:
           done <<< "$LABELS"
 
       - name: Login to GHCR
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: echo ${{ secrets.GITHUB_TOKEN }} | podman login -u ${{ github.actor }} --password-stdin ghcr.io
 
       - name: Push Manifest
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           MANIFEST: ${{ steps.create-manifest.outputs.MANIFEST }}
           TAGS: ${{ steps.metadata.outputs.tags }}
