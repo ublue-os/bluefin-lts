@@ -22,7 +22,7 @@ dnf -y install \
 # We do, however, leave crb and EPEL enabled by default.
 
 # RPMS from Ublue-os config
-dnf -y install /tmp/rpms/ublue-os-{udev-rules,luks}.noarch.rpm
+dnf -y install /tmp/rpms/ublue-os-{udev-rules,luks,signing}.noarch.rpm
 
 cp -r /usr/share/ublue-os/just /tmp/just
 # Focefully install ujust without powerstat while we don't have it on EPEL
