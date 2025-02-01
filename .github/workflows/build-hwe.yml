@@ -21,6 +21,7 @@ concurrency:
 jobs:
   build:
     uses: ./.github/workflows/reusable-build-image.yml
+    secrets: inherit
     with:
       image-name: bluefin-hwe
       flavor: hwe

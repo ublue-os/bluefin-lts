@@ -27,6 +27,10 @@ on:
         required: false
         type: string
         default: "stream10"
+    secrets:
+      SIGNING_SECRET:
+        description: "The private key used to sign the image"
+        required: false
 
 env:
   IMAGE_NAME: ${{ inputs.image-name }}
