@@ -211,6 +211,7 @@ jobs:
   manifest:
     runs-on: ubuntu-latest
     needs:
+      - generate_matrix
       - build_push
     container:
       image: quay.io/fedora/fedora:41@sha256:991a06b2425c13613ef8ace721a9055e52a64f65cd96c2b18c72bde43fe1308b
