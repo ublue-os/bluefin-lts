@@ -3,7 +3,9 @@
 set -xeuo pipefail
 
 mkdir -p /var/home
-# Homebrew
+
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install ublue-brew
+
 touch /.dockerenv
 curl --retry 3 -Lo /tmp/brew-install https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
 chmod +x /tmp/brew-install
