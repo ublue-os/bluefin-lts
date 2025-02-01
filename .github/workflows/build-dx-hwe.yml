@@ -1,4 +1,4 @@
-name: Build Bluefin LTS HWE DX
+name: Build Bluefin LTS DX HWE
 
 on:
   pull_request:
@@ -22,5 +22,5 @@ jobs:
   build:
     uses: ./.github/workflows/reusable-build-image.yml
     with:
-      image-name: bluefin-hwe-dx
-      flavor: hwe-dx
+      image-name: bluefin-dx-hwe
+      flavor: dx-hwe
