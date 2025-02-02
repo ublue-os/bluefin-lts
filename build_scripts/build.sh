@@ -23,7 +23,7 @@ copy_systemfiles_for() {
 	WHAT=$1
 	shift
 	printf "::group:: ===%s-file-copying===\n" "$WHAT"
-	cp -av "/var/tmp/system_files_overrides/$WHAT/." /
+	cp -avf "/var/tmp/system_files_overrides/$WHAT/." /
 	printf "::endgroup::\n"
 }
 

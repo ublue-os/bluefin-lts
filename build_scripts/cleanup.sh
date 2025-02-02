@@ -12,7 +12,7 @@ sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nHidden=true@g' /usr/share/applica
 dnf -y install /tmp/rpms/ublue-os-signing.noarch.rpm
 # ublue-os-signing incorrectly puts files under /usr/etc and bootc container lint gets mad at this.
 # FIXME: dear lord fix this upstream https://github.com/ublue-os/config/pull/311
-cp -av /usr/etc /etc
+cp -avf /usr/etc/. /etc
 rm -rvf /usr/etc
 
 # Image-layer cleanup
