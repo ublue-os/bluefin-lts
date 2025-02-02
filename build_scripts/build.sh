@@ -12,7 +12,7 @@ run_buildscripts_for() {
 	WHAT=$1
 	shift
 	# Complex "find" expression here since there might not be any overrides
-	find "/var/tmp/build_scripts/overrides/$WHAT" -iname "*-*.sh" -print0 -depth 1 | while IFS= read -r -d $'\0' script; do
+	find "/var/tmp/build_scripts/overrides/$WHAT" -iname "*-*.sh" -type f -maxdepth 1 -print0 | while IFS= read -r -d $'\0' script; do
 		printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
 		$script
 		printf "::endgroup::\n"
