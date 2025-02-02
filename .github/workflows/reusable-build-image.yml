@@ -353,7 +353,7 @@ jobs:
             podman manifest push --all=false --digestfile=/tmp/digestfile $MANIFEST $IMAGE_REGISTRY/$IMAGE_NAME:$tag
           done <<< "$TAGS"
 
-          DIGEST=$(cat digestfile)
+          DIGEST=$(cat /tmp/digestfile)
           echo "DIGEST=$DIGEST" >> $GITHUB_OUTPUT
 
       - name: Install Cosign
