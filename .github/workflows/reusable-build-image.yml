@@ -211,6 +211,7 @@ jobs:
   manifest:
     name: Create ${{ inputs.image-name }}:${{ inputs.centos-version }} Manifest
     runs-on: ubuntu-latest
+    if: always()
     needs:
       - generate_matrix
       - build_push
@@ -222,6 +223,21 @@ jobs:
       packages: write
       id-token: write
     steps:
+      - name: Exit on failure
+        env:
+          JOBS: ${{ toJson(needs) }}
+        run: |
+          echo "Job status:"
+          echo $JOBS | jq -r 'to_entries[] | " - \(.key): \(.value.result)"'
+
+          for i in $(echo $JOBS | jq -r 'to_entries[] | .value.result'); do
+            if [ "$i" != "success" ] && [ "$i" != "skipped" ]; then
+              echo ""
+              echo "Status check not okay!"
+              exit 1
+            fi
+          done
+
       - name: Install dependencies
         run: |
           dnf install -y \
