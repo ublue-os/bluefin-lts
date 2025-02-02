@@ -223,6 +223,15 @@ jobs:
       packages: write
       id-token: write
     steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y \
+            jq \
+            git
+
+          dnf copr enable -y rhcontainerbot/podman-next
+          dnf install -y podman
+
       - name: Exit on failure
         env:
           JOBS: ${{ toJson(needs) }}
@@ -237,15 +246,6 @@ jobs:
               exit 1
             fi
           done
-
-      - name: Install dependencies
-        run: |
-          dnf install -y \
-            jq \
-            git
-
-          dnf copr enable -y rhcontainerbot/podman-next
-          dnf install -y podman
 
       - name: Get current date
         id: date
