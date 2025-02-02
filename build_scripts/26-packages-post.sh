@@ -15,6 +15,10 @@ rm -f /usr/share/pixmaps/faces/* || echo "Expected directory deletion to fail"
 mv /usr/share/pixmaps/faces/bluefin/* /usr/share/pixmaps/faces
 rm -rf /usr/share/pixmaps/faces/bluefin
 
+# This should only be enabled on `-dx`
+sed -i "/^show-boxbuddy=.*/d" /etc/dconf/db/distro.d/04-bluefin-logomenu-extension
+sed -i "/^show-boxbuddy=.*/d" /usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override
+
 # The compose repos we used during the build are point in time repos that are
 # not updated, so we don't want to leave them enabled.
 # FIXME: figure out why this is not working
