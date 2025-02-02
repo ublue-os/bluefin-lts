@@ -342,6 +342,7 @@ jobs:
 
       - name: Push Manifest
         if: github.event_name != 'pull_request'
+        id: push_manifest
         env:
           MANIFEST: ${{ steps.create-manifest.outputs.MANIFEST }}
           TAGS: ${{ steps.metadata.outputs.tags }}
@@ -349,5 +350,23 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
           while IFS= read -r tag; do
-            podman manifest push --all=false $MANIFEST $IMAGE_REGISTRY/$IMAGE_NAME:$tag
+            podman manifest push --all=false --digestfile=/tmp/digestfile $MANIFEST $IMAGE_REGISTRY/$IMAGE_NAME:$tag
           done <<< "$TAGS"
+
+          DIGEST=$(cat digestfile)
+          echo "DIGEST=$DIGEST" >> $GITHUB_OUTPUT
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
+        if: github.event_name != 'pull_request'
+
+      - name: Sign Manifest
+        if: github.event_name != 'pull_request'
+        run: |
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE_REGISTRY/$IMAGE_NAME@$DIGEST
+        env:
+          DIGEST: ${{ steps.push_manifest.outputs.DIGEST }}
+          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          COSIGN_EXPERIMENTAL: false
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
