@@ -37,4 +37,4 @@ alias changelog := changelogs
 
 # Show the changelog
 changelogs:
-    rpm-ostree db diff --changelogs
+    /usr/libexec/ublue-changelog
