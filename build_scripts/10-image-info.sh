@@ -18,13 +18,13 @@ cat >$IMAGE_INFO <<EOF
 EOF
 
 OLD_PRETTY_NAME="$(sh -c '. /usr/lib/os-release ; echo $NAME $VERSION')"
-IMAGE_PRETTY_NAME="Achillobator"
+IMAGE_PRETTY_NAME="Bluefin LTS"
 IMAGE_LIKE="rhel fedora"
 HOME_URL="https://projectbluefin.io"
 DOCUMENTATION_URL="https://docs.projectbluefin.io"
 SUPPORT_URL="https://github.com/ublue-os/bluefin-lts/issues/"
 BUG_SUPPORT_URL="https://github.com/ublue-os/bluefin-lts/issues/"
-CODE_NAME="Dromaeosauridae"
+CODE_NAME="Achillobator Giganticus"
 
 # OS Release File (changed in order with upstream)
 sed -i -f - /usr/lib/os-release <<EOF
