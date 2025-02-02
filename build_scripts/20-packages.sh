@@ -41,7 +41,7 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	fzf \
 	glow \
 	wl-clipboard \
-	gnome-shell-extension-{search-light,gsconnect,logo-menu} \
+	gnome-shell-extension-{search-light,gsconnect,logo-menu,caffeine} \
 	gum \
 	jetbrains-mono-fonts-all \
 	ublue-motd \
