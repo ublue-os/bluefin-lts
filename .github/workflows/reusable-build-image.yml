@@ -365,7 +365,7 @@ jobs:
             --env IMAGE_NAME="${IMAGE_NAME}" \
             --env DIGEST="${DIGEST}" \
             --env COSIGN_EXPERIMENTAL=false \
-            chainguard/cosign:latest \
+            cgr.dev/chainguard/cosign:latest \
             sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}"
         env:
           DIGEST: ${{ steps.push_manifest.outputs.DIGEST }}
