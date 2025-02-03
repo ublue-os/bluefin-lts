@@ -20,4 +20,4 @@ jobs:
     with:
       image-name: bluefin-gdx
       flavor: gdx
-      platforms: adm64
+      platforms: amd64
