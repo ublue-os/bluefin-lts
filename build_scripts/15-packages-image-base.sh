@@ -9,6 +9,8 @@ dnf remove -y subscription-manager
 
 # The base images take super long to update, this just updates manually for now
 dnf -y update
+dnf -y install 'dnf-command(versionlock)'
+dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
 dnf config-manager --set-enabled crb
 dnf -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-$MAJOR_VERSION_NUMBER.noarch.rpm"

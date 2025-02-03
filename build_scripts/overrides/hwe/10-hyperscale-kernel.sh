@@ -6,6 +6,7 @@ set -euox pipefail
 dnf -y install centos-release-hyperscale-kernel
 dnf config-manager --set-disabled "centos-hyperscale"
 dnf config-manager --set-disabled "centos-hyperscale-kernel"
+dnf versionlock remove kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y update kernel
 
 # Only necessary when not building with Nvidia
