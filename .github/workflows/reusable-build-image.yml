@@ -372,7 +372,7 @@ jobs:
 
       - name: Sign Manifest
         run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE_REGISTRY/$IMAGE_NAME@$DIGEST
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE@$DIGEST
         env:
           DIGEST: ${{ needs.manifest.outputs.digest }}
           IMAGE: ${{ needs.manifest.outputs.image }}
