@@ -54,14 +54,9 @@ jobs:
           IFS=',' read -r -a platforms <<< "${{ inputs.platforms }}"
 
           MATRIX="{\"include\":[]}"
-          if [ "${{ inputs.flavor }}" == "gdx" ] ; then
-            # We explicitly only support Nvidia on x86 for now.
-            MATRIX=$(echo $MATRIX | jq ".include += [{\"platform\": \"amd64\"}]")
-          else
-            for platform in "${platforms[@]}"; do
-              MATRIX=$(echo $MATRIX | jq ".include += [{\"platform\": \"$platform\"}]")
-            done
-          fi
+          for platform in "${platforms[@]}"; do
+            MATRIX=$(echo $MATRIX | jq ".include += [{\"platform\": \"$platform\"}]")
+          done
           echo "matrix=$(echo $MATRIX | jq -c '.')" >> $GITHUB_OUTPUT
 
   build_push:
