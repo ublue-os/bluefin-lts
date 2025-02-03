@@ -54,9 +54,14 @@ jobs:
           IFS=',' read -r -a platforms <<< "${{ inputs.platforms }}"
 
           MATRIX="{\"include\":[]}"
-          for platform in "${platforms[@]}"; do
-            MATRIX=$(echo $MATRIX | jq ".include += [{\"platform\": \"$platform\"}]")
-          done
+          if [ "${{ inputs.flavor }}" == "gdx" ] ; then
+            # We explicitly only support Nvidia on x86 for now.
+            MATRIX=$(echo $MATRIX | jq ".include += [{\"platform\": \"amd64\"}]")
+          else
+            for platform in "${platforms[@]}"; do
+              MATRIX=$(echo $MATRIX | jq ".include += [{\"platform\": \"$platform\"}]")
+            done
+          fi
           echo "matrix=$(echo $MATRIX | jq -c '.')" >> $GITHUB_OUTPUT
 
   build_push:
@@ -106,8 +111,12 @@ jobs:
           set -x
           just=$(which just)
 
+          ENABLE_GDX=0
           ENABLE_DX=0
           ENABLE_HWE=0
+          if [[ "$FLAVOR" =~ "gdx" ]] ; then
+            ENABLE_GDX=1
+          fi
           if [[ "$FLAVOR" =~ "dx" ]] ; then
             ENABLE_DX=1
           fi
@@ -115,7 +124,7 @@ jobs:
             ENABLE_HWE=1
           fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "$ENABLE_DX" "$ENABLE_HWE"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "$ENABLE_DX" "$ENABLE_HWE" "$ENABLE_GDX"
 
       - name: Run Rechunker
         if: github.event_name != 'pull_request'

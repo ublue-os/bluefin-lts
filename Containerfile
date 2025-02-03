@@ -5,6 +5,7 @@ FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 # ARM should be handled by $(arch)
 ARG ENABLE_DX="${ENABLE_DX:-0}"
 ARG ENABLE_HWE="${ENABLE_HWE:-0}"
+ARG ENABLE_GDX="${ENABLE_GDX:-0}"
 ARG IMAGE_NAME="${IMAGE_NAME:-bluefin}"
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
 ARG MAJOR_VERSION="${MAJOR_VERSION:-lts}"
