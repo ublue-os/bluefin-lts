@@ -33,6 +33,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        include:
+          - platform: arm64
+            flavor: ""
+          - platform: arm64
+            flavor: "hwe"
         platform: [amd64]
         flavor: ["","hwe", "gdx"]
     permissions:
