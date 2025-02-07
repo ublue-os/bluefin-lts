@@ -33,13 +33,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        platform: [arm64, amd64]
+        flavor: ["", "hwe"]
         include:
-          - platform: arm64
-            flavor: ""
-          - platform: arm64
-            flavor: "hwe"
-        platform: [amd64]
-        flavor: ["","hwe", "gdx"]
+          - platform: amd64
+            flavor: "gdx"
     permissions:
       contents: read
       packages: read
@@ -58,6 +56,14 @@ jobs:
 
       - name: Setup Just
         uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+
+      - name: Patch ISO configuration to fit flavor
+        env:
+          FLAVOR: ${{ matrix.flavor }}
+        run: |
+          if [ "${FLAVOR}" != "" ] ; then
+            sed -i "s/bluefin\:lts/bluefin-$FLAVOR\:lts" ./image-builder-iso.config.toml
+          fi
 
       - name: Build ISO
         id: build
@@ -83,7 +89,7 @@ jobs:
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
           FLAVOR: ${{ matrix.flavor }}
         run: |
-          if [ ${FLAVOR} != "" ] ; then
+          if [ "${FLAVOR}" != "" ] ; then
             IMAGE_NAME="${IMAGE_NAME}-${FLAVOR}"
             export IMAGE_NAME
             echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
