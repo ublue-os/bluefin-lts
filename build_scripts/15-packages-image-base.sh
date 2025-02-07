@@ -72,7 +72,8 @@ dnf -y install \
 dnf -y install \
 	plymouth \
 	plymouth-system-theme \
-	fwupd
+	fwupd \
+	systemd-{resolved,container,oomd}
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
 dnf -y remove console-login-helper-messages
