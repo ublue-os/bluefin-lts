@@ -2,9 +2,11 @@
 
 set -xeuo pipefail
 
-# This is for better testing, we might split this later
+# FIXME: just install uv regularly, this should be out of epel testing after 10-02-25 or so
+# dnf --enablerepo="epel-testing" install -y uv
 
-dnf install -y fuse flatpak-builder
+dnf install -y \
+	python3-ramalama
 
 # VSCode on the base image!
 dnf config-manager --add-repo "https://packages.microsoft.com/yumrepos/vscode"
