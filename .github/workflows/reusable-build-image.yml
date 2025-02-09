@@ -121,13 +121,13 @@ jobs:
 
           sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "$ENABLE_DX" "$ENABLE_HWE" "$ENABLE_GDX"
 
-      - name: Rechunk and Tag
-        if: github.event_name != 'pull_request'
+      - name: Rechunk and Tag image
+        # if: github.event_name != 'pull_request'
         id: load
         run: |
           set -x
           just=$(which just)
-          
+
           sudo $just rechunk "${IMAGE_NAME}" "${DEFAULT_TAG}"
           sudo podman image tag "$IMAGE_NAME:${DEFAULT_TAG}" "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 
