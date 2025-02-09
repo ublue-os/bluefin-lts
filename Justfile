@@ -68,35 +68,38 @@ sudoif command *args:
         fi
     }
     sudoif {{ command }} {{ args }}
-    # This Justfile recipe builds a container image using Podman.
-    # 
-    # Arguments:
-    #   $target_image - The tag you want to apply to the image (default: bluefin).
-    #   $tag - The tag for the image (default: lts).
-    #   $dx - Enable DX (default: "0").
-    #   $hwe - Enable HWE (default: "0").
-    #   $gdx - Enable GDX (default: "0").
-    #
-    # DX: 
-    #   Developer Experience (DX) is a feature that allows you to install the latest developer tools for your system.
-    #   Packages include VScode, Docker, Distrobox, and more.
-    # HWE:
-    #   Hardware Enablement (HWE) is a feature that allows you to install the latest hardware support for your system.
-    #   Currently this install the Hyperscale SIG kernel which will stay ahead of the CentOS Stream kernel and enables btrfs
-    # GDX: https://docs.projectbluefin.io/gdx/
-    #   GPU Developer Experience (GDX) creates a base as an AI and Graphics platform.
-    #   Installs Nvidia drivers, CUDA, and other tools.
-    #
-    # The script constructs the version string using the tag and the current date.
-    # If the git working directory is clean, it also includes the short SHA of the current HEAD.
-    #
-    # just build $target_image $tag $dx $hwe $gdx
-    #
-    # Example usage:
-    #   just build bluefin lts 1 0 1
-    #
-    # This will build an image 'bluefin:lts' with DX and GDX enabled.
 
+# This Justfile recipe builds a container image using Podman.
+#
+# Arguments:
+#   $target_image - The tag you want to apply to the image (default: bluefin).
+#   $tag - The tag for the image (default: lts).
+#   $dx - Enable DX (default: "0").
+#   $hwe - Enable HWE (default: "0").
+#   $gdx - Enable GDX (default: "0").
+#
+# DX:
+#   Developer Experience (DX) is a feature that allows you to install the latest developer tools for your system.
+#   Packages include VScode, Docker, Distrobox, and more.
+# HWE:
+#   Hardware Enablement (HWE) is a feature that allows you to install the latest hardware support for your system.
+#   Currently this install the Hyperscale SIG kernel which will stay ahead of the CentOS Stream kernel and enables btrfs
+# GDX: https://docs.projectbluefin.io/gdx/
+#   GPU Developer Experience (GDX) creates a base as an AI and Graphics platform.
+#   Installs Nvidia drivers, CUDA, and other tools.
+#
+# The script constructs the version string using the tag and the current date.
+# If the git working directory is clean, it also includes the short SHA of the current HEAD.
+#
+# just build $target_image $tag $dx $hwe $gdx
+#
+# Example usage:
+#   just build bluefin lts 1 0 1
+#
+# This will build an image 'bluefin:lts' with DX and GDX enabled.
+#
+
+# Build the image using the specified parameters
 build $target_image=image_name $tag=default_tag $dx="0" $hwe="0" $gdx="0":
     #!/usr/bin/env bash
 
@@ -121,7 +124,7 @@ build $target_image=image_name $tag=default_tag $dx="0" $hwe="0" $gdx="0":
         .
 
 # Command: _rootful_load_image
-# Description: This script checks if the current user is root or running under sudo. If not, it attempts to resolve the image tag using podman inspect. 
+# Description: This script checks if the current user is root or running under sudo. If not, it attempts to resolve the image tag using podman inspect.
 #              If the image is found, it loads it into rootful podman. If the image is not found, it pulls it from the repository.
 #
 # Parameters:
@@ -174,6 +177,7 @@ _rootful_load_image $target_image=image_name $tag=default_tag:
 #   tag: The tag of the image to build (ex. latest)
 #   type: The type of image to build (ex. qcow2, raw, iso)
 #   config: The configuration file to use for the build (deafult: image-builder.config.toml)
+
 # Example: just _rebuild-bib localhost/fedora latest qcow2 image-builder.config.toml
 _build-bib $target_image $tag $type $config: (_rootful_load_image target_image tag)
     #!/usr/bin/env bash
@@ -217,6 +221,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
 #   tag: The tag of the image to build (ex. latest)
 #   type: The type of image to build (ex. qcow2, raw, iso)
 #   config: The configuration file to use for the build (deafult: image-builder.config.toml)
+
 # Example: just _rebuild-bib localhost/fedora latest qcow2 image-builder.config.toml
 _rebuild-bib $target_image $tag $type $config: (build target_image tag) && (_build-bib target_image tag type config)
 
@@ -295,13 +300,13 @@ run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_ru
 [group('Run Virtal Machine')]
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "image-builder.config.toml")
 
-# Run a virtual from an ISO
+# Run a virtual machine from an ISO
 [group('Run Virtal Machine')]
 run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "image-builder-iso.config.toml")
 
-
+# Run a virtual machine using systemd-vmspawn
 [group('Run Virtal Machine')]
-spawn-vm rebuild="0" type="qcow2" ram="6GiB":
+spawn-vm rebuild="0" type="qcow2" ram="6G":
     #!/usr/bin/env bash
 
     set -euo pipefail
@@ -312,7 +317,7 @@ spawn-vm rebuild="0" type="qcow2" ram="6GiB":
       -M "achillobator" \
       --console=gui \
       --cpus=2 \
-      --ram=$(echo 6G| /usr/bin/numfmt --from=iec) \
+      --ram=$(echo {{ ram }}| /usr/bin/numfmt --from=iec) \
       --network-user-mode \
       --vsock=false --pass-ssh-key=false \
       -i ./output/**/*.{{ type }}
@@ -322,9 +327,10 @@ spawn-vm rebuild="0" type="qcow2" ram="6GiB":
 ##########################
 # Description:
 # Enables the manual customization of the osbuild manifest before running the ISO build
-# 
+#
 # Mount the configuration file and output directory
 # Clear the entrypoint to run the custom command
+
 # Run osbuild with the specified parameters
 customize-iso-build:
     sudo podman run \
@@ -344,13 +350,15 @@ customize-iso-build:
 #  'patch-iso-branding'  #
 ##########################
 # Description:
-# creates a custom branded ISO image.
+# creates a custom branded ISO image. As per https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/anaconda_customization_guide/sect-iso-images#sect-product-img
 # Parameters:
 #   override: A flag to determine if the final ISO should replace the original ISO (default is 0).
 #   iso_path: The path to the original ISO file.
-# Runs a Podman container with Fedora image. Installs 'lorax' and 'mkksiso' tools inside the container. Creates a compressed 'product.img' 
-# from the Brnading images in the 'iso_files' directory. Uses 'mkksiso' to add the 'product.img' to the original ISO and creates 'final.iso' 
+# Runs a Podman container with Fedora image. Installs 'lorax' and 'mkksiso' tools inside the container. Creates a compressed 'product.img'
+# from the Brnading images in the 'iso_files' directory. Uses 'mkksiso' to add the 'product.img' to the original ISO and creates 'final.iso'
 # in the output directory. If 'override' is not 0, replaces the original ISO with the newly created 'final.iso'.
+
+# applies custom branding to an ISO image.
 patch-iso-branding override="0" iso_path="output/bootiso/install.iso":
     #!/usr/bin/env bash
     podman run \
@@ -369,8 +377,10 @@ patch-iso-branding override="0" iso_path="output/bootiso/install.iso":
         mv output/final.iso {{ iso_path }}
     fi
 
+# Runs shell check on all Bash scripts
 lint:
     /usr/bin/find . -iname "*.sh" -type f -exec shellcheck "{}" ';'
 
+# Runs shfmt on all Bash scripts
 format:
     /usr/bin/find . -iname "*.sh" -type f -exec shfmt --write "{}" ';'
