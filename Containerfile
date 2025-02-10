@@ -1,6 +1,6 @@
 ARG MAJOR_VERSION="${MAJOR_VERSION:-stream10}"
 FROM ghcr.io/astral-sh/uv:latest@sha256:88d7b48fc9f17462c82b5482e497af250d337f3f14e1ac97c16e68eba49b651e AS uv-bin
-FROM ghcr.io/ublue-os/config:latest@sha256:9dce9d52ba90b418d768a65486c30be9fcf4b4f54ceb787602be6776b749ba88 AS config
+FROM ghcr.io/ublue-os/config:latest@sha256:0de519af5768d39abb1c416afdd3345337ef377e31c43f7bc894a39f30516bff AS config
 FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 
 # ARM should be handled by $(arch)
