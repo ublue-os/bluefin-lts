@@ -9,7 +9,7 @@ change-edition:
     edition=$(gum choose --header "Please select a edition:" "HWE" "GDX" "DX" "Base")
 
     if [[ -z "$edition" ]]; then # Handle cancelation
-        echo "No edition selected."
+        echo "No Edition selected."
         exit 1
     fi
 
@@ -30,7 +30,7 @@ change-edition:
         exit 1
     fi
 
-    sudo bootc switch --enforce-container-sigpolicy "ghcr.io/ublue-os/bluefin:lts${edition:+-$edition}"
+    sudo bootc switch --enforce-container-sigpolicy "ghcr.io/ublue-os/bluefin${edition:+-$edition}:lts"
     if [[ $? -ne 0 ]]; then
         echo "Error: Failed to switch boot configuration."
         exit 1
