@@ -16,6 +16,6 @@ COPY system_files /
 COPY system_files_overrides /var/tmp/system_files_overrides
 COPY build_scripts /var/tmp/build_scripts
 # FIXME: install UV from EPEL whenever it gets released there, its currently on epel-testing but its broken (07-02-2025)
-COPY --from=uv-bin /uv* /var/tmp/system_files_overrides/dx/usr/bin
+COPY --from=uv-bin /uv* /var/tmp/system_files_overrides/gdx/usr/bin
 
 RUN --mount=type=tmpfs,dst=/tmp --mount=type=bind,from=config,src=/rpms,dst=/tmp/rpms /var/tmp/build_scripts/build.sh

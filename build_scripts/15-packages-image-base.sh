@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euox pipefail
+set -xeuo pipefail
 
 # This is the base for a minimal GNOME system on CentOS Stream.
 

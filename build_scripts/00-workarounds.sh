@@ -8,9 +8,7 @@ set -xeuo pipefail
 # uses during its build.  This avoids downgrading packages in the image that
 # have strict NVR requirements.
 curl --retry 3 -Lo "/etc/yum.repos.d/compose.repo" "https://gitlab.com/redhat/centos-stream/containers/bootc/-/raw/c${MAJOR_VERSION_NUMBER}s/cs.repo"
-sed -r \
-	-e 's@\[rhel-10-for-\$basearch-@[@' \
-	-e 's@-rpms\]@-compose]@' \
-	-e 's@- (BaseOS|AppStream)@& - Compose@' \
-	-e 's@/usr/share/distribution-gpg-keys/centos/RPM-GPG-KEY-CentOS-Official@/etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial-SHA256@' \
-	-i /etc/yum.repos.d/compose.repo
+sed -i -f - /etc/yum.repos.d/compose.repo <<EOF
+s@- (BaseOS|AppStream)@& - Compose@
+s@\(baseos\|appstream\)@&-compose@
+EOF

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -xeuo pipefail
 
 # Image cleanup
 # Specifically called by build.sh
@@ -21,8 +21,10 @@ shopt -s extglob
 # shellcheck disable=SC2115
 rm -rf /var/!(cache)
 rm -rf /var/cache/!(rpm-ostree)
-rm -rf /var/tmp
+# Ensure /var/tmp exists, FIXME: remove this once this is fixed upstream
+mkdir -p /var/tmp
 dnf clean all
 
-ostree container commit # FIXME: Maybe will not be necessary in the future. Reassess in a few years.
+# FIXME: bootc container lint --fix will replace this
+ostree container commit
 bootc container lint
