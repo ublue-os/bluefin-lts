@@ -123,6 +123,28 @@ build $target_image=image_name $tag=default_tag $dx="0" $hwe="0" $gdx="0":
         --tag "${target_image}:${tag}" \
         .
 
+rechunk $target_image=image_name $tag=default_tag:
+    #!/usr/bin/env bash
+    set -xeuo pipefail
+
+    OUTDIR=$(mktemp -d -p /var/tmp)
+    ROOTFSDIR=$(mktemp -d -p /var/tmp)
+    cleanup() {
+        sudo rm -rf $OUTDIR
+        sudo rm -rf $ROOTFSDIR
+    }
+    trap cleanup EXIT
+
+    podman export $(podman create "${target_image}:${tag}") | tar -xf - -C $ROOTFSDIR
+
+    # The built image itself has a new enough rpm-ostree version to be able to do this.
+    podman run --rm -it -v "$OUTDIR:/out:Z" -v "$ROOTFSDIR:/rootfs:Z" "${target_image}:${tag}" \
+        sh -c "mkdir /var/tmp && /usr/bin/rpm-ostree experimental compose build-chunked-oci --bootc --format-version=1 --rootfs=/rootfs --output /out/out.oci"
+
+    podman rmi -f "${target_image}:${tag}"
+    # Load image into storage and tag it properly
+    podman load -i $OUTDIR/out.oci | sed "s/Loaded image: //" | xargs -i podman tag '{}' "${target_image}:${tag}" 
+
 # Command: _rootful_load_image
 # Description: This script checks if the current user is root or running under sudo. If not, it attempts to resolve the image tag using podman inspect.
 #              If the image is found, it loads it into rootful podman. If the image is not found, it pulls it from the repository.
