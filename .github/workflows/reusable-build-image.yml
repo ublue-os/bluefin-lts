@@ -38,6 +38,7 @@ env:
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "lts"
   CENTOS_VERSION: ${{ inputs.centos-version }}
+  CENTOS_VERSION_NUMBER: ${{ inputs.centos-version | tr -d -c 0-9 }}
   PLATFORMS: ${{ inputs.platforms }}
 
 jobs:
@@ -272,6 +273,8 @@ jobs:
             type=raw,value=lts-{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.CENTOS_VERSION }}
             type=raw,value=${{ env.CENTOS_VERSION }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
             type=ref,event=pr
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
