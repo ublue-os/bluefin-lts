@@ -48,7 +48,6 @@ change-image:
             exit 1
     fi
 
-    skopeo inspect docker://ghcr.io/ublue-os/bluefin${image}:lts
     sudo bootc switch --enforce-container-sigpolicy "ghcr.io/ublue-os/bluefin${image}:lts"
     if [[ $? -ne 0 ]]; then
             echo "Error: Failed to switch boot configuration."
