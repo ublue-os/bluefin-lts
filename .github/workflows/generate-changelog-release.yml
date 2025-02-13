@@ -6,48 +6,23 @@ on:
       stream_name:
         description: "Release Tag (e.g. stream10, latest)"
         type: string
-        default: "latest"
+        default: "lts"
         required: false
   workflow_dispatch:
     inputs:
       handwritten:
         description: "Small Changelog about changes in this build"
-      stream_name:
-        description: "Release Tag (e.g. gts, stable)"
-        required: false
-        default: '["latest"]'
-        type: choice
-        options:
-          - '["stream10"]'
-          - '["latest"]'
-          - '["stream10","latest"]'
-
 permissions:
   contents: write
 
 name: Generate Release
 jobs:
-  defaults:
-    runs-on: ubuntu-latest
-    outputs:
-      streams: ${{ steps.streams.outputs.stream_names }}
-    steps:
-      - name: Get stream with fallback
-        id: streams
-        run: |
-          if [ "${{ inputs.stream_name }}" == "" ] ; then
-            echo "stream_names=[\"latest\"]" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          echo "stream_names=${{ inputs.stream_name }}" >> $GITHUB_OUTPUT
-
   generate-release:
     runs-on: ubuntu-latest
-    needs: defaults
     strategy:
       fail-fast: false
       matrix:
-        version: ${{ fromJson( needs.defaults.outputs.streams ) }}
+        version: ["lts"]
     steps:
       - name: Checkout last 500 commits (for <commits> to work)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4

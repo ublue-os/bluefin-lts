@@ -263,6 +263,12 @@ jobs:
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
+      - name: Extract numbers from input
+        id: extract-numbers
+        run: |
+          numbers_only=$(echo "${{ env.CENTOS_VERSION }}" | tr -cd '0-9')
+          echo "CENTOS_VERSION_NUMBER=$numbers_only" >> $GITHUB_ENV
+
       - name: Image Metadata
         uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5
         id: metadata
@@ -272,6 +278,8 @@ jobs:
             type=raw,value=lts-{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.CENTOS_VERSION }}
             type=raw,value=${{ env.CENTOS_VERSION }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
             type=ref,event=pr
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
