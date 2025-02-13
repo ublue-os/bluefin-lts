@@ -1,50 +1,64 @@
+alias toggle-devmode := change-image
+alias rebase-helper := change-image
 
-alias devmode := change-edition
-# Allows selection of Bluefin LTS editions
-change-edition:
+# Allows selection of Bluefin LTS images
+change-image:
     #!/bin/bash
 
     # Function to display the menu and get user selection using gum
-    select_edition() {
-    edition=$(gum choose --header "Please select a edition:" "HWE" "GDX" "DX" "Base")
+    select_image() {
+    image=$(gum choose --header "Please select a image:" "lts-HWE" "lts-GDX" "lts-$(date +%Y%m%d)")
 
-    if [[ -z "$edition" ]]; then # Handle cancelation
-        echo "No Edition selected."
-        exit 1
+    if [[ -z "$image" ]]; then # Handle cancelation
+            echo "No image selected."
+            exit 1
     fi
 
-    echo "You have selected edition: $edition"
+    if [[ "$image" == "lts-GDX" ]]; then
+            echo -e "\e[32mYou have selected image: lts-GDX\e[0m"
+            echo -e "\e[34mBluefin GDX is designed to be an AI Workstation by providing Nvidia drivers and CUDA in one image. It combines Bluefin LTS with the Bluefin Developer Experience. It is designed for AI and Machine Learning professionals.\e[0m"
+            echo -e "\e[33mRead more at: \e[4mhttps://docs.projectbluefin.io/gdx\e[0m"
+            image="-gdx"
+    elif [[ "$image" == "lts-HWE" ]]; then
+            echo -e "\e[32mYou have selected image: lts-HWE\e[0m"
+            echo -e "\e[34mBluefin lts-HWE is Bluefin LTS with a more up-to-date kernel, maintained by the the CentOS Hyperscale SIG\e[0m"
+            echo -e "\e[33mRead more at: \e[4mhttps://docs.projectbluefin.io/lts\e[0m"
+            image="-hwe"
+    fi
 
     # Consider Base as empty string
-    if [[ "$edition" == "Base" ]]; then
-        edition=""
+    if [[ "$image" == "lts-$(date +%Y%m%d)" ]]; then
+            image=""
+            echo -e "\e[32mYou have selected image: lts-$(date +%Y%m%d)\e[0m"
+            echo -e "\e[34mBluefin LTS is based on CentOS 10, for people who prefer Long Term Support.\e[0m"
+            echo -e "\e[33mRead more at: \e[4mhttps://docs.projectbluefin.io/lts\e[0m"
     fi
 
-    # take edition to lower case
-    edition=$(echo "$edition" | tr '[:upper:]' '[:lower:]')
+    # take image to lower case
+    image=$(echo "$image" | tr '[:upper:]' '[:lower:]')
 
-    confirm=$(gum confirm --prompt.bold "Are you sure you want to proceed?")
-
-    if [[ "$confirm" = "true" ]]; then
-        echo "Operation cancelled."
-        exit 1
+    # Corrected confirmation logic: Proceed if confirmed, cancel otherwise.
+    if ! gum confirm --prompt.bold "Are you sure you want to proceed?"; then
+            echo "Operation cancelled."
+            exit 1
     fi
 
-    sudo bootc switch --enforce-container-sigpolicy "ghcr.io/ublue-os/bluefin${edition:+-$edition}:lts"
+    skopeo inspect docker://ghcr.io/ublue-os/bluefin${image}:lts
+    sudo bootc switch --enforce-container-sigpolicy "ghcr.io/ublue-os/bluefin${image}:lts"
     if [[ $? -ne 0 ]]; then
-        echo "Error: Failed to switch boot configuration."
-        exit 1
+            echo "Error: Failed to switch boot configuration."
+            exit 1
     fi
 
-    # Show a window informing the user that the operation is complete and they will need to reboot, give the option to reboot now or later
+    # Show a window informing the user that the operation is complete and they will need to reboot
     action=$(gum notify --title "Operation Complete" --message "The operation is complete. You will need to reboot your system for the changes to take effect." --actions "Reboot Now" "Reboot Later")
 
     if [[ "$action" == "Reboot Now" ]]; then
-        systemctl reboot
+            systemctl reboot
     else
-        echo "Please reboot your system later to apply the changes."
+            echo "Please reboot your system later to apply the changes."
     fi
     }
 
     # Run the function
-    select_edition
+    select_image
