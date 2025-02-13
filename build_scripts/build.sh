@@ -48,6 +48,7 @@ fi
 
 if [ "$ENABLE_GDX" == "1" ] ; then
 	# We explicitly only support x86 on nvidia (unless they update it?)
+	copy_systemfiles_for "gdx"
 	copy_systemfiles_for "x86_64-gdx"
 	run_buildscripts_for "x86_64/gdx"
 fi

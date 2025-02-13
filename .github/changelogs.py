@@ -8,15 +8,16 @@ from collections import defaultdict
 
 REGISTRY = "docker://ghcr.io/ublue-os/"
 
-IMAGE_MATRIX_LATEST = {
-    "experience": ["base"],
-    "image_flavor": ["main"], # hwe eventually
+IMAGE_MATRIX = {
+    "experience": ["base", "dx", "gdx"],
+    "de": ["gnome"],
+    "image_flavor": ["main", "hwe"],
 }
 
 RETRIES = 3
 RETRY_WAIT = 5
 FEDORA_PATTERN = re.compile(r"\.fc\d\d")
-START_PATTERN = lambda target: re.compile(rf"{target}\.\d\d\d+")
+START_PATTERN = lambda target: re.compile(rf"{target}-\d\d\d+")
 
 PATTERN_ADD = "\n| ✨ | {name} | | {version} |"
 PATTERN_CHANGE = "\n| 🔄 | {name} | {prev} | {new} |"
@@ -26,8 +27,9 @@ PATTERN_PKGREL = "{version}"
 COMMON_PAT = "### All Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n"
 OTHER_NAMES = {
     "base": "### Base Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "dx": "### [Dev Experience Images](https://docs.projectbluefin.io/achillobator)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "gnome": "### [Bluefin LTS Images](https://projectbluefin.io/)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+    "dx": "### [Developer Experience Images](https://docs.projectbluefin.io/bluefin-dx)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+    "gdx": "### [Graphical Developer Experience Images](https://docs.projectbluefin.io/gdx)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+    "gnome": "### [Bluefin LTS Images](https://docs.projectbluefin.io/lts)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
     "nvidia": "### Nvidia Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
     "hwe": "### HWE Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
 }
@@ -53,9 +55,9 @@ From previous `{target}` version `{prev}` there have been the following changes.
 ### Major DX packages
 | Name | Version |
 | --- | --- |
-| **Incus** | {pkgrel:incus} |
 | **Docker** | {pkgrel:docker-ce} |
-| **Devpod** | {pkgrel:devpod} |
+| **VSCode** | {pkgrel:code} |
+| **Ramalama** | {pkgrel:python3-ramalama} |
 
 {changes}
 
@@ -73,7 +75,7 @@ sudo bootc switch --enforce-container-sigpolicy ghcr.io/ublue-os/$IMAGE_NAME:{cu
 ```
 
 ### Documentation
-Be sure to read the [documentation](https://docs.projectbluefin.io/) for more information
+Be sure to read the [documentation](https://docs.projectbluefin.io/lts) for more information
 on how to use your cloud native system.
 """
 HANDWRITTEN_PLACEHOLDER = """\
@@ -86,28 +88,38 @@ BLACKLIST_VERSIONS = [
     "podman",
     "docker-ce",
     "incus",
-    "devpod",
+    "vscode",
     "nvidia-driver"
 ]
 
 
 def get_images(target: str):
-    matrix = IMAGE_MATRIX_LATEST
+    matrix = IMAGE_MATRIX
 
-    for experience, image_flavor in product(*matrix.values()):
-        img = "bluefin"
+    for experience, de, image_flavor in product(*matrix.values()):
+        img = ""
+        if de == "gnome":
+            img += "bluefin"
+
+        if experience == "dx":
+            img += "-dx"
+
+        if experience == "gdx":
+            if image_flavor == "hwe":
+                continue
+            img += "-gdx"
 
         if image_flavor != "main":
             img += "-"
             img += image_flavor
 
-        yield img, experience, image_flavor
+        yield img, experience, de, image_flavor
 
 
 def get_manifests(target: str):
     out = {}
     imgs = list(get_images(target))
-    for j, (img, _, _) in enumerate(imgs):
+    for j, (img, _, _, _) in enumerate(imgs):
         output = None
         print(f"Getting {img}:{target} manifest ({j+1}/{len(imgs)}).")
         for i in range(RETRIES):
@@ -179,7 +191,7 @@ def get_package_groups(target: str, prev: dict[str, Any], manifests: dict[str, A
 
     # Find common packages
     first = True
-    for img, experience, image_flavor in get_images(target):
+    for img, experience, de, image_flavor in get_images(target):
         if img not in pkg:
             continue
 
@@ -196,13 +208,15 @@ def get_package_groups(target: str, prev: dict[str, Any], manifests: dict[str, A
     # Find other packages
     for t, other in others.items():
         first = True
-        for img, experience, image_flavor in get_images(target):
+        for img, experience, de, image_flavor in get_images(target):
             if img not in pkg:
                 continue
 
             if t == "hwe" and "hwe" not in image_flavor:
                 continue
             if t == "nvidia" and "nvidia" not in image_flavor:
+                continue
+            if t == "gnome" and de != "gnome":
                 continue
             if t == "base" and experience != "base":
                 continue
@@ -420,9 +434,6 @@ def main():
     # Tags cannot include / anyway.
     target = args.target.split('/')[-1]
 
-    if target == "main":
-        target = "stable"
-
     manifests = get_manifests(target)
     prev, curr = get_tags(target, manifests)
     print(f"Previous tag: {prev}")
@@ -450,4 +461,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
