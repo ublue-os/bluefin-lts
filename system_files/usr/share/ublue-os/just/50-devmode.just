@@ -7,7 +7,7 @@ change-image:
 
     # Function to display the menu and get user selection using gum
     select_image() {
-    image=$(gum choose --header "Please select a image:" "lts-HWE" "lts-GDX" "lts-$(date +%Y%m%d)")
+    image=$(gum choose --header "Please select a image:" "lts-DX" "lts-HWE" "lts-GDX" "lts-$(date +%Y%m%d)")
 
     if [[ -z "$image" ]]; then # Handle cancelation
             echo "No image selected."
@@ -24,6 +24,11 @@ change-image:
             echo -e "\e[34mBluefin lts-HWE is Bluefin LTS with a more up-to-date kernel, maintained by the the CentOS Hyperscale SIG\e[0m"
             echo -e "\e[33mRead more at: \e[4mhttps://docs.projectbluefin.io/lts\e[0m"
             image="-hwe"
+    elif [[ "$image" == "lts-DX" ]]; then
+            echo -e "\e[32mYou have selected image: lts-DX\e[0m"
+            echo -e "\e[34mBluefin LTS DX is designed for developers, providing a comprehensive development environment out of the box. Based on a CentOS 10\e[0m"
+            echo -e "\e[33mRead more at: \e[4mhttps://docs.projectbluefin.io/bluefin-dx\e[0m"
+            image="-dx"
     fi
 
     # Consider Base as empty string
