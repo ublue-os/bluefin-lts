@@ -117,6 +117,11 @@ build $target_image=image_name $tag=default_tag $dx="0" $hwe="0" $gdx="0":
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
     fi
 
+    if [[ -n "${GENERATE_SBOM:-}" ]]; then
+        BUILD_ARGS+=("--sbom=syft")
+        BUILD_ARGS+=("--sbom-output=${SBOM_OUTPUT:-./sbom.json}")
+    fi
+
     podman build \
         "${BUILD_ARGS[@]}" \
         --pull=newer \
