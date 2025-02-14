@@ -108,7 +108,7 @@ jobs:
           FLAVOR: ${{ inputs.flavor }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           GENERATE_SBOM: ${{ inputs.generate-sbom }}
-          SBOM_OUTPUT: /tmp/sbom.json
+          SBOM_OUTPUT: ./sbom.json
         run: |
           set -x
           just=$(which just)
@@ -161,7 +161,7 @@ jobs:
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
-          SBOM_OUTPUT: /tmp/sbom.json
+          SBOM_OUTPUT: ./sbom.json
         run: |
           oras attach \
             --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
