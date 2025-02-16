@@ -67,14 +67,14 @@ dnf -y install \
 	"sane-backends-drivers-scanners" \
 	"xdg-desktop-portal-gnome" \
 	"xdg-user-dirs-gtk" \
-	"yelp-tools" \
-	"libcamera{,-{v4l2,gstreamer,tools}}"
+	"yelp-tools"
 
 dnf -y install \
 	plymouth \
 	plymouth-system-theme \
 	fwupd \
-	systemd-{resolved,container,oomd}
+	systemd-{resolved,container,oomd} \
+	libcamera{,-{v4l2,gstreamer,tools}}
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
 dnf -y remove console-login-helper-messages
