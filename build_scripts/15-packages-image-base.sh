@@ -73,7 +73,8 @@ dnf -y install \
 	plymouth \
 	plymouth-system-theme \
 	fwupd \
-	systemd-{resolved,container,oomd}
+	systemd-{resolved,container,oomd} \
+	libcamera{,-{v4l2,gstreamer,tools}}
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
 dnf -y remove console-login-helper-messages
