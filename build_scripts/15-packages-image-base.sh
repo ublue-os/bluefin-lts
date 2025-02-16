@@ -67,7 +67,8 @@ dnf -y install \
 	"sane-backends-drivers-scanners" \
 	"xdg-desktop-portal-gnome" \
 	"xdg-user-dirs-gtk" \
-	"yelp-tools"
+	"yelp-tools" \
+	"libcamera{,-{v4l2,gstreamer,tools}}"
 
 dnf -y install \
 	plymouth \
