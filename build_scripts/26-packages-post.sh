@@ -24,6 +24,9 @@ sed -i "/.*io.github.dvlv.boxbuddyrs.*/d" /etc/ublue-os/system-flatpaks.list
 mkdir -p /etc/flatpak/remotes.d
 curl --retry 3 -o /etc/flatpak/remotes.d/flathub.flatpakrepo "https://dl.flathub.org/repo/flathub.flatpakrepo"
 
+# Enable polkit rules for fingerprint sensors via fprintd
+authselect enable-feature with-fingerprint
+
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage
 # Add resume module so that hibernation works
 echo "add_dracutmodules+=\" resume \"" >/etc/dracut.conf.d/resume.conf
