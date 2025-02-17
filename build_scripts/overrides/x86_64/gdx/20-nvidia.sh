@@ -43,7 +43,7 @@ install -Dm0755 /tmp/fake-uname /tmp/bin/uname
 
 NVIDIA_DRIVER_VERSION=$(rpm -q "nvidia-driver" --queryformat '%{VERSION}')
 # PATH modification for fake-uname
-PATH=/tmp/bin:$PATH dkms install -m $NVIDIA_DRIVER_FLAVOR -v $NVIDIA_DRIVER_VERSION -k $QUALIFIED_KERNEL
+PATH=/tmp/bin:$PATH dkms --force install -m $NVIDIA_DRIVER_FLAVOR -v $NVIDIA_DRIVER_VERSION -k $QUALIFIED_KERNEL
 cat /var/lib/dkms/nvidia-open/$NVIDIA_DRIVER_VERSION/build/make.log || echo "Expected failure"
 
 cat >/usr/lib/modprobe.d/00-nouveau-blacklist.conf <<EOF

@@ -8,6 +8,10 @@ set -xeuo pipefail
 # Hide Desktop Files. Hidden removes mime associations
 sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nHidden=true@g' /usr/share/applications/fish.desktop
 
+# The compose repos we used during the build are point in time repos that are
+# not updated, so we don't want to leave them enabled.
+dnf config-manager --set-disabled baseos-compose,appstream-compose
+
 # Signing needs to be as late as possible so that it wont be overwritten by anything, ever.
 dnf -y install /tmp/rpms/ublue-os-signing.noarch.rpm
 # ublue-os-signing incorrectly puts files under /usr/etc and bootc container lint gets mad at this.
