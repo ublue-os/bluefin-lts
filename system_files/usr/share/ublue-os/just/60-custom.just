@@ -5,3 +5,14 @@ install-system-flatpaks:
 
 bluefin-cli:
     /usr/libexec/ublue-bling
+
+alias switch-stream := rebase-helper
+alias switch-streams := rebase-helper
+alias rollback-helper := rebase-helper
+alias devmode := toggle-devmode
+
+rebase-helper:
+    /usr/libexec/ublue-rebase-helper
+
+toggle-devmode:
+    /usr/libexec/ublue-dx-helper

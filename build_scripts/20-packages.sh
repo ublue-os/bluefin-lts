@@ -48,6 +48,7 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	ublue-fastfetch \
 	ublue-brew \
 	ublue-bling \
+	ublue-rebase-helper \
 	bluefin-*
 
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:ublue-os:staging" install uupd
