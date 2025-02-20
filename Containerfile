@@ -1,5 +1,5 @@
 ARG MAJOR_VERSION="${MAJOR_VERSION:-stream10}"
-FROM ghcr.io/astral-sh/uv:latest@sha256:90daa0b4d74ea55c7b8e06d25d3826b1eac66e7994387248e6173dd2b66668e2 AS uv-bin
+FROM ghcr.io/astral-sh/uv:latest@sha256:01ddc2a91588f1210396433c79c9f58848ad668ea05bda895f5a1a31f2e5b64f AS uv-bin
 FROM ghcr.io/ublue-os/config:latest@sha256:e45ff5faf342ea871a88b3e1c86b7cd517545d53fdd88e23ca5a3d56e79b9440 AS config
 FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 

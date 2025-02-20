@@ -28,6 +28,8 @@ copy_systemfiles_for() {
 }
 
 MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
+SCRIPTS_PATH="$(realpath "$(dirname $0)/scripts")"
+export SCRIPTS_PATH
 export MAJOR_VERSION_NUMBER
 
 for script in /var/tmp/build_scripts/*-*.sh; do
@@ -61,5 +63,7 @@ if [ "$ENABLE_HWE" == "1" ]; then
 fi
 
 
+printf "::group:: ===Image Cleanup===\n"
 # Ensure these get run at the _end_ of the build no matter what
 /var/tmp/build_scripts/cleanup.sh
+printf "::endgroup::\n"
