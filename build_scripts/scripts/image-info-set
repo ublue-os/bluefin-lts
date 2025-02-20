@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+FLAVOR="${FLAVOR:-1}"
+
+set -xeuo pipefail
+
+IMAGE_INFO="${IMAGE_INFO:-/usr/share/ublue-os/image-info.json}"
+IMAGE_NAME="${IMAGE_NAME:-$(jq -c -r '."image-name"' "${IMAGE_INFO}")}"
+IMAGE_REF="${IMAGE_REF:-$(jq -c -r '."image-ref"' "${IMAGE_INFO}")}"
+
+jq -f /dev/stdin "${IMAGE_INFO}" <<EOF
+."image-name" = "${IMAGE_NAME}-${FLAVOR}" | \
+."image-flavor" = "${FLAVOR}" | \
+."image-ref" = "${IMAGE_REF}-${FLAVOR}"
+EOF | tee "${IMAGE_INFO}"
