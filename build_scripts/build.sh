@@ -28,8 +28,8 @@ copy_systemfiles_for() {
 }
 
 MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
-SCRIPTS_FOLDER="$(realpath "$(dirname $0)/scripts")"
-export SCRIPTS_FOLDER
+SCRIPTS_PATH="$(realpath "$(dirname $0)/scripts")"
+export SCRIPTS_PATH
 export MAJOR_VERSION_NUMBER
 
 for script in /var/tmp/build_scripts/*-*.sh; do
