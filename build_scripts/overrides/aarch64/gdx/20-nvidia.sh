@@ -9,6 +9,7 @@ dnf config-manager --add-repo "https://developer.download.nvidia.com/compute/cud
 dnf clean expire-cache
 
 dnf -y install \
-  nvidia-container-toolkit
+  nvidia-container-toolkit \
+  libnvidia-container
 
 systemctl enable ublue-nvctk-cdi.service
