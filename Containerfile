@@ -1,5 +1,5 @@
 ARG MAJOR_VERSION="${MAJOR_VERSION:-stream10}"
-FROM ghcr.io/ublue-os/config:latest@sha256:e45ff5faf342ea871a88b3e1c86b7cd517545d53fdd88e23ca5a3d56e79b9440 AS config
+FROM ghcr.io/ublue-os/config:latest@sha256:b7464c991152399a40ff5ce8991b3456c3bc0622cdbe51ca247cac8671b103ca AS config
 FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 
 # ARM should be handled by $(arch)
