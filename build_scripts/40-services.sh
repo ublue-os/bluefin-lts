@@ -25,3 +25,4 @@ systemctl enable uupd.timer
 systemctl enable ublue-system-setup.service
 systemctl --global enable ublue-user-setup.service
 systemctl mask bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service
+systemctl enable check-sb-key.service
