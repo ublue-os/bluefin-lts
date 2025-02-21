@@ -20,8 +20,9 @@ dnf -y install \
 	wl-clipboard \
 	gum
 
-dnf install -y --enablerepo="epel-testing" \
-	jetbrains-mono-fonts-all
+# FIXME: this will be on EPEL tomorrow (today: 20-02-2025)
+# dnf install -y --enablerepo="epel-testing" \
+	# jetbrains-mono-fonts-all
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
@@ -44,6 +45,7 @@ dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	-x bluefin-logos \
+	jetbrains-mono-fonts-all \
 	gnome-shell-extension-{search-light,gsconnect,logo-menu,caffeine} \
 	ublue-{motd,fastfetch,brew,bling,rebase-helper,setup-services} \
 	uupd \
