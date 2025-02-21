@@ -10,6 +10,6 @@ dnf clean expire-cache
 
 dnf -y install \
   nvidia-container-toolkit \
-  libnvidia-container
+  libnvidia-container1
 
 systemctl enable ublue-nvctk-cdi.service
