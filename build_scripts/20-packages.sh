@@ -41,7 +41,7 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/centos-stream-$MAJOR_VERSION_NUMBER/ublue-os-staging-centos-stream-$MAJOR_VERSION_NUMBER.repo"
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	-x bluefin-logos \
