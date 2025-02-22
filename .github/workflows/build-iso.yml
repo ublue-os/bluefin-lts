@@ -34,10 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [arm64, amd64]
-        flavor: ["", "hwe"]
-        include:
-          - platform: amd64
-            flavor: "gdx"
+        flavor: ["", "hwe", "gdx"]
     permissions:
       contents: read
       packages: read
