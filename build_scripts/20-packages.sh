@@ -38,10 +38,10 @@ dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packa
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
 	ublue-os-just \
-  ublue-os-luks \
-  ublue-os-signing \
-  ublue-os-udev-rules \
-  ublue-os-update-services \
+	ublue-os-luks \
+	ublue-os-signing \
+	ublue-os-udev-rules \
+	ublue-os-update-services \
 	ublue-{motd,fastfetch,brew,bling,rebase-helper,setup-services} \
 	uupd \
 	bluefin-*
