@@ -28,9 +28,6 @@ dnf -y install \
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
 # We do, however, leave crb and EPEL enabled by default.
 
-# RPMS from Ublue-os config
-dnf -y install /tmp/rpms/ublue-os-{udev-rules,luks}.noarch.rpm
-
 cp -r /usr/share/ublue-os/just /tmp/just
 # Focefully install ujust without powerstat while we don't have it on EPEL
 rpm -ivh /tmp/rpms/ublue-os-just.noarch.rpm --nodeps --force
@@ -45,9 +42,14 @@ dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
+	ublue-os-* \
 	ublue-{motd,fastfetch,brew,bling,rebase-helper,setup-services} \
 	uupd \
 	bluefin-*
+
+# Upstream ublue-os-signing bug, we are using /usr/etc for the container signing and bootc gets mad at this
+cp -avf /usr/etc/. /etc
+rm -rvf /usr/etc
 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 	centos-logos bluefin-logos

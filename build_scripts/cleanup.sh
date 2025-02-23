@@ -12,13 +12,6 @@ sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nHidden=true@g' /usr/share/applica
 # not updated, so we don't want to leave them enabled.
 dnf config-manager --set-disabled baseos-compose,appstream-compose
 
-# Signing needs to be as late as possible so that it wont be overwritten by anything, ever.
-dnf -y install /tmp/rpms/ublue-os-signing.noarch.rpm
-# ublue-os-signing incorrectly puts files under /usr/etc and bootc container lint gets mad at this.
-# FIXME: dear lord fix this upstream https://github.com/ublue-os/config/pull/311
-cp -avf /usr/etc/. /etc
-rm -rvf /usr/etc
-
 # Image-layer cleanup
 shopt -s extglob
 
