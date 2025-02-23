@@ -28,11 +28,6 @@ dnf -y install \
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
 # We do, however, leave crb and EPEL enabled by default.
 
-cp -r /usr/share/ublue-os/just /tmp/just
-# Focefully install ujust without powerstat while we don't have it on EPEL
-rpm -ivh /tmp/rpms/ublue-os-just.noarch.rpm --nodeps --force
-mv /tmp/just/* /usr/share/ublue-os/just
-
 dnf config-manager --add-repo "https://pkgs.tailscale.com/stable/centos/${MAJOR_VERSION_NUMBER}/tailscale.repo"
 dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
@@ -42,7 +37,11 @@ dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
-	ublue-os-* \
+	ublue-os-just \
+  ublue-os-luks \
+  ublue-os-signing \
+  ublue-os-udev-rules \
+  ublue-os-update-services \
 	ublue-{motd,fastfetch,brew,bling,rebase-helper,setup-services} \
 	uupd \
 	bluefin-*
