@@ -41,18 +41,26 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/bluefin/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-bluefin-epel-$MAJOR_VERSION_NUMBER.repo"
+dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:bluefin" \
+	-x bluefin-logos \
+	bluefin-*
+
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:bluefin swap \
+	centos-logos bluefin-logos
+
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/packages/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-packages-epel-$MAJOR_VERSION_NUMBER.repo"
+dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
+	ublue-{motd,fastfetch,brew,bling,rebase-helper,setup-services} \
+	uupd
+
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
-	-x bluefin-logos \
 	jetbrains-mono-fonts-all \
-	gnome-shell-extension-{search-light,gsconnect,logo-menu,caffeine} \
-	ublue-{motd,fastfetch,brew,bling,rebase-helper,setup-services} \
-	uupd \
-	bluefin-*
+	gnome-shell-extension-{search-light,gsconnect,logo-menu,caffeine}
 
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging swap \
-	centos-logos bluefin-logos
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
 dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
