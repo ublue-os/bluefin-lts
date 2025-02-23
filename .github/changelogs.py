@@ -356,7 +356,7 @@ def generate_changelog(
             linux: str = next(iter(manifests.values()))["Labels"][
                 "ostree.linux"
             ]
-            start=linux.find(".fc") + 3
+            start=linux.find(".el") + 3
             fedora_version=linux[start:start+2]
         except Exception as e:
             print(f"Failed to get linux version:\n{e}")
@@ -371,7 +371,7 @@ def generate_changelog(
         if not fedora_version + "." in curr_pretty:
             curr_pretty=fedora_version + "." + curr_pretty
         pretty = target.capitalize()
-        pretty += " (F" + curr_pretty
+        pretty += " (CS" + curr_pretty
         if finish:
             pretty += ", #" + finish[:7]
         pretty += ")"
