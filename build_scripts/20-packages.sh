@@ -18,11 +18,8 @@ dnf -y install \
 	fzf \
 	glow \
 	wl-clipboard \
-	gum
-
-# FIXME: this will be on EPEL tomorrow (today: 20-02-2025)
-# dnf install -y --enablerepo="epel-testing" \
-	# jetbrains-mono-fonts-all
+	gum \
+	jetbrains-mono-fonts-all
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
