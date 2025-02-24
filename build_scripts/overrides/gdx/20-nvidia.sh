@@ -14,13 +14,6 @@ dnf -y update kernel
 dnf -y install kernel-devel kernel-devel-matched kernel-headers dkms gcc-c++
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
-NVIDIA_DRIVER_VERSION="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}-%{RELEASE}" kmod-nvidia --quiet)"
-# Workaround for `kmod-nvidia` package not getting downloaded properly off of negativo's repos
-# FIXME: REMOVE THIS at some point. (added 24-02-2025)
-NEGATIVO_RPM="$(mktemp --suffix .rpm)"
-curl --retry 3 -Lo $NEGATIVO_RPM "https://negativo17.org/repos/nvidia/epel-${MAJOR_VERSION_NUMBER}/$(arch)/kmod-nvidia-${NVIDIA_DRIVER_VERSION}.$(arch).rpm"
-dnf install -y --enablerepo="epel-nvidia" $NEGATIVO_RPM
-
 dnf install -y --enablerepo="epel-nvidia" \
   cuda nvidia-driver{,-cuda} dkms-nvidia
 
