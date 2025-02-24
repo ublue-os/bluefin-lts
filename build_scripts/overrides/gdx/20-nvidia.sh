@@ -22,15 +22,16 @@ curl --retry 3 -Lo $NEGATIVO_RPM "https://negativo17.org/repos/nvidia/epel-${MAJ
 dnf install -y --enablerepo="epel-nvidia" $NEGATIVO_RPM
 
 dnf install -y --enablerepo="epel-nvidia" \
-  cuda nvidia-driver{,-cuda}
+  cuda nvidia-driver{,-cuda} dkms-nvidia
 
 sed -i -e 's/kernel$/kernel-open/g' /etc/nvidia/kernel.conf
 cat /etc/nvidia/kernel.conf
 
-# The nvidia-open driver tries to use the kernel from the host. (uname -r), just override it and let it do whatever otherwise
 KERNEL_SUFFIX=""
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//')"
 
+# The nvidia-open driver tries to use the kernel from the host. (uname -r), just override it and let it do whatever otherwise
+# FIXME: remove this workaround please at some point
 cat >/tmp/fake-uname <<EOF
 #!/usr/bin/env bash
 
@@ -43,10 +44,9 @@ exec /usr/bin/uname \$@
 EOF
 install -Dm0755 /tmp/fake-uname /tmp/bin/uname
 
-# PATH modification for fake-uname
-NVIDIA_DRIVER_VERSION_NO_RELEASE="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}-%{RELEASE}" kmod-nvidia --quiet | sed "s/$(rpm -E %{dist})//")"
-PATH=/tmp/bin:$PATH akmods --kernels "$QUALIFIED_KERNEL" --rebuild
-cat "/var/cache/akmods/nvidia/${NVIDIA_DRIVER_VERSION_NO_RELEASE}-for-${QUALIFIED_KERNEL}.failed.log" || echo "Expected failure"
+NVIDIA_DRIVER_VERSION="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}-%{RELEASE}" kmod-nvidia --quiet)"
+PATH=/tmp/bin:$PATH dkms --force install -m nvidia -v $NVIDIA_DRIVER_VERSION -k "$QUALIFIED_KERNEL"
+cat "/var/lib/dkms/nvidia/$NVIDIA_DRIVER_VERSION/build/make.log" || echo "Expected failure"
 
 cat >/usr/lib/modprobe.d/00-nouveau-blacklist.conf <<EOF
 blacklist nouveau
@@ -56,6 +56,8 @@ EOF
 cat >/usr/lib/bootc/kargs.d/00-nvidia.toml <<EOF
 kargs = ["rd.driver.blacklist=nouveau", "modprobe.blacklist=nouveau", "nvidia-drm.modeset=1"]
 EOF
+
+dnf -y remove kernel-devel kernel-devel-matched kernel-headers dkms gcc-c++
 
 # Make sure initramfs is rebuilt after nvidia drivers or kernel replacement
 /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v -f
