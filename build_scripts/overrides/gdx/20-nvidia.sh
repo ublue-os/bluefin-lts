@@ -5,8 +5,15 @@ set -euox pipefail
 dnf config-manager --add-repo="https://negativo17.org/repos/epel-nvidia.repo"
 dnf config-manager --set-disabled "epel-nvidia"
 
+NVIDIA_DRIVER_VERSION="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}-%{RELEASE}" kmod-nvidia --quiet)"
+# Workaround for `kmod-nvidia` package not getting downloaded properly off of negativo's repos
+# FIXME: REMOVE THIS at some point. (added 24-02-2025)
+NEGATIVO_RPM="$(mktemp --suffix .rpm)"
+curl --retry 3 -Lo $NEGATIVO_RPM "https://negativo17.org/repos/nvidia/epel-${MAJOR_VERSION_NUMBER}/$(arch)/kmod-nvidia-${NVIDIA_DRIVER_VERSION}.$(arch).rpm"
+dnf install -y --enablerepo="epel-nvidia" $NEGATIVO_RPM
+
 dnf install -y --enablerepo="epel-nvidia" \
-  akmod-nvidia kmod-nvidia cuda nvidia-driver{,-cuda}
+  cuda nvidia-driver{,-cuda}
 
 sed -i -e 's/kernel$/kernel-open/g' /etc/nvidia/kernel.conf
 cat /etc/nvidia/kernel.conf
