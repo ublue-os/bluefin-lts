@@ -44,8 +44,9 @@ EOF
 install -Dm0755 /tmp/fake-uname /tmp/bin/uname
 
 # PATH modification for fake-uname
+NVIDIA_DRIVER_VERSION_NO_RELEASE="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}" kmod-nvidia --quiet)"
 PATH=/tmp/bin:$PATH akmods --kernels "$QUALIFIED_KERNEL" --rebuild
-cat " /var/cache/akmods/nvidia/${NVIDIA_DRIVER_VERSION}-for-${QUALIFIED_KERNEL}.failed.log" || echo "Expected failure"
+cat "/var/cache/akmods/nvidia/${NVIDIA_DRIVER_VERSION_NO_RELEASE}-for-${QUALIFIED_KERNEL}.failed.log" || echo "Expected failure"
 
 cat >/usr/lib/modprobe.d/00-nouveau-blacklist.conf <<EOF
 blacklist nouveau
