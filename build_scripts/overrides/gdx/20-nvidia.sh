@@ -44,7 +44,7 @@ EOF
 install -Dm0755 /tmp/fake-uname /tmp/bin/uname
 
 # PATH modification for fake-uname
-NVIDIA_DRIVER_VERSION_NO_RELEASE="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}" kmod-nvidia --quiet)"
+NVIDIA_DRIVER_VERSION_NO_RELEASE="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}-%{RELEASE}" kmod-nvidia --quiet | sed "s/$(rpm -E %{dist})//")"
 PATH=/tmp/bin:$PATH akmods --kernels "$QUALIFIED_KERNEL" --rebuild
 cat "/var/cache/akmods/nvidia/${NVIDIA_DRIVER_VERSION_NO_RELEASE}-for-${QUALIFIED_KERNEL}.failed.log" || echo "Expected failure"
 
