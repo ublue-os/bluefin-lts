@@ -37,7 +37,7 @@ exec /usr/bin/uname \$@
 EOF
 install -Dm0755 /tmp/fake-uname /tmp/bin/uname
 
-NVIDIA_DRIVER_VERSION="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}-%{RELEASE}" kmod-nvidia --quiet)"
+NVIDIA_DRIVER_VERSION="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}" kmod-nvidia --quiet)"
 PATH=/tmp/bin:$PATH dkms --force install -m nvidia -v $NVIDIA_DRIVER_VERSION -k "$QUALIFIED_KERNEL"
 cat "/var/lib/dkms/nvidia/$NVIDIA_DRIVER_VERSION/build/make.log" || echo "Expected failure"
 
