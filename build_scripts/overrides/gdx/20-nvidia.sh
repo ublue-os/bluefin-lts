@@ -5,6 +5,15 @@ set -euox pipefail
 dnf config-manager --add-repo="https://negativo17.org/repos/epel-nvidia.repo"
 dnf config-manager --set-disabled "epel-nvidia"
 
+# These are necessary for building the nvidia drivers
+# DKMS is provided by EPEL
+# Also make sure the kernel is locked before this is run whenever the kernel updates
+# kernel-devel might pull in an entire new kernel if you dont do
+dnf versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
+dnf -y update kernel
+dnf -y install kernel-devel kernel-devel-matched kernel-headers dkms gcc-c++
+dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
+
 NVIDIA_DRIVER_VERSION="$(dnf repoquery --disablerepo="*" --enablerepo="epel-nvidia" --queryformat "%{VERSION}-%{RELEASE}" kmod-nvidia --quiet)"
 # Workaround for `kmod-nvidia` package not getting downloaded properly off of negativo's repos
 # FIXME: REMOVE THIS at some point. (added 24-02-2025)
@@ -36,7 +45,7 @@ install -Dm0755 /tmp/fake-uname /tmp/bin/uname
 
 # PATH modification for fake-uname
 PATH=/tmp/bin:$PATH akmods --kernels "$QUALIFIED_KERNEL" --rebuild
-cat "/var/cache/akmods/nvidia/*.failed.log" || echo "Expected failure"
+cat " /var/cache/akmods/nvidia/${NVIDIA_DRIVER_VERSION}-for-${QUALIFIED_KERNEL}.failed.log" || echo "Expected failure"
 
 cat >/usr/lib/modprobe.d/00-nouveau-blacklist.conf <<EOF
 blacklist nouveau
