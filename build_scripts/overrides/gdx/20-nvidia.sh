@@ -36,6 +36,7 @@ install -Dm0755 /tmp/fake-uname /tmp/bin/uname
 
 # PATH modification for fake-uname
 PATH=/tmp/bin:$PATH akmods --kernels "$QUALIFIED_KERNEL" --rebuild
+cat "/var/cache/akmods/nvidia/*.failed.log" || echo "Expected failure"
 
 cat >/usr/lib/modprobe.d/00-nouveau-blacklist.conf <<EOF
 blacklist nouveau
