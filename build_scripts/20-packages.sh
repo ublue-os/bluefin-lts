@@ -7,6 +7,7 @@ dnf -y remove \
 
 dnf -y install \
 	-x gnome-extensions-app \
+	system-reinstall-bootc \
 	gnome-disk-utility \
 	distrobox \
 	fastfetch \
