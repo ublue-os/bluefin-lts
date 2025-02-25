@@ -24,6 +24,7 @@ copy_systemfiles_for() {
 	shift
 	printf "::group:: ===%s-file-copying===\n" "$WHAT"
 	cp -avf "/var/tmp/system_files_overrides/$WHAT/." /
+	rm -f /.gitkeep
 	printf "::endgroup::\n"
 }
 
