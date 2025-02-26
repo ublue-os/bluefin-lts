@@ -20,4 +20,7 @@ jq -f /dev/stdin "${IMAGE_INFO}" >"${ANNOYING_JQ_WORKAROUND}" <<EOF
 EOF
 
 mv "${ANNOYING_JQ_WORKAROUND}" "${IMAGE_INFO}"
+# Set file to globally readable
+chmod 644 "${IMAGE_INFO}"
 cat "${IMAGE_INFO}"
+
