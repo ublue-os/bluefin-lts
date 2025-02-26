@@ -26,7 +26,7 @@ dnf clean all
 
 # Set file to globally readable
 # FIXME: This should not be necessary, needs to be cleaned up somewhere else
-chmod 644 "${IMAGE_INFO}"
+chmod 644 "/usr/share/ublue-os/image-info.json"
 
 # FIXME: bootc container lint --fix will replace this
 ostree container commit
