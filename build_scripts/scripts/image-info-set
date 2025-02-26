@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+FLAVOR="${FLAVOR:-$1}"
+
+set -xeuo pipefail
+
+IMAGE_INFO="${IMAGE_INFO:-/usr/share/ublue-os/image-info.json}"
+IMAGE_NAME="${IMAGE_NAME:-$(jq -c -r '."image-name"' "${IMAGE_INFO}")}"
+IMAGE_REF="${IMAGE_REF:-$(jq -c -r '."image-ref"' "${IMAGE_INFO}")}"
+
+cat "${IMAGE_INFO}"
+
+# Output cannot be redirected to the same file jq is reading from because of
+# a lock or something that makes it so the resulting file is just empty
+ANNOYING_JQ_WORKAROUND=$(mktemp)
+jq -f /dev/stdin "${IMAGE_INFO}" >"${ANNOYING_JQ_WORKAROUND}" <<EOF
+."image-name" = "${IMAGE_NAME}-${FLAVOR}" | \
+."image-flavor" = "${FLAVOR}" | \
+."image-ref" = "${IMAGE_REF}-${FLAVOR}"
+EOF
+
+mv "${ANNOYING_JQ_WORKAROUND}" "${IMAGE_INFO}"
+cat "${IMAGE_INFO}"

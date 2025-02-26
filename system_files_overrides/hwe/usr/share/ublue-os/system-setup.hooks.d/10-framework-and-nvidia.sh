@@ -17,7 +17,7 @@ if [[ $KARGS =~ "nomodeset" ]]; then
 	NEEDED_KARGS+=("--delete-if-present=nomodeset")
 fi
 
-if [[ ":Framework:" =~ ":$VEN_ID:" ]]; then
+if [[ ":Framework:" =~ :$VEN_ID: ]]; then
 	if [[ "GenuineIntel" == "$CPU_VENDOR" ]]; then
 		if [[ ! $KARGS =~ "hid_sensor_hub" ]]; then
 			echo "Intel Framework Laptop detected, applying needed keyboard fix"
@@ -38,7 +38,7 @@ fi
 SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
 
 # FRAMEWORK 13 AMD FIXES
-if [[ ":Framework:" =~ ":$VEN_ID:" ]]; then
+if [[ ":Framework:" =~ :$VEN_ID: ]]; then
 	if [[ $SYS_ID == "Laptop 13 ("* ]]; then
 		if [[ "AuthenticAMD" == "$CPU_VENDOR" ]]; then
 			if [[ ! -f /etc/modprobe.d/alsa.conf ]]; then

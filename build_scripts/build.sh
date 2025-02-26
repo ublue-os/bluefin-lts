@@ -28,6 +28,8 @@ copy_systemfiles_for() {
 }
 
 MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
+SCRIPTS_PATH="$(realpath "$(dirname "$0")/scripts")"
+export SCRIPTS_PATH
 export MAJOR_VERSION_NUMBER
 
 for script in /var/tmp/build_scripts/*-*.sh; do
@@ -46,11 +48,11 @@ if [ "$ENABLE_DX" == "1" ]; then
 	run_buildscripts_for "$(arch)/dx"
 fi
 
-if [ "$ENABLE_GDX" == "1" ] ; then
-	# We explicitly only support x86 on nvidia (unless they update it?)
-	copy_systemfiles_for "gdx"
-	copy_systemfiles_for "x86_64-gdx"
-	run_buildscripts_for "x86_64/gdx"
+if [ "$ENABLE_GDX" == "1" ]; then
+	copy_systemfiles_for gdx
+	run_buildscripts_for gdx
+	copy_systemfiles_for "$(arch)-gdx"
+	run_buildscripts_for "$(arch)/gdx"
 fi
 
 if [ "$ENABLE_HWE" == "1" ]; then
@@ -60,6 +62,7 @@ if [ "$ENABLE_HWE" == "1" ]; then
 	run_buildscripts_for "$(arch)/hwe"
 fi
 
-
+printf "::group:: ===Image Cleanup===\n"
 # Ensure these get run at the _end_ of the build no matter what
 /var/tmp/build_scripts/cleanup.sh
+printf "::endgroup::\n"
