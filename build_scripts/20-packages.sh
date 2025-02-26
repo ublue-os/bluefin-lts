@@ -59,7 +59,7 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 
 # FIXME: gsconnect is currently broken as of 26-02-2025
 if [ "$(arch)" == "aarch64" ] ; then
-	dnf install -y gnome-shell-extension-gsconnect
+	dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install gnome-shell-extension-gsconnect
 fi
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"

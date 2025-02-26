@@ -22,7 +22,7 @@ systemctl --global enable ublue-user-setup.service
 systemctl mask bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service
 systemctl enable check-sb-key.service
 
-sed -i -e "s@PrivateTmp=.*@PrivateTmp=no@g" /usr/lib/systemd/system/systemd-resolved.service
+sed -i -e "s@PrivateTmp=.*@PrivateTmp=yes@g" /usr/lib/systemd/system/systemd-resolved.service
 # FIXME: this does not yet work, the resolution service fails for somer reason
 # enable systemd-resolved for proper name resolution
 systemctl enable systemd-resolved.service
