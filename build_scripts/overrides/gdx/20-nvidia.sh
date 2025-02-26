@@ -10,7 +10,7 @@ dnf config-manager --set-disabled "epel-nvidia"
 # Also make sure the kernel is locked before this is run whenever the kernel updates
 # kernel-devel might pull in an entire new kernel if you dont do
 # dnf -y update kernel
-# dnf -y install kernel-devel kernel-devel-matched kernel-headers dkms gcc-c++
+dnf -y install kernel-devel kernel-devel-matched kernel-headers dkms gcc-c++
 # dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
 dnf install -y --enablerepo="epel-nvidia" \
