@@ -6,13 +6,9 @@ dnf config-manager --add-repo="https://negativo17.org/repos/epel-nvidia.repo"
 dnf config-manager --set-disabled "epel-nvidia"
 
 # These are necessary for building the nvidia drivers
-# DKMS is provided by EPEL
 # Also make sure the kernel is locked before this is run whenever the kernel updates
 # kernel-devel might pull in an entire new kernel if you dont do
-dnf versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
-dnf -y update kernel
 dnf -y install kernel-devel kernel-devel-matched kernel-headers dkms gcc-c++
-dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
 dnf install -y --enablerepo="epel-nvidia" \
   cuda nvidia-driver{,-cuda} dkms-nvidia
