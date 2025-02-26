@@ -14,7 +14,4 @@ if [ "$ARCH" != "aarch64"] ; then
 	/usr/bin/cp -rf /usr/share/ublue-os/firefox-config/* "/var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/${ARCH}/stable/defaults/pref/"
 fi
 
-# Use until yafti rework is done
-flatpak --system update -y
-
 notify-send "Welcome to Bluefin LTS" "Your computer is ready!" --app-name="Flatpak Manager Service" -u NORMAL
