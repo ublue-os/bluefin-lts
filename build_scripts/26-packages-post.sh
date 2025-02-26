@@ -27,6 +27,9 @@ curl --retry 3 -o /etc/flatpak/remotes.d/flathub.flatpakrepo "https://dl.flathub
 # Enable polkit rules for fingerprint sensors via fprintd
 authselect enable-feature with-fingerprint
 
+# move the custom just
+mv /usr/share/ublue-os/just/61-lts-custom.just /usr/share/ublue-os/just/60-custom.just 
+
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage
 # Add resume module so that hibernation works
 echo "add_dracutmodules+=\" resume \"" >/etc/dracut.conf.d/resume.conf

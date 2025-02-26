@@ -55,7 +55,7 @@ dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	jetbrains-mono-fonts-all \
-	gnome-shell-extension-{search-light,gsconnect,logo-menu,caffeine}
+	gnome-shell-extension-{search-light,logo-menu,caffeine}
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
 dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
