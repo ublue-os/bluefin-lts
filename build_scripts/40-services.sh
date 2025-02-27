@@ -25,7 +25,7 @@ systemctl enable check-sb-key.service
 # FIXME: upstream issue needs this: https://github.com/systemd/systemd/issues/35731
 sed -i -e "s@PrivateTmp=.*@PrivateTmp=no@g" /usr/lib/systemd/system/systemd-resolved.service
 # Resolved by default as DNS resolver
-ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+ln -sf ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 # FIXME: this does not yet work, the resolution service fails for somer reason
 # enable systemd-resolved for proper name resolution
 systemctl enable systemd-resolved.service
