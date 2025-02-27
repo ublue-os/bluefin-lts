@@ -21,3 +21,4 @@ EOF
 
 mv "${ANNOYING_JQ_WORKAROUND}" "${IMAGE_INFO}"
 cat "${IMAGE_INFO}"
+
