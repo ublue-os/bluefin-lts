@@ -29,4 +29,4 @@ find /var/log -type f -exec 'bash' '-c' "[ -s {} ] && rm {}" ';'
 chmod 644 "/usr/share/ublue-os/image-info.json"
 
 # FIXME: use --fix option once https://github.com/containers/bootc/pull/1152 is merged
-bootc container lint
+bootc container lint --fatal-warnings
