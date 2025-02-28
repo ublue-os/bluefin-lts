@@ -8,8 +8,6 @@ set -xeuo pipefail
 dnf remove -y subscription-manager
 
 # The base images take super long to update, this just updates manually for now
-# FIXME: necessary for aarch64 builds as they dont create that dir for some reason
-mkdir -p /boot/dtb
 dnf -y update
 dnf -y install 'dnf-command(versionlock)'
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
@@ -71,6 +69,7 @@ dnf -y install \
 	"xdg-user-dirs-gtk" \
 	"yelp-tools"
 
+# FIXME: ffmpegthumbnailer EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349096
 dnf -y install \
 	plymouth \
 	plymouth-system-theme \

@@ -28,6 +28,7 @@ dnf -y install \
 
 dnf config-manager --add-repo "https://pkgs.tailscale.com/stable/centos/${MAJOR_VERSION_NUMBER}/tailscale.repo"
 dnf config-manager --set-disabled "tailscale-stable"
+# FIXME: tailscale EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349099
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
@@ -45,22 +46,19 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	bluefin-*
 
 # Upstream ublue-os-signing bug, we are using /usr/etc for the container signing and bootc gets mad at this
+# FIXME: remove this once https://github.com/ublue-os/packages/issues/245 is closed
 cp -avf /usr/etc/. /etc
 rm -rvf /usr/etc
 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 	centos-logos bluefin-logos
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-${MAJOR_VERSION_NUMBER}/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
+# FIXME: gsconnect EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349097
+# FIXME: caffeine EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349098
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
-	jetbrains-mono-fonts-all \
-	gnome-shell-extension-{search-light,logo-menu,caffeine}
-
-# FIXME: gsconnect is currently broken as of 26-02-2025
-if [ "$(arch)" == "aarch64" ] ; then
-	dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install gnome-shell-extension-gsconnect
-fi
+	gnome-shell-extension-{search-light,logo-menu,caffeine,gsconnect}
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
 dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts

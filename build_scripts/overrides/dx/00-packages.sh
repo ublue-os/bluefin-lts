@@ -2,9 +2,6 @@
 
 set -xeuo pipefail
 
-# FIXME: just install uv regularly, this should be out of epel testing after 10-02-25 or so
-# dnf --enablerepo="epel-testing" install -y uv
-
 dnf install -y \
 	python3-ramalama
 
