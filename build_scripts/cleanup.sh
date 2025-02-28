@@ -21,6 +21,9 @@ rm -rf /.gitkeep \
   /var/lib/{dnf,rhsm} \
   /var/cache/*
 
+# Remove non-empty log files so that we dont get bootc lint errors
+find /var/log -type f -exec 'bash' '-c' "[ -s {} ] && rm {}" ';'
+
 # Set file to globally readable
 # FIXME: This should not be necessary, needs to be cleaned up somewhere else
 chmod 644 "/usr/share/ublue-os/image-info.json"
