@@ -77,7 +77,7 @@ jobs:
         id: build
         uses: ublue-os/bootc-image-builder-action@main
         with:
-          bootc-image-builder-image: quay.io/centos-bootc/bootc-image-builder:latest
+          bootc-image-builder-image: ghcr.io/centos-workstation/bootc-image-builder:latest
           use-librepo: true
           config-file: ./iso.toml
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}

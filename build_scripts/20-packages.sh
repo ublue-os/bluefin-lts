@@ -55,7 +55,12 @@ dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	jetbrains-mono-fonts-all \
-	gnome-shell-extension-{search-light,gsconnect,logo-menu,caffeine}
+	gnome-shell-extension-{search-light,logo-menu,caffeine}
+
+# FIXME: gsconnect is currently broken as of 26-02-2025
+if [ "$(arch)" == "aarch64" ] ; then
+	dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install gnome-shell-extension-gsconnect
+fi
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
 dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
