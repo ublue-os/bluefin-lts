@@ -12,3 +12,4 @@ sed -i \
 	-e "s@- (BaseOS|AppStream)@& - Compose@" \
 	-e "s@\(baseos\|appstream\)@&-compose@" \
 	/etc/yum.repos.d/compose.repo
+cat /etc/yum.repos.d/compose.repo
