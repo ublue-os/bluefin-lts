@@ -4,6 +4,11 @@ set -xeuo pipefail
 
 # This is a bucket list. We want to not have anything in this file at all.
 
+# Necessary so that we get DNS resolution when podman build --dns none is specified
+# FIXME: Maybe figure out some better solution for this
+cp -f /etc/resolv-host.conf /etc/resolv.conf
+cat /etc/resolv.conf
+
 # Enable the same compose repos during our build that the centos-bootc image
 # uses during its build.  This avoids downgrading packages in the image that
 # have strict NVR requirements.

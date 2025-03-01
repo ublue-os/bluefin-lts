@@ -119,6 +119,8 @@ build $target_image=image_name $tag=default_tag $dx="0" $hwe="0" $gdx="0":
 
     podman build \
         "${BUILD_ARGS[@]}" \
+        --dns none \
+        -v "/etc/resolv.conf:/etc/resolv-host.conf" \
         --pull=newer \
         --tag "${target_image}:${tag}" \
         .
