@@ -3,15 +3,13 @@
 # This file needs to exist otherwise running this in a RUN label makes it so bash strict mode doesnt work.
 # Thus leading to silent failures
 
-set -xeuo pipefail
+set -eo pipefail
 
 # Do not rely on any of these scripts existing in a specific path
 # Make the names as descriptive as possible and everything that uses dnf for package installation/removal should have `packages-` as a prefix.
 
 run_buildscripts_for() {
 	WHAT=$1
-	CUSTOM_NAME="${2:-}"
-	shift
 	shift
 	# Complex "find" expression here since there might not be any overrides
 	find "/var/tmp/build_scripts/overrides/$WHAT" -maxdepth 1 -iname "*-*.sh" -type f -print0 | sort --zero-terminated --sort=human-numeric | while IFS= read -r -d $'\0' script ; do
@@ -37,7 +35,9 @@ SCRIPTS_PATH="$(realpath "$(dirname "$0")/scripts")"
 export SCRIPTS_PATH
 export MAJOR_VERSION_NUMBER
 
-run_buildscripts_for .. base
+CUSTOM_NAME="base"
+run_buildscripts_for ..
+CUSTOM_NAME=""
 
 copy_systemfiles_for "$(arch)"
 run_buildscripts_for "$(arch)"
