@@ -10,9 +10,14 @@ set -euo pipefail
 
 run_buildscripts_for() {
 	WHAT=$1
+	CUSTOM_NAME=$2
+	shift
 	shift
 	# Complex "find" expression here since there might not be any overrides
-	find "/var/tmp/build_scripts/overrides/$WHAT" -iname "*-*.sh" -type f -maxdepth 1 -print0 | while IFS= read -r -d $'\0' script; do
+	find "/var/tmp/build_scripts/overrides/$WHAT" -iname "*-*.sh" -type f -maxdepth 1 -print0 | sort | while IFS= read -r -d $'\0' script; do
+		if [ "${CUSTOM_NAME}" != "" ] ; then
+			WHAT=$CUSTOM_NAME
+		fi
 		printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
 		$script
 		printf "::endgroup::\n"
@@ -32,11 +37,7 @@ SCRIPTS_PATH="$(realpath "$(dirname "$0")/scripts")"
 export SCRIPTS_PATH
 export MAJOR_VERSION_NUMBER
 
-for script in /var/tmp/build_scripts/*-*.sh; do
-	printf "::group:: ===%s===\n" "$(basename "$script")"
-	$script
-	printf "::endgroup::\n"
-done
+run_buildscripts_for .. base
 
 copy_systemfiles_for "$(arch)"
 run_buildscripts_for "$(arch)"
