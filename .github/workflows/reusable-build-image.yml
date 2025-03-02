@@ -255,7 +255,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image: quay.io/fedora/fedora:41
+      image:  cgr.dev/chainguard/wolfi-base:latest
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
@@ -267,12 +267,16 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          dnf install -y \
+          apk add \
             jq \
-            git
-
-          dnf copr enable -y rhcontainerbot/podman-next
-          dnf install -y podman
+            git \
+            podman \
+            uutils \
+            bash \
+            conmon \
+            crun \
+            netavark
+          ln -s /bin/bash /usr/bin/bash
 
       - name: Exit on failure
         env:
@@ -370,6 +374,7 @@ jobs:
           DIGESTS_JSON: ${{ steps.load-outputs.outputs.DIGESTS_JSON }}
           LABELS: ${{ steps.metadata.outputs.labels }}
         run: |
+          set -x
           DIGESTS=$(echo "$DIGESTS_JSON" | jq -c '.')
           # turn the comma separated string into a list
           platforms=()
