@@ -20,7 +20,9 @@ rm -rf /.gitkeep \
   /var/tmp/* \
   /var/lib/{dnf,rhsm} \
   /var/cache/* \
-  /boot/*
+  /boot
+
+mkdir -p /boot
 
 # Remove non-empty log files so that we dont get bootc lint errors
 find /var/log -type f -exec 'bash' '-c' "[ -s {} ] && rm {}" ';'
