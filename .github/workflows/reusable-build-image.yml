@@ -140,7 +140,7 @@ jobs:
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
         run: |
           sudo systemctl start podman.socket
-          OUTPUT_PATH="$(mktmp -d)/sbom.json"
+          OUTPUT_PATH="$(mktemp -d)/sbom.json"
           sudo syft ${IMAGE}:${DEFAULT_TAG} -o cyclonedx-json=${OUTPUT_PATH}
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
@@ -227,14 +227,14 @@ jobs:
         if: inputs.generate-sbom == true
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
+          DIGEST: ${{ steps.push.outputs.remote_image_digest }}
           SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
         run: |
           set -x
           oras attach \
             --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
             --artifact-type "application/vnd.cyclonedx+json" \
-            "${IMAGE}:${DEFAULT_TAG}-${{ matrix.platform }}" "${SBOM_OUTPUT}"
+            "${IMAGE}:${DIGEST}" "${SBOM_OUTPUT}"
 
       - name: Create Job Outputs
         # if: github.event_name != 'pull_request'
