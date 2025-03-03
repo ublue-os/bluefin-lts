@@ -275,8 +275,9 @@ jobs:
             bash \
             conmon \
             crun \
-            netavark
-          ln -s /bin/bash /usr/bin/bash
+            netavark \
+            fuse-overlayfs
+          ln -sf /bin/bash /bin/sh
 
       - name: Exit on failure
         env:
@@ -374,7 +375,6 @@ jobs:
           DIGESTS_JSON: ${{ steps.load-outputs.outputs.DIGESTS_JSON }}
           LABELS: ${{ steps.metadata.outputs.labels }}
         run: |
-          set -x
           DIGESTS=$(echo "$DIGESTS_JSON" | jq -c '.')
           # turn the comma separated string into a list
           platforms=()
