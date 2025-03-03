@@ -225,6 +225,7 @@ jobs:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
         run: |
           cd "$(dirname "$SBOM_OUTPUT")"
           cosign attest \
