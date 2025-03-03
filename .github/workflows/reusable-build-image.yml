@@ -128,6 +128,22 @@ jobs:
 
           sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_HWE}" "${ENABLE_GDX}"
 
+      - name: Setup Syft
+        if: inputs.generate-sbom == true
+        uses: anchore/sbom-action/download-syft@v0
+
+      - name: Generate SBOM
+        id: generate-sbom
+        if: inputs.generate-sbom == true
+        env:
+          IMAGE: ${{ env.IMAGE_NAME }}
+          DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
+        run: |
+          sudo systemctl start podman.socket
+          OUTPUT_PATH="$(mktmp -d)/sbom.json"
+          sudo syft ${IMAGE}:${DEFAULT_TAG} -o cyclonedx-json=${OUTPUT_PATH}
+          echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
+
       - name: Run Rechunker
         # if: github.event_name != 'pull_request'
         id: rechunk
@@ -212,7 +228,7 @@ jobs:
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
-          SBOM_OUTPUT: ./sbom.json
+          SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
         run: |
           set -x
           oras attach \
