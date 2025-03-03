@@ -219,28 +219,42 @@ jobs:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
-      - name: Setup ORAS
-        if: inputs.generate-sbom == true
-        uses: oras-project/setup-oras@v1
-
-      - name: Login to GHCR with ORAS
-        if: inputs.generate-sbom == true
-        run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | oras login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Attach SBOM
+      - name: Add SBOM Attestation
         if: inputs.generate-sbom == true
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
-          SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
         run: |
-          set -x
           cd "$(dirname "$SBOM_OUTPUT")"
-          oras attach \
-            --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
-            --artifact-type "application/vnd.cyclonedx+json" \
-            "${IMAGE}@${DIGEST}" "./sbom.json"
+          cosign attest \
+            --predicate ./sbom.json \
+            --type cyclonedx \
+            --key env://COSIGN_PRIVATE_KEY \
+            "${IMAGE}@${DIGEST}"
+
+      # - name: Setup ORAS
+      #   if: inputs.generate-sbom == true
+      #   uses: oras-project/setup-oras@v1
+
+      # - name: Login to GHCR with ORAS
+      #   if: inputs.generate-sbom == true
+      #   run: |
+      #     echo ${{ secrets.GITHUB_TOKEN }} | oras login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # - name: Attach SBOM
+      #   if: inputs.generate-sbom == true
+      #   env:
+      #     IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+      #     DIGEST: ${{ steps.push.outputs.remote_image_digest }}
+      #     SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
+      #   run: |
+      #     set -x
+      #     cd "$(dirname "$SBOM_OUTPUT")"
+      #     oras attach \
+      #       --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
+      #       --artifact-type "application/vnd.cyclonedx+json" \
+      #       "${IMAGE}@${DIGEST}" "./sbom.json"
 
       - name: Create Job Outputs
         # if: github.event_name != 'pull_request'
