@@ -220,7 +220,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image: quay.io/fedora/fedora:41@sha256:42128db05cd20c23000a6249522426332be443cd6fafde7e107145e6a22fb440
+      image: quay.io/fedora/fedora:41@sha256:903dc614ba19208c018e11419c1d34b6a505ad451505c62cb29627afbb75340c
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
