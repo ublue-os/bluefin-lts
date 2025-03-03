@@ -222,7 +222,8 @@ jobs:
         uses: oras-project/setup-oras@v1
 
       - name: Login to GHCR with ORAS
-        run:
+        if: inputs.generate-sbom == true
+        run: |
           echo ${{ secrets.GITHUB_TOKEN }} | oras login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Attach SBOM
@@ -233,10 +234,11 @@ jobs:
           SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
         run: |
           set -x
+          cd "$(dirname "$SBOM_OUTPUT")"
           oras attach \
             --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
             --artifact-type "application/vnd.cyclonedx+json" \
-            "${IMAGE}:${DIGEST}" "${SBOM_OUTPUT}"
+            "${IMAGE}:${DIGEST}" "./sbom.json"
 
       - name: Create Job Outputs
         # if: github.event_name != 'pull_request'
