@@ -152,22 +152,6 @@ jobs:
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
           echo "digest=$IMAGE_DIGEST" >> $GITHUB_OUTPUT
 
-      - name: Setup ORAS
-        if: inputs.generate-sbom == true
-        uses: oras-project/setup-oras@v1
-
-      - name: Attach SBOM
-        if: inputs.generate-sbom == true
-        env:
-          IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
-          SBOM_OUTPUT: ./sbom.json
-        run: |
-          oras attach \
-            --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
-            --artifact-type "application/vnd.cyclonedx+json" \
-            "${IMAGE}:${DEFAULT_TAG}" "${SBOM_OUTPUT}"
-
       - name: Login to GitHub Container Registry
         # if: github.event_name != 'pull_request'
         env:
@@ -215,6 +199,22 @@ jobs:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
+      - name: Setup ORAS
+        if: inputs.generate-sbom == true
+        uses: oras-project/setup-oras@v1
+
+      - name: Attach SBOM
+        if: inputs.generate-sbom == true
+        env:
+          IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
+          SBOM_OUTPUT: ./sbom.json
+        run: |
+          oras attach \
+            --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
+            --artifact-type "application/vnd.cyclonedx+json" \
+            "${IMAGE}:${DEFAULT_TAG}" "${SBOM_OUTPUT}"
+
       - name: Create Job Outputs
         # if: github.event_name != 'pull_request'
         env:
@@ -226,16 +226,8 @@ jobs:
           echo "${DIGEST}" > /tmp/outputs/digests/${IMAGE_NAME}-${PLATFORM}.txt
 
       - name: Upload Output Artifacts
-<<<<<<< HEAD
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
-||||||| parent of ad55b94 (feat: enable SBOM generation)
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
-=======
-        # if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
->>>>>>> ad55b94 (feat: enable SBOM generation)
         with:
           name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
           retention-days: 1
