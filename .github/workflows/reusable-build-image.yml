@@ -203,6 +203,10 @@ jobs:
         if: inputs.generate-sbom == true
         uses: oras-project/setup-oras@v1
 
+      - name: Login to GHCR with ORAS
+        run:
+          echo ${{ secrets.GITHUB_TOKEN }} | oras login -u ${{ github.actor }} --password-stdin
+
       - name: Attach SBOM
         if: inputs.generate-sbom == true
         env:
@@ -210,6 +214,7 @@ jobs:
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
           SBOM_OUTPUT: ./sbom.json
         run: |
+          set -x
           oras attach \
             --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
             --artifact-type "application/vnd.cyclonedx+json" \
