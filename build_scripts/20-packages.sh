@@ -20,7 +20,8 @@ dnf -y install \
 	glow \
 	wl-clipboard \
 	gum \
-	jetbrains-mono-fonts-all
+	jetbrains-mono-fonts-all \
+	buildah
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
