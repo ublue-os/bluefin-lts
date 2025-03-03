@@ -174,24 +174,6 @@ jobs:
           echo "remote_image_digest=$REMOTE_IMAGE_DIGEST" >> $GITHUB_OUTPUT
           cat /tmp/digestfile
 
-      # This section is optional and only needs to be enabled in you plan on distributing
-      # your project to others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
-        if: github.event_name != 'pull_request'
-
-      - name: Sign Image
-        if: github.event_name != 'pull_request'
-        run: |
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}"
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_FULL}@${{ steps.push.outputs.remote_image_digest }}
-        env:
-          TAGS: ${{ steps.push.outputs.digest }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-
       - name: Create Job Outputs
         if: github.event_name != 'pull_request'
         env:
@@ -393,7 +375,7 @@ jobs:
 
       - name: Sign Manifest
         run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE@$DIGEST
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY --recursive $IMAGE@$DIGEST
         env:
           DIGEST: ${{ needs.manifest.outputs.digest }}
           IMAGE: ${{ needs.manifest.outputs.image }}
