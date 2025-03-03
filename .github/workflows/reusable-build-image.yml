@@ -142,7 +142,9 @@ jobs:
           SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
         run: |
           sudo systemctl start podman.socket
+          
           OUTPUT_PATH="$(mktemp -d)/sbom.json"
+          export SYFT_PARALLELISM=$(($(nproc)*2))
           sudo $SYFT_CMD ${IMAGE}:${DEFAULT_TAG} -o cyclonedx-json=${OUTPUT_PATH}
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
@@ -238,7 +240,7 @@ jobs:
           oras attach \
             --annotation "org.opencontainers.artifact.description=CycloneDX SBOM" \
             --artifact-type "application/vnd.cyclonedx+json" \
-            "${IMAGE}:${DIGEST}" "./sbom.json"
+            "${IMAGE}@${DIGEST}" "./sbom.json"
 
       - name: Create Job Outputs
         # if: github.event_name != 'pull_request'
