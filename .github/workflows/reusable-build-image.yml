@@ -205,7 +205,7 @@ jobs:
 
       - name: Login to GHCR with ORAS
         run:
-          echo ${{ secrets.GITHUB_TOKEN }} | oras login -u ${{ github.actor }} --password-stdin
+          echo ${{ secrets.GITHUB_TOKEN }} | oras login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Attach SBOM
         if: inputs.generate-sbom == true
