@@ -20,4 +20,3 @@ jobs:
     with:
       image-name: bluefin-dx-hwe
       flavor: dx-hwe
-      generate-sbom: ${{ github.event_name != 'pull_request' }}

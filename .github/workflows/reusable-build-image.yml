@@ -27,11 +27,6 @@ on:
         required: false
         type: string
         default: "stream10"
-      generate-sbom:
-        description: "Whether to generate an SBOM for the image"
-        required: false
-        type: boolean
-        default: true
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -128,12 +123,12 @@ jobs:
 
       - name: Setup Syft
         id: setup-syft
-        if: inputs.generate-sbom == true
+        if: github.event_name != 'pull_request'
         uses: anchore/sbom-action/download-syft@v0
 
       - name: Generate SBOM
         id: generate-sbom
-        if: inputs.generate-sbom == true
+        if: github.event_name != 'pull_request'
         env:
           IMAGE: ${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
@@ -218,7 +213,7 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       - name: Add SBOM Attestation
-        if: inputs.generate-sbom == true
+        if: github.event_name != 'pull_request'
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}

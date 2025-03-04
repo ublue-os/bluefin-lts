@@ -19,4 +19,3 @@ jobs:
     secrets: inherit
     with:
       image-name: bluefin
-      generate-sbom: ${{ github.event_name != 'pull_request' }}
