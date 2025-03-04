@@ -278,6 +278,7 @@ jobs:
             netavark \
             fuse-overlayfs
           ln -sf /bin/bash /bin/sh
+          mkdir -p /etc/containers
           echo '{"default":[{"type":"insecureAcceptAnything"}]}' | jq . > /etc/containers/policy.json
 
       - name: Exit on failure
