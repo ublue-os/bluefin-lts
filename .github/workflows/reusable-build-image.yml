@@ -145,7 +145,7 @@ jobs:
           
           OUTPUT_PATH="$(mktemp -d)/sbom.json"
           export SYFT_PARALLELISM=$(($(nproc)*2))
-          sudo $SYFT_CMD ${IMAGE}:${DEFAULT_TAG} -o cyclonedx-json=${OUTPUT_PATH}
+          sudo $SYFT_CMD ${IMAGE}:${DEFAULT_TAG} -o spdx-json=${OUTPUT_PATH}
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
       - name: Run Rechunker
@@ -228,9 +228,9 @@ jobs:
           SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
         run: |
           cd "$(dirname "$SBOM_OUTPUT")"
-          cosign attest \
+          cosign attest -y \
             --predicate ./sbom.json \
-            --type cyclonedx \
+            --type spdxjson \
             --key env://COSIGN_PRIVATE_KEY \
             "${IMAGE}@${DIGEST}"
 
