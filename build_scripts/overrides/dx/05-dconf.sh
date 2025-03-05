@@ -12,5 +12,3 @@ cat >/usr/share/glib-2.0/schemas/zz1-dx-modifications.gschema.override <<EOF
 [org/gnome/shell/extensions/Logo-menu]
 show-boxbuddy=true
 EOF
-
-echo "io.github.dvlv.boxbuddyrs" >>/etc/ublue-os/system-flatpaks.list
