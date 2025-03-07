@@ -171,6 +171,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | sudo podman login -u ${{ github.actor }} --password-stdin $registry
           echo ${{ secrets.GITHUB_TOKEN }} | podman login -u ${{ github.actor }} --password-stdin $registry
           echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.actor }} --password-stdin $registry
 
@@ -184,9 +185,9 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: |
           set -x
-          podman tag localhost/${IMAGE_NAME}:${DEFAULT_TAG} $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM
+          sudo podman tag localhost/${IMAGE_NAME}:${DEFAULT_TAG} $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM
           for i in {1..3}; do
-            podman push --digestfile=/tmp/digestfile $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM && break || sleep $((5 * i));
+            sudo podman push --digestfile=/tmp/digestfile $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM && break || sleep $((5 * i));
           done
           REMOTE_IMAGE_DIGEST=$(cat /tmp/digestfile)
           echo "remote_image_digest=$REMOTE_IMAGE_DIGEST" >> $GITHUB_OUTPUT
