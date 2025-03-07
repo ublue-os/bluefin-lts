@@ -411,7 +411,7 @@ jobs:
           echo "IMAGE=$IMAGE_REGISTRY/$IMAGE_NAME" >> $GITHUB_OUTPUT
 
   # Cosign throws errors when ran inside the Fedora container for one reason or another
-  # so we move this to another step in order to run on Ubuntu
+  # so we move this to another step in order to run on Ubuntu.
   sign:
     needs: manifest
     # if: github.event_name != 'pull_request'
