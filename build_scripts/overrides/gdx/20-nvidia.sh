@@ -3,7 +3,7 @@
 set -euox pipefail
 
 KERNEL_SUFFIX=""
-QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//')"
+QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 
 dnf config-manager --add-repo="https://negativo17.org/repos/epel-nvidia.repo"
 dnf config-manager --set-disabled "epel-nvidia"

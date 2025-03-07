@@ -141,7 +141,7 @@ jobs:
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
       - name: Run Rechunker
-        if: github.event_name != 'pull_request'
+        if: false
         id: rechunk
         uses: hhd-dev/rechunk@341e1298e827bc60cfe19d71539ca42d08c89cfe # v1.1.3
         with:
@@ -152,12 +152,9 @@ jobs:
           version: ${{ env.CENTOS_VERSION }}
 
       - name: Load Image
-        if: github.event_name != 'pull_request'
         id: load
         run: |
-          IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
-          sudo rm -rf ${{ steps.rechunk.outputs.location }}
-          podman image tag $IMAGE ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          podman image tag localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
 
           IMAGE=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           IMAGE_DIGEST=$(podman image inspect --format '{{.Digest}}' $IMAGE)
