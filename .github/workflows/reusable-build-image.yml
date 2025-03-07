@@ -128,7 +128,6 @@ jobs:
 
       - name: Generate SBOM
         if: false()
-        if: github.event_name != 'pull_request'
         env:
           IMAGE: ${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
