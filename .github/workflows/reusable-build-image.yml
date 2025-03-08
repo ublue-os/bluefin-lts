@@ -152,6 +152,7 @@ jobs:
           version: ${{ env.CENTOS_VERSION }}
 
       - name: Load Image
+        if: github.event_name != 'pull_request'
         id: load
         run: |
           IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
