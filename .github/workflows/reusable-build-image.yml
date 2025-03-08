@@ -141,11 +141,11 @@ jobs:
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
       - name: Run Rechunker
-        if: false
+        if: github.event_name != 'pull_request'
         id: rechunk
-        uses: hhd-dev/rechunk@341e1298e827bc60cfe19d71539ca42d08c89cfe # v1.1.3
+        uses: hhd-dev/rechunk@v1.2.1
         with:
-          rechunk: "ghcr.io/hhd-dev/rechunk:v1.1.3"
+          rechunk: "ghcr.io/hhd-dev/rechunk:v1.2.1"
           ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           skip_compression: true
@@ -154,10 +154,12 @@ jobs:
       - name: Load Image
         id: load
         run: |
-          sudo podman image tag localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
+          sudo rm -rf ${{ steps.rechunk.outputs.location }}
+          podman image tag $IMAGE ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
 
           IMAGE=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          IMAGE_DIGEST=$(sudo podman image inspect --format '{{.Digest}}' $IMAGE)
+          IMAGE_DIGEST=$(podman image inspect --format '{{.Digest}}' $IMAGE)
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
           echo "digest=$IMAGE_DIGEST" >> $GITHUB_OUTPUT
 
@@ -182,9 +184,9 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: |
           set -x
-          sudo podman tag ${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}:${DEFAULT_TAG} $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM
+          podman tag ${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}:${DEFAULT_TAG} $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM
           for i in {1..3}; do
-            sudo podman push --digestfile=/tmp/digestfile $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM && break || sleep $((5 * i));
+            podman push --digestfile=/tmp/digestfile $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM && break || sleep $((5 * i));
           done
           REMOTE_IMAGE_DIGEST=$(cat /tmp/digestfile)
           echo "remote_image_digest=$REMOTE_IMAGE_DIGEST" >> $GITHUB_OUTPUT
