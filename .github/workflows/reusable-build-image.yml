@@ -141,7 +141,7 @@ jobs:
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
       - name: Run Rechunker
-        if: false
+        if: github.event_name != 'pull_request'
         id: rechunk
         uses: hhd-dev/rechunk@341e1298e827bc60cfe19d71539ca42d08c89cfe # v1.1.3
         with:
