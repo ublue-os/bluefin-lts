@@ -18,4 +18,4 @@ jobs:
     uses: ./.github/workflows/reusable-build-image.yml
     secrets: inherit
     with:
-      image-name: rs-c10s-pin-bluefin
+      image-name: bluefin
