@@ -12,10 +12,6 @@ sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nHidden=true@g' /usr/share/applica
 # not updated, so we don't want to leave them enabled.
 dnf config-manager --set-disabled baseos-compose,appstream-compose
 
-# Fast track for latest rpm-ostree for rechunker
-# FIXME: remove this once it drops on latest el10
-rpm -Uvh https://kojihub.stream.centos.org/kojifiles/vol/koji02/packages/rpm-ostree/2025.6/1.el10/$(arch)/rpm-ostree-{,libs-,}2025.6-1.el10.$(arch).rpm
-
 # Image-layer cleanup
 shopt -s extglob
 
