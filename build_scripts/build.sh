@@ -8,16 +8,23 @@ set -eo pipefail
 # Do not rely on any of these scripts existing in a specific path
 # Make the names as descriptive as possible and everything that uses dnf for package installation/removal should have `packages-` as a prefix.
 
+CONTEXT_PATH="$(realpath "$(dirname "$0")/..")" # should return /run/context
+BUILD_SCRIPTS_PATH="$(realpath "$(dirname "$0")")"
+MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
+SCRIPTS_PATH="$(realpath "$(dirname "$0")/scripts")"
+export SCRIPTS_PATH
+export MAJOR_VERSION_NUMBER
+
 run_buildscripts_for() {
 	WHAT=$1
 	shift
 	# Complex "find" expression here since there might not be any overrides
-	find "/var/tmp/build_scripts/overrides/$WHAT" -maxdepth 1 -iname "*-*.sh" -type f -print0 | sort --zero-terminated --sort=human-numeric | while IFS= read -r -d $'\0' script ; do
+	find "${BUILD_SCRIPTS_PATH}/overrides/$WHAT" -maxdepth 1 -iname "*-*.sh" -type f -print0 | sort --zero-terminated --sort=human-numeric | while IFS= read -r -d $'\0' script ; do
 		if [ "${CUSTOM_NAME}" != "" ] ; then
 			WHAT=$CUSTOM_NAME
 		fi
 		printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
-		$script
+		"$(realpath $script)"
 		printf "::endgroup::\n"
 	done
 }
@@ -25,17 +32,17 @@ run_buildscripts_for() {
 copy_systemfiles_for() {
 	WHAT=$1
 	shift
-	printf "::group:: ===%s-file-copying===\n" "$WHAT"
-	cp -avf "/var/tmp/system_files_overrides/$WHAT/." /
+	DISPLAY_NAME=$WHAT
+	if [ "${CUSTOM_NAME}" != "" ] ; then
+		DISPLAY_NAME=$CUSTOM_NAME
+	fi
+	printf "::group:: ===%s-file-copying===\n" "${DISPLAY_NAME}"
+	cp -avf "${CONTEXT_PATH}/overrides/$WHAT/." /
 	printf "::endgroup::\n"
 }
 
-MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
-SCRIPTS_PATH="$(realpath "$(dirname "$0")/scripts")"
-export SCRIPTS_PATH
-export MAJOR_VERSION_NUMBER
-
 CUSTOM_NAME="base"
+copy_systemfiles_for ../files
 run_buildscripts_for ..
 CUSTOM_NAME=""
 
@@ -65,5 +72,5 @@ fi
 
 printf "::group:: ===Image Cleanup===\n"
 # Ensure these get run at the _end_ of the build no matter what
-/var/tmp/build_scripts/cleanup.sh
+"${BUILD_SCRIPTS_PATH}/cleanup.sh"
 printf "::endgroup::\n"

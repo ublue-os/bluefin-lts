@@ -65,9 +65,3 @@ dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-
 dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 	nerd-fonts
-
-# This is required so homebrew works indefinitely.
-# Symlinking it makes it so whenever another GCC version gets released it will break if the user has updated it without-
-# the homebrew package getting updated through our builds.
-# We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
-dnf -y --setopt=install_weak_deps=False install gcc
