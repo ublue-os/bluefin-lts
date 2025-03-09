@@ -17,12 +17,12 @@ shopt -s extglob
 
 dnf clean all
 rm -rf /.gitkeep \
-  /var/tmp/* \
+  /var/tmp \
   /var/lib/{dnf,rhsm} \
   /var/cache/* \
   /boot
 
-mkdir -p /boot
+mkdir -p /boot /var/tmp
 
 # Remove non-empty log files so that we dont get bootc lint errors
 find /var/log -type f -exec 'bash' '-c' "[ -s {} ] && rm {}" ';'
