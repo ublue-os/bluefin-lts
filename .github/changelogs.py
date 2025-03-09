@@ -371,7 +371,7 @@ def generate_changelog(
         if not fedora_version + "." in curr_pretty:
             curr_pretty=fedora_version + "." + curr_pretty
         pretty = target.capitalize()
-        pretty += " (CS" + curr_pretty
+        pretty += " (c" + curr_pretty + "s"
         if finish:
             pretty += ", #" + finish[:7]
         pretty += ")"
