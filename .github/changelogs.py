@@ -50,7 +50,7 @@ From previous `{target}` version `{prev}` there have been the following changes.
 | **GNOME** | {pkgrel:gnome-control-center-filesystem} |
 | **Mesa** | {pkgrel:mesa-filesystem} |
 | **Podman** | {pkgrel:podman} |
-| **Nvidia (with Cuda)** | {pkgrel:nvidia-driver-cuda} |
+| **Nvidia** | {pkgrel:nvidia-driver} |
 
 ### Major DX packages
 | Name | Version |
