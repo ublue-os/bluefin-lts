@@ -20,7 +20,7 @@ dnf -y --enablerepo docker-ce-stable install \
 	docker-compose-plugin
 
 STABLE_KUBE_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
-cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+cat <<EOF | tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
 baseurl=https://pkgs.k8s.io/core:/stable:/${STABLE_KUBE_VERSION}/rpm/
