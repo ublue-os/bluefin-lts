@@ -192,7 +192,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
       sudo rm -rf "output/${type}" || true
     fi
 
-    args="--type ${type}"
+    args="--type ${type} "
     args+="--use-librepo=True"
 
     if [[ $target_image == localhost/* ]]; then
@@ -211,7 +211,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
       -v /var/lib/containers/storage:/var/lib/containers/storage \
       "${bib_image}" \
       ${args} \
-      "${target_image}"
+      "${target_image}:${tag}"
 
     sudo chown -R $USER:$USER output
 
