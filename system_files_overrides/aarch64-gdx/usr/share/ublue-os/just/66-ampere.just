@@ -38,8 +38,8 @@ demo-ai-server:
 
     # Check if a model was selected
     if [[ -z "$selected_model" ]]; then
-    echo "No model selected."
-    exit 1
+        echo "No model selected."
+        exit 1
     fi
 
     # Run the just llama-server command with the selected model
