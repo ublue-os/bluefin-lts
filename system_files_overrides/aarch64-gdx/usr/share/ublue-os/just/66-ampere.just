@@ -6,7 +6,7 @@ demo-deepseekserver:
 
 demo-llama-server $model $threads:
     #!/usr/bin/env bash
-    echo "Server will be available at http://bluefin.taile821f.ts.net:8080/"
+    echo "Server will be available at http://localhost:8080/"
     sleep 2
     podman run --rm -i --label ai.ramalama --name ramalama_okQhesH2uf \
     --env=HOME=/tmp --init --security-opt=label=disable --cap-drop=all \
