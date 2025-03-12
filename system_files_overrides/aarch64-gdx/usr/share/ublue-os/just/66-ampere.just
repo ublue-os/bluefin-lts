@@ -27,8 +27,8 @@ demo-ai-server:
 
     # Check if any models were found
     if [[ -z "$models" ]]; then
-    echo "No models found."
-    exit 1
+        echo "No models found."
+        exit 1
     fi
 
     models_newline=$(echo "$models" | tr ' ' '\n'| sed 's/^ollama:\/\///')
