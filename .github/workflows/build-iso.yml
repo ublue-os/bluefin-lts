@@ -79,6 +79,9 @@ jobs:
         with:
           config-file: ./iso.toml
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          types: |
+            anaconda-iso
+          additional-args: --use-librepo=True
 
       - name: Patch ISO with our branding
         env:
