@@ -75,37 +75,56 @@ jobs:
 
       - name: Build ISO
         id: build
-        uses: ublue-os/bootc-image-builder-action@main
+        uses: bootc-warehouse/bootc-image-builder-action@main
         with:
-          bootc-image-builder-image: ghcr.io/centos-workstation/bootc-image-builder:latest
-          use-librepo: true
           config-file: ./iso.toml
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
 
       - name: Patch ISO with our branding
-        run: |
-          set -x
-          just patch-iso-branding 1 ${{ steps.build.outputs.output-path }}
+        env:
+          ANACONDA_ISO_OUTPUT_PATH: ${{ steps.build.outputs.anaconda-iso-output-path }}
+        run: just patch-iso-branding 1 ${ANACONDA_ISO_OUTPUT_PATH}
 
       - name: Rename ISO
         id: rename
         env:
-          OUTPUT_PATH: ${{ steps.build.outputs.output-path }}
+          OUTPUT_PATH: ${{ steps.build.outputs.anaconda-iso-output-path }}
           OUTPUT_DIRECTORY: ${{ steps.build.outputs.output-directory }}
-          CHECKSUM_PATH: ${{ steps.build.outputs.checksum-path }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           PLATFORM: ${{ matrix.platform }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
           FLAVOR: ${{ matrix.flavor }}
         run: |
-          set -x
+          ISO_PATH=""
           if [ $PLATFORM == "amd64" ]; then
-            mv "${OUTPUT_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}.iso"
-            mv "${CHECKSUM_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}.iso-CHECKSUM"
+            ISO_PATH="${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}.iso"
+            mv "${OUTPUT_PATH}" "${ISO_PATH}"
           else
-            mv "${OUTPUT_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}-${PLATFORM}.iso"
-            mv "${CHECKSUM_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}-${PLATFORM}.iso-CHECKSUM"
+            ISO_PATH="${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}-${PLATFORM}.iso"
+            mv "${OUTPUT_PATH}" "${ISO_PATH}"
           fi
+          echo "ISO_PATH=${ISO_PATH}" >> $GITHUB_OUTPUT
+
+      # While the bootc-image-builder-action does generate checksums for the artifacts,
+      # the subsequent branding steps alter the files and therefore the checksums
+      - name: Generate Checksum
+        id: checksum
+        env:
+          ISO_PATH: ${{ steps.rename.outputs.ISO_PATH }}
+          OUTPUT_DIRECTORY: ${{ steps.build.outputs.output-directory }}
+        working-directory: ${{ steps.build.outputs.output-directory }}
+        run: |
+          sha256sum $(basename $ISO_PATH) > $ISO_PATH-CHECKSUM
+          CHECKSUM_PATH=$(readlink -f $ISO_PATH-CHECKSUM)
+          echo "CHECKSUM_PATH=${CHECKSUM_PATH}" >> $GITHUB_OUTPUT
+
+      - name: Validate ISO against checksum
+        env:
+          ISO_PATH: ${{ steps.rename.outputs.ISO_PATH }}
+          CHECKSUM_PATH: ${{ steps.checksum.outputs.CHECKSUM_PATH }}
+        working-directory: ${{ steps.build.outputs.output-directory }}
+        run: |
+          sha256sum -c $CHECKSUM_PATH
 
       - name: Upload to Job Artifacts
         if: inputs.upload-to-cloudflare == false || github.event_name == 'pull_request'
