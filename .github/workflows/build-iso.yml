@@ -9,6 +9,11 @@ on:
         required: false
         default: false
         type: boolean
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/build-iso.yml'
 
 env:
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
@@ -43,24 +48,35 @@ jobs:
           config-file: ./image-builder-iso.config.toml
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
 
-      - name: Extract ISO path
-        id: extract-iso-path
-        run: |
-          ISO_PATH=$(echo ${{ steps.build.outputs.output-paths }} | jq -r '.[] | select(.type == "bootiso") | .path')
-          echo "ISO_PATH=$ISO_PATH" >> $GITHUB_OUTPUTS
-
       - name: Patch ISO with our branding
-        run: |
-          just patch-iso-branding 1 ${{ steps.extract-iso-path.outputs.ISO_PATH }}
+        env:
+          ISO_OUTPUT_PATH: ${{ steps.build.outputs.anaconda-iso-output-path }}
+        run: just patch-iso-branding 1 $ISO_OUTPUT_PATH
 
       - name: Rename ISO
         id: rename
         env:
-          OUTPUT_PATH: ${{ steps.extract-iso-path.outputs.ISO_PATH }}
+          ISO_OUTPUT_PATH: ${{ steps.build.outputs.anaconda-iso-output-path }}
           OUTPUT_DIRECTORY: ${{ steps.build.outputs.output-directory }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          mv $OUTPUT_PATH $OUTPUT_DIRECTORY/$IMAGE_NAME.iso
+          ISO_PATH=$OUTPUT_DIRECTORY/$IMAGE_NAME.iso
+          mv $OUTPUT_PATH $ISO_PATH
+          echo "ISO_PATH=$ISO_PATH" >> $GITHUB_OUTPUT
+
+      # While the bootc-image-builder-action does generate checksums for the artifacts,
+      # the subsequent branding steps alter the files and therefore the checksums
+      - name: Generate Checksum
+        id: checksum
+        env:
+          ISO_PATH: ${{ steps.rename.outputs.ISO_PATH }}
+          OUTPUT_DIRECTORY: ${{ steps.build.outputs.output-directory }}
+        run: |
+          FILE_NAME=$(basename $ISO_PATH)
+          CHECKSUM_FILE="${ISO_PATH}-CHECKSUM"
+
+          sha256sum $ISO_PATH | awk -v fname="$FILE_NAME" '{print $1, fname}' > $CHECKSUM_FILE
+          cat $CHECKSUM_FILE
 
       - name: Upload to Job Artifacts
         if: inputs.upload-to-cloudflare == false
