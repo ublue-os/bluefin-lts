@@ -2,13 +2,13 @@
 
 set -xeuo pipefail
 
-
-clean_kind() {
-  rm -rf "${KIND_TMP}"
-}
-trap clean_kind EXIT
-
 PIXI_TMP="$(mktemp -d)"
+
+cleanup() {
+  rm -rf "${PIXI_TMP}"
+}
+trap cleanup EXIT
+
 PIXI_FILENAME="pixi-$(arch)-unknown-linux-musl.tar.gz"
 SHA_TYPE="256"
 
