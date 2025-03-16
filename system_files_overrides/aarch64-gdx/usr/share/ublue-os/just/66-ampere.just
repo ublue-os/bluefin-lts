@@ -1,48 +1,62 @@
-export model := env("model", "deepseek-r1:70b")
-export threads := env("threads", "64")
+export model_name := env("MODEL_NAME", "deepseek-r1:70b")
+export model_source := env("SOURCE", "ollama")
+export threads := env("THREADS", `sh -c 'echo $(( $(nproc) / 2 ))'`)
+export ngl := env("NGL", "0")
+export ramalama_image := env("RAMALAMA_IMAGE", "quay.io/ramalama/vulkan:latest")
+export script_dir := env("SCRIPT_DIR", "/usr/share/ublue-os/gdx-demo")
 
-demo-deepseekserver:
-    just llama-server "deepseek-r1:70b" "96"
-
-demo-llama-server $model $threads:
+demo-ai-server $ramalama_image=ramalama_image $threads=threads $ngl=ngl:
     #!/usr/bin/env bash
-    echo "Server will be available at http://localhost:8080/"
-    sleep 2
-    podman run --rm -i --label ai.ramalama --name ramalama_okQhesH2uf \
-    --env=HOME=/tmp --init --security-opt=label=disable --cap-drop=all \
-    --security-opt=no-new-privileges --label ai.ramalama.model=${model} \
-    --label ai.ramalama.engine=podman --label ai.ramalama.runtime=llama.cpp \
-    --label ai.ramalama.port=8080 --label ai.ramalama.command=serve --pull=newer \
-    -t --env LLAMA_ARG_THREADS=${threads} -p 8080:8080 --device /dev/dri \
-    --mount=type=bind,src=/var/home/adalovelace/.local/share/ramalama/models/ollama/${model},destination=/mnt/models/model.file,ro \
-    quay.io/ramalama/ramalama:latest llama-server \
-    --port 8080 -m /mnt/models/model.file -c 2048 --temp 0.8 -ngl 0 --host 0.0.0.0
+    python3 ${script_dir}/ramalama/demo-ai-server.py --image $ramalama_image --threads $threads --ngl $ngl
 
-demo-ai-server:
+[group('Just')]
+check:
+    #!/usr/bin/bash
+    echo "Checking syntax: Justfile"
+    find . -type f -name "*.just" | while read -r file; do
+    echo "Checking syntax: $file"
+    just --unstable --fmt --check -f $file
+    done
+    echo "Checking syntax: Justfile"
+    just --unstable --fmt --check -f Justfile
+
+[group('Just')]
+fix:
+    #!/usr/bin/bash
+    echo "Fixing syntax: Justfile"
+    find . -type f -name "*.just" | while read -r file; do
+    echo "Fixing syntax: $file"
+    just --unstable --fmt -f $file
+    done
+    echo "Fixing syntax: Justfile"
+    just --unstable --fmt -f Justfile || { echo "Error: Failed to fix Justfile syntax."; exit 1; }
+
+_demo-llama-server $ramalama_image=ramalama_image $model_source=model_source $model_name=model_name $threads=threads $ngl=ngl:
     #!/usr/bin/env bash
-    #!/bin/bash
+    cd ~/demo
+    python3 ${script_dir}/ramalama/ramalama-serve-ampere.py --image $ramalama_image --threads $threads --ngl $ngl $model_source://$model_name
 
-    # Get the list of models and extract the names
-    models=$(ramalama list --json | jq -r '.[].name')
+demo-deepseek-server:
+    just _demo-llama-server ramalama_image="quay.io/ramalama/vulkan:latest" model_source="ollama" model_name="deepseek-coder:6.7b-base" threads="96" ngl="0"
 
-    # Check if any models were found
-    if [[ -z "$models" ]]; then
-        echo "No models found."
-        exit 1
-    fi
+demo-benchmark-sysbench:
+    #!/usr/bin/env bash
+    podman image inspect localhost/ampere-benchmarks || podman build -t localhost/ampere-benchmarks -f Dockerfile ${script_dir}/bench-container
+    echo "Running sysbench cpu benchmark for 60 seconds"
+    podman run -it --rm localhost/ampere-benchmarks sysbench cpu --threads=$(nproc) run --time=60
 
-    models_newline=$(echo "$models" | tr ' ' '\n'| sed 's/^ollama:\/\///')
+demo-benchmark-stress-ng:
+    #!/usr/bin/env bash
+    podman image inspect localhost/ampere-benchmarks || podman build -t localhost/ampere-benchmarks -f Dockerfile ${script_dir}/bench-container
+    echo "Running stress-ng cpu benchmark for 60 seconds"
+    podman run -it --rm localhost/ampere-benchmarks stress-ng --cpu $(nproc) --cpu-method all --timeout 60s --metrics-brief
 
-    # Use glow to display the model names and allow selection
-    selected_model=$(echo "$models" | fzf --height 40% --border --ansi --prompt="Select a model: ")
+demo-benchmark-7zip:
+    #!/usr/bin/env bash
+    podman image inspect localhost/ampere-benchmarks || podman build -t localhost/ampere-benchmarks -f Dockerfile ${script_dir}/bench-container
+    echo "Running 7zip benchmark for 60 seconds"
+    podman run -it --rm localhost/ampere-benchmarks 7z b -mmt$(nproc)
 
-    # Check if a model was selected
-    if [[ -z "$selected_model" ]]; then
-        echo "No model selected."
-        exit 1
-    fi
-
-    # Run the just llama-server command with the selected model
-    just llama-server "$selected_model" "64"
-
-    echo "Started llama-server with model: $selected_model"
+demo-btop:
+    #!/usr/bin/env bash
+    btop 
