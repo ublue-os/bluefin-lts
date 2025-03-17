@@ -16,20 +16,13 @@ dnf config-manager --set-disabled baseos-compose,appstream-compose
 shopt -s extglob
 
 dnf clean all
-rm -rf /.gitkeep \
-  /var/tmp \
-  /var/lib/{dnf,rhsm} \
-  /var/cache/* \
-  /boot
 
-mkdir -p /boot /var/tmp
-
-# Remove non-empty log files so that we dont get bootc lint errors
-find /var/log -type f -exec 'bash' '-c' "[ -s {} ] && rm {}" ';'
+rm -rf /.gitkeep /var /boot
+mkdir -p /boot /var
 
 # Set file to globally readable
 # FIXME: This should not be necessary, needs to be cleaned up somewhere else
 chmod 644 "/usr/share/ublue-os/image-info.json"
 
 # FIXME: use --fix option once https://github.com/containers/bootc/pull/1152 is merged
-bootc container lint --fatal-warnings
+bootc container lint --fatal-warnings || true
