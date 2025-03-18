@@ -28,15 +28,25 @@ on:
         type: string
         default: "stream10"
       rechunk:
-        description: "Enable rechunking for the build"
+        description: "Rechunk the build"
         required: false
         type: boolean
         default: true
       sbom:
-        description: "Enable SBOM generation and publishing for the build"
+        description: "Generate/publish SBOMs for the artifacts"
         required: false
         type: boolean
         default: true
+      cleanup_runner:
+        description: "Use the ublue cleanup action to clean up the runner before running the build"
+        required: false
+        type: boolean
+        default: true
+      publish:
+        description: "Publish this image"
+        required: false
+        type: boolean
+        default: ${{ github.event_name != 'pull_request' }}
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -94,7 +104,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Maximize build space
-        if: matrix.platform != 'arm64'
+        if: ${{ matrix.platform != 'arm64' && inputs.cleanup_runner }}
         uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
         with:
           remove-codeql: true
@@ -136,11 +146,11 @@ jobs:
 
       - name: Setup Syft
         id: setup-syft
-        if: ${{ inputs.sbom }}
+        if: ${{ inputs.sbom && inputs.publish }}
         uses: anchore/sbom-action/download-syft@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0
 
       - name: Generate SBOM
-        if: ${{ inputs.sbom }}
+        if: ${{ inputs.sbom && inputs.publish }}
         env:
           IMAGE: ${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
@@ -152,7 +162,7 @@ jobs:
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
       - name: Run Rechunker
-        if: ${{ inputs.rechunk }}
+        if: ${{ inputs.rechunk && inputs.publish }}
         id: rechunk
         uses: hhd-dev/rechunk@c945e9ec8ad4466f888e41ab7f4d5ba2f74a8ee4 # v1.2.1
         with:
@@ -163,14 +173,16 @@ jobs:
           version: ${{ env.CENTOS_VERSION }}
 
       - name: Load Image
-        # if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: load
         env:
           RECHUNK_RAN: ${{ inputs.rechunk }}
+          RECHUNK_REF: ${{ steps.rechunk.outputs.ref }}
+          RECHUNK_LOCATION: ${{ steps.rechunk.outputs.location }}
         run: |
           if [ "${RECHUNK_RAN}" == "true" ] ; then
-            IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
-            sudo rm -rf ${{ steps.rechunk.outputs.location }}
+            IMAGE="$(podman pull "${RECHUNK_REF}")"
+            sudo rm -rf "${RECHUNK_LOCATION}"
           else
             IMAGE="localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
           fi
@@ -182,7 +194,7 @@ jobs:
           echo "digest=$IMAGE_DIGEST" >> $GITHUB_OUTPUT
 
       - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         env:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -191,9 +203,8 @@ jobs:
           echo ${{ secrets.GITHUB_TOKEN }} | podman login -u ${{ github.actor }} --password-stdin $registry
           echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.actor }} --password-stdin $registry
 
-      # Push the image to GHCR (Image Registry)
       - name: Push to GHCR
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: push
         env:
           IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
@@ -210,10 +221,6 @@ jobs:
           echo "remote_image_digest=${REMOTE_IMAGE_DIGEST}" >> $GITHUB_OUTPUT
           cat /tmp/digestfile
 
-      # This section is optional and only needs to be enabled in you plan on distributing
-      # your project to others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
       - name: Install Cosign
         uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
         if: github.event_name != 'pull_request'
@@ -229,7 +236,7 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       - name: Add SBOM Attestation
-        if: false
+        if: ${{ inputs.sbom }}
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
@@ -244,7 +251,7 @@ jobs:
             "${IMAGE}@${DIGEST}"
 
       - name: Create Job Outputs
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           PLATFORM: ${{ matrix.platform }}
@@ -254,7 +261,7 @@ jobs:
           echo "${DIGEST}" > /tmp/outputs/digests/${IMAGE_NAME}-${PLATFORM}.txt
 
       - name: Upload Output Artifacts
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
         with:
           name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
@@ -323,8 +330,10 @@ jobs:
 
       - name: Extract numbers from input
         id: extract-numbers
+        env:
+          CENTOS_VERSION: ${{ env.CENTOS_VERSION }}
         run: |
-          numbers_only=$(echo "${{ env.CENTOS_VERSION }}" | tr -cd '0-9')
+          numbers_only=$(echo "${CENTOS_VERSION}" | tr -cd '0-9')
           echo "CENTOS_VERSION_NUMBER=$numbers_only" >> $GITHUB_ENV
 
       - name: Image Metadata
@@ -358,7 +367,7 @@ jobs:
             containers.bootc=1
 
       - name: Fetch Build Outputs
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
         with:
           pattern: ${{ env.IMAGE_NAME }}-*
@@ -366,25 +375,28 @@ jobs:
           path: /tmp/artifacts
 
       - name: Load Outputs
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: load-outputs
         run: |
           DIGESTS_JSON=$(jq -n '{}')
           for digest_file in /tmp/artifacts/*.txt; do
             # Extract the platform from the file name
-            PLATFORM=$(basename $digest_file | rev | cut -d'-' -f1 | rev | cut -d'.' -f1)
-            DIGEST=$(cat $digest_file)
+            PLATFORM="$(basename ${digest_file} | rev | cut -d'-' -f1 | rev | cut -d'.' -f1)"
+            DIGEST="$(cat ${digest_file})"
             # Add the platform and digest to the JSON object
-            DIGESTS_JSON=$(echo "$DIGESTS_JSON" | jq --arg key "$PLATFORM" --arg value "$DIGEST" '. + {($key): $value}')
+            DIGESTS_JSON="$(echo "${DIGESTS_JSON}" | jq --arg key "${PLATFORM}" --arg value "{$DIGEST}" '. + {($key): $value}')"
           done
-          echo "DIGESTS_JSON=$(echo $DIGESTS_JSON | jq -c '.')" >> $GITHUB_OUTPUT
+          echo "DIGESTS_JSON=$(echo "$DIGESTS_JSON" | jq -c '.')" >> $GITHUB_OUTPUT
 
       - name: Create Manifest
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: create-manifest
+        env:
+          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          podman manifest create ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          echo "MANIFEST=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+          podman manifest create ${IMAGE_REGISTRY}/${IMAGE_NAME}
+          echo "MANIFEST=${IMAGE_REGISTRY}/${IMAGE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Populate Manifest
         if: github.event_name != 'pull_request'
