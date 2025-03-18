@@ -36,7 +36,7 @@ on:
         description: "Generate/publish SBOMs for the artifacts"
         required: false
         type: boolean
-        default: ${{ github.event_name != "pull_request" }}
+        default: true
       cleanup_runner:
         description: "Use the ublue cleanup action to clean up the runner before running the build"
         required: false
