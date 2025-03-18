@@ -30,8 +30,8 @@ on:
       rechunk:
         description: "Enable rechunking for the build"
         required: false
-        type: string
-        default: "true"
+        type: boolean
+        default: true
       sbom:
         description: "Enable SBOM generation and publishing for the build"
         required: false
@@ -152,7 +152,7 @@ jobs:
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
       - name: Run Rechunker
-        if: ${{ inputs.rechunk == "true" }}
+        if: ${{ inputs.rechunk }}
         id: rechunk
         uses: hhd-dev/rechunk@c945e9ec8ad4466f888e41ab7f4d5ba2f74a8ee4 # v1.2.1
         with:
