@@ -46,7 +46,8 @@ on:
         description: "Publish this image"
         required: false
         type: boolean
-        default: ${{ github.event_name != 'pull_request' }}
+        # default: ${{ github.event_name != 'pull_request' }}
+        default: true
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -223,10 +224,10 @@ jobs:
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
-        # if: ${{ inputs.publish }}
+        if: ${{ inputs.publish }}
 
       - name: Sign Image
-        # if: ${{ inputs.publish }}
+        if: ${{ inputs.publish }}
         run: |
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}"
           cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_FULL}@${{ steps.push.outputs.remote_image_digest }}
