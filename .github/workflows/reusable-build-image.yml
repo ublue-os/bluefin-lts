@@ -54,7 +54,7 @@ on:
         required: false
 
 env:
-  IMAGE_NAME: ${{ inputs.image-name }}
+  IMAGE_NAME: t-test-gh-actions-${{ inputs.image-name }}
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "lts"
@@ -229,7 +229,7 @@ jobs:
       - name: Sign Image
         if: ${{ inputs.publish }}
         run: |
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}"
+          IMAGE_FULL="${IMAGE_REGISTRY}/${IMAGE_NAME}"
           cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_FULL}@${{ steps.push.outputs.remote_image_digest }}
         env:
           TAGS: ${{ steps.push.outputs.digest }}
@@ -326,7 +326,7 @@ jobs:
           CENTOS_VERSION: ${{ env.CENTOS_VERSION }}
         run: |
           numbers_only=$(echo "${CENTOS_VERSION}" | tr -cd '0-9')
-          echo "CENTOS_VERSION_NUMBER=$numbers_only" >> $GITHUB_ENV
+          echo "CENTOS_VERSION_NUMBER=${numbers_only}" >> "${GITHUB_ENV}"
 
       - name: Image Metadata
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
@@ -373,10 +373,10 @@ jobs:
           DIGESTS_JSON="$(jq -n '{}')"
           for digest_file in /tmp/artifacts/*.txt; do
             # Extract the platform from the file name
-            PLATFORM="$(basename ${digest_file} | rev | cut -d'-' -f1 | rev | cut -d'.' -f1)"
-            DIGEST="$(cat ${digest_file})"
+            PLATFORM="$(basename "${digest_file}" | rev | cut -d'-' -f1 | rev | cut -d'.' -f1)"
+            DIGEST="$(cat "${digest_file}")"
             # Add the platform and digest to the JSON object
-            DIGESTS_JSON="$(echo "${DIGESTS_JSON}" | jq --arg key "${PLATFORM}" --arg value "{$DIGEST}" '. + {($key): $value}')"
+            DIGESTS_JSON="$(echo "${DIGESTS_JSON}" | jq --arg key "${PLATFORM}" --arg value "${DIGEST}" '. + {($key): $value}')"
           done
           echo "DIGESTS_JSON=$(echo "$DIGESTS_JSON" | jq -c '.')" >> "${GITHUB_OUTPUT}"
 
@@ -391,16 +391,17 @@ jobs:
           echo "MANIFEST=${IMAGE_REGISTRY}/${IMAGE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Populate Manifest
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         env:
           MANIFEST: ${{ steps.create-manifest.outputs.MANIFEST }}
           DIGESTS_JSON: ${{ steps.load-outputs.outputs.DIGESTS_JSON }}
           LABELS: ${{ steps.metadata.outputs.labels }}
+          PLATFORMS: "${{ inputs.platforms }}"
         run: |
           DIGESTS=$(echo "$DIGESTS_JSON" | jq -c '.')
           # turn the comma separated string into a list
           platforms=()
-          IFS=',' read -r -a platforms <<< "${{ inputs.platforms }}"
+          IFS=',' read -r -a platforms <<< "${PLATFORMS}"
           for platform in ${platforms[@]}; do
             digest="$(echo $DIGESTS | jq -r ".$platform")"
             echo "Adding ${IMAGE_REGISTRY}/${IMAGE_NAME}@${digest} for ${platform}"
