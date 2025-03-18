@@ -88,7 +88,7 @@ jobs:
     needs: generate_matrix
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+      matrix: ${{fromJson(needs.generate_matrix.outputs.matrix)}}
     permissions:
       contents: read
       packages: write
@@ -223,10 +223,10 @@ jobs:
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
-        if: ${{ inputs.publish }}
+        # if: ${{ inputs.publish }}
 
       - name: Sign Image
-        if: ${{ inputs.publish }}
+        # if: ${{ inputs.publish }}
         run: |
           IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}"
           cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_FULL}@${{ steps.push.outputs.remote_image_digest }}
@@ -466,4 +466,4 @@ jobs:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
         run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE@$DIGEST
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
