@@ -127,11 +127,6 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
           set -x
-          sudo systemctl start podman.socket
-          DOCKER_HOST="unix:///var/run/podman/podman.sock"
-          export DOCKER_HOST
-          echo "DOCKER_HOST=${DOCKER_HOST}" >> "${GITHUB_ENV}"
-
           ENABLE_GDX=0
           ENABLE_DX=0
           ENABLE_HWE=0
