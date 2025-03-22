@@ -24,6 +24,10 @@ mkdir -p /boot /var
 mv /usr/local /var/usrlocal
 ln -s /var/usrlocal /usr/local
 
+# Make /opt writeable
+mv /opt /var/opt
+ln -s /var/opt /opt
+
 # Set file to globally readable
 # FIXME: This should not be necessary, needs to be cleaned up somewhere else
 chmod 644 "/usr/share/ublue-os/image-info.json"
