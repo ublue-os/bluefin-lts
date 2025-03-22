@@ -21,19 +21,6 @@ dnf -y --enablerepo docker-ce-stable install \
 
 STABLE_KUBE_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
 STABLE_KUBE_VERSION_MAJOR="${STABLE_KUBE_VERSION%.*}"
-cat <<EOF | tee /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/${STABLE_KUBE_VERSION_MAJOR}/rpm/
-enabled=0
-gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/${STABLE_KUBE_VERSION_MAJOR}/rpm/repodata/repomd.xml.key
-EOF
-
-dnf install -y --enablerepo="kubernetes" \
-	kubectl \
-	kubeadm
-
 GITHUB_LIKE_ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
 KIND_LATEST_VERSION="$(curl -L https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | jq -r ".tag_name")"
 
