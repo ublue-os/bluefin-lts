@@ -4,36 +4,41 @@ set -xeuo pipefail
 
 # This is the base for a minimal GNOME system on CentOS Stream.
 
+
 # This thing slows down downloads A LOT for no reason
-dnf remove -y subscription-manager
+# dnf remove -y subscription-manager
 
 # The base images take super long to update, this just updates manually for now
 dnf -y update kernel
 dnf -y install 'dnf-command(versionlock)'
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
-dnf -y install epel-release
-dnf config-manager --set-enabled crb
+# dnf -y install epel-release
+# dnf config-manager --set-enabled crb
 
 # Multimidia codecs
 dnf -y install @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl
 
-# `dnf group info Workstation` without GNOME
-dnf group install -y --nobest \
-	-x rsyslog* \
-	-x cockpit \
-	-x cronie* \
-	-x crontabs \
-	-x PackageKit \
-	-x PackageKit-command-not-found \
-	"Common NetworkManager submodules" \
-	"Core" \
-	"Fonts" \
-	"Guest Desktop Agents" \
-	"Hardware Support" \
-	"Printing Client" \
-	"Standard" \
-	"Workstation product core"
+# # `dnf group info Workstation` without GNOME
+# dnf group install -y --nobest \
+# 	-x rsyslog* \
+# 	-x cockpit \
+# 	-x cronie* \
+# 	-x crontabs \
+# 	-x PackageKit \
+# 	-x PackageKit-command-not-found \
+# 	"Common NetworkManager submodules" \
+# 	"Core" \
+# 	"Fonts" \
+# 	"Guest Desktop Agents" \
+# 	"Hardware Support" \
+# 	"Printing Client" \
+# 	"Standard" \
+# 	"Workstation product core"
+
+
+dnf -y group install \
+	workstation-product-environment
 
 # Minimal GNOME group. ("Multimedia" adds most of the packages from the GNOME group. This should clear those up too.)
 # In order to reproduce this, get the packages with `dnf group info GNOME`, install them manually with dnf install and see all the packages that are already installed.
@@ -43,8 +48,8 @@ dnf -y install \
 	-x PackageKit-command-not-found \
 	-x gnome-software-fedora-langpacks \
 	"NetworkManager-adsl" \
-	"centos-backgrounds" \
 	"gdm" \
+	"f42-backgrounds-gnome" \
 	"gnome-bluetooth" \
 	"gnome-color-manager" \
 	"gnome-control-center" \

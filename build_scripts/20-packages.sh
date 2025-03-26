@@ -27,13 +27,13 @@ dnf -y install \
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
 # We do, however, leave crb and EPEL enabled by default.
 
-dnf config-manager --add-repo "https://pkgs.tailscale.com/stable/centos/${MAJOR_VERSION_NUMBER}/tailscale.repo"
+dnf config-manager --add-repo "https://pkgs.tailscale.com/stable/fedora/${MAJOR_VERSION_NUMBER}/tailscale.repo"
 dnf config-manager --set-disabled "tailscale-stable"
 # FIXME: tailscale EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349099
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/packages/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-packages-epel-$MAJOR_VERSION_NUMBER.repo"
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/packages/repo/fedora-$MAJOR_VERSION_NUMBER/ublue-os-packages-fedora-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
@@ -52,16 +52,16 @@ cp -avf /usr/etc/. /etc
 rm -rvf /usr/etc
 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
-	centos-logos bluefin-logos
+	fedora-logos bluefin-logos
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-${MAJOR_VERSION_NUMBER}/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/fedora-${MAJOR_VERSION_NUMBER}/ublue-os-staging-fedora-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
 # FIXME: gsconnect EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349097
 # FIXME: caffeine EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349098
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	gnome-shell-extension-{search-light,logo-menu,caffeine,gsconnect}
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/fedora-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-fedora-${MAJOR_VERSION_NUMBER}.repo"
 dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 	nerd-fonts

@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       stream_name:
-        description: "Release Tag (e.g. stream10, latest)"
+        description: "Release Tag (e.g. 42, latest)"
         type: string
         default: "lts"
         required: false

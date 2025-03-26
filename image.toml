@@ -1,6 +1,6 @@
 [[customizations.user]]
-name = "centos"
-password = "centos"
+name = "fedora"
+password = "fedora"
 groups = ["wheel"]
 
 [[customizations.filesystem]]

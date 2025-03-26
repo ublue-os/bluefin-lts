@@ -11,7 +11,7 @@ on:
         description: "The description of the image to build"
         required: false
         type: string
-        default: "Bluefin LTS, built on CentOS Stream with bootc"
+        default: "Bluefin LTS, built on Fedora with bootc"
       flavor:
         description: "The flavor of the image to build"
         required: false
@@ -22,11 +22,11 @@ on:
         required: false
         type: string
         default: "amd64,arm64"
-      centos-version:
-        description: "The version of CentOS to build the image on"
+      fedora-version:
+        description: "The version of Fedora to build the image on"
         required: false
         type: string
-        default: "stream10"
+        default: "42"
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -37,7 +37,7 @@ env:
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "lts"
-  CENTOS_VERSION: ${{ inputs.centos-version }}
+  FEDORA_VERSION: ${{ inputs.centos-version }}
   PLATFORMS: ${{ inputs.platforms }}
 
 jobs:
@@ -149,7 +149,7 @@ jobs:
           ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           skip_compression: true
-          version: ${{ env.CENTOS_VERSION }}
+          version: ${{ env.FEDORA_VERSION }}
 
       - name: Load Image
         if: github.event_name != 'pull_request'
@@ -307,8 +307,8 @@ jobs:
       - name: Extract numbers from input
         id: extract-numbers
         run: |
-          numbers_only=$(echo "${{ env.CENTOS_VERSION }}" | tr -cd '0-9')
-          echo "CENTOS_VERSION_NUMBER=$numbers_only" >> $GITHUB_ENV
+          numbers_only=$(echo "${{ env.FEDORA_VERSION }}" | tr -cd '0-9')
+          echo "FEDORA_VERSION_NUMBER=$numbers_only" >> $GITHUB_ENV
 
       - name: Image Metadata
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
@@ -317,10 +317,10 @@ jobs:
           tags: |
             type=raw,value=lts
             type=raw,value=lts-{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION }}
-            type=raw,value=${{ env.CENTOS_VERSION }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.FEDORA_VERSION }}
+            type=raw,value=${{ env.FEDORA_VERSION }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.FEDORA_VERSION_NUMBER }}
+            type=raw,value=${{ env.FEDORA_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
             type=ref,event=pr
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
@@ -331,7 +331,7 @@ jobs:
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
             org.opencontainers.image.url=https://projectbluefin.io
             org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.version=${{ env.CENTOS_VERSION }}
+            org.opencontainers.image.version=${{ env.FEDORA_VERSION }}
             io.artifacthub.package.deprecated=false
             io.artifacthub.package.keywords=bootc,centos,bluefin,ublue,universal-blue
             io.artifacthub.package.license=Apache-2.0
