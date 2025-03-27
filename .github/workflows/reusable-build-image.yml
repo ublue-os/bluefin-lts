@@ -342,7 +342,7 @@ jobs:
 
       - name: Fetch Build Outputs
         if: github.event_name != 'pull_request'
-        uses: actions/download-artifact@b14cf4c92620c250e1c074ab0a5800e37df86765 # v4
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           pattern: ${{ env.IMAGE_NAME }}-*
           merge-multiple: true
