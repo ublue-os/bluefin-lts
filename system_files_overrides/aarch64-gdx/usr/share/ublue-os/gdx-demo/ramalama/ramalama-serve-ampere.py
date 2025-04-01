@@ -62,7 +62,9 @@ def main():
     if args.port:
         ramalama_args.extend(["-p", str(args.port)])
     if args.threads:
-        ramalama_args.extend(["--env", f"LLAMA_ARG_THREADS={args.threads}"])
+        ramalama_args.extend(["--threads", str(args.threads)])
+    if args.threads:
+        ramalama_args.extend(["-t", str(args.threads)])
 
     ramalama_args.append(args.model)
 
