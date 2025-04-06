@@ -1,6 +1,6 @@
 [[customizations.user]]
-name = "centos"
-password = "centos"
+name = "almalinux"
+password = "almalinux"
 groups = ["wheel"]
 
 [[customizations.filesystem]]

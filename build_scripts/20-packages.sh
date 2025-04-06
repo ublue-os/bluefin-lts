@@ -33,6 +33,7 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
+dnf -y remove plymouth-theme-spinner
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/packages/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-packages-epel-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
@@ -51,8 +52,9 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 cp -avf /usr/etc/. /etc
 rm -rvf /usr/etc
 
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
-	centos-logos bluefin-logos
+# dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
+# 	almalinux-logos bluefin-logos
+dnf -y remove almalinux-logos
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-${MAJOR_VERSION_NUMBER}/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
