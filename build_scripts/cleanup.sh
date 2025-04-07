@@ -8,10 +8,6 @@ set -xeuo pipefail
 # Hide Desktop Files. Hidden removes mime associations
 sed -i 's@\[Desktop Entry\]@\[Desktop Entry\]\nHidden=true@g' /usr/share/applications/fish.desktop
 
-# The compose repos we used during the build are point in time repos that are
-# not updated, so we don't want to leave them enabled.
-# dnf config-manager --set-disabled baseos-compose,appstream-compose
-
 # Image-layer cleanup
 shopt -s extglob
 

@@ -52,8 +52,6 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 cp -avf /usr/etc/. /etc
 rm -rvf /usr/etc
 
-# dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
-# 	almalinux-logos bluefin-logos
 dnf -y remove almalinux-logos
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-${MAJOR_VERSION_NUMBER}/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"

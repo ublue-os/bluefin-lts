@@ -2,10 +2,7 @@
 
 set -xeuo pipefail
 
-# This is the base for a minimal GNOME system on CentOS Stream.
-
-# This thing slows down downloads A LOT for no reason
-dnf remove -y subscription-manager
+# This is the base for a minimal GNOME system on AlmaLinux.
 
 # The base images take super long to update, this just updates manually for now
 dnf -y update kernel

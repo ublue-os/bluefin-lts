@@ -26,7 +26,7 @@ on:
         description: "The version of AlmaLinux to build the image on"
         required: false
         type: string
-        default: "stream10"
+        default: "10-kitten"
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"

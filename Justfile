@@ -368,7 +368,7 @@ patch-iso-branding override="0" iso_path="output/bootiso/install.iso":
         --privileged \
         -v ./output:/output \
         -v ./iso_files:/iso_files \
-        quay.io/almalinuxorg/almalinux:10-kitten \
+        quay.io/almalinuxorg/almalinux:${almalinux_version} \
         bash -c 'dnf install -y lorax && \
     	mkdir /images && cd /iso_files/product && find . | cpio -c -o | gzip -9cv > /images/product.img && cd / \
             && mkksiso --add images --volid bluefin-boot /{{ iso_path }} /output/final.iso'
