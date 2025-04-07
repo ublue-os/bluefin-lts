@@ -11,6 +11,7 @@ dnf -y install \
 	gnome-disk-utility \
 	distrobox \
 	fastfetch \
+	fish \
 	fpaste \
 	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell} \
 	just \
