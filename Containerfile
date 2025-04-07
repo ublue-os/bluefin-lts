@@ -21,3 +21,5 @@ RUN --mount=type=tmpfs,dst=/opt \
   --mount=type=tmpfs,dst=/tmp \
   --mount=type=bind,from=context,source=/,target=/run/context \
   /run/context/build_scripts/build.sh
+
+RUN rm -rf /opt && ln -s /var/opt /opt 
