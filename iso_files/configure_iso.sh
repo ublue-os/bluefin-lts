@@ -8,7 +8,8 @@ dnf config-manager --set-enabled crb
 dnf install -y \
   anaconda \
   anaconda-install-env-deps \
-  anaconda-live
+  anaconda-live \
+  anaconda-webui
 
 echo "ostreecontainer --url=/usr/lib/ostreecontainer --transport=oci --no-signature-verification" >>/usr/share/anaconda/interactive-defaults.ks
 echo "bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry ghcr.io/ublue-os/bluefin:lts" >>/usr/share/anaconda/post-scripts/switch-container.ks
