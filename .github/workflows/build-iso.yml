@@ -71,7 +71,7 @@ jobs:
 
       - name: Build ISO
         id: build
-        uses: ublue-os/titanoboa@main
+        uses: ublue-os/titanoboa@anaconda-webui-format
         with:
           image-ref: ${{ steps.image_ref.outputs.image_ref }}:lts
           flatpaks-list: ${{ github.workspace }}/system_files/etc/ublue-os/system-flatpaks.list
