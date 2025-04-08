@@ -107,7 +107,7 @@ jobs:
         with:
           name: ${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}-${{ matrix.platform }}-iso
           if-no-files-found: error
-          path: ${{ steps.build.outputs.iso-dest }}
+          path: ${{ steps.rename.outputs.output_directory }}
 
       - name: Upload to CloudFlare
         if: inputs.upload-to-cloudflare == true && github.event_name != 'pull_request'
