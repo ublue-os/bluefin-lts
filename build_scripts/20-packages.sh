@@ -12,7 +12,7 @@ dnf -y install \
 	distrobox \
 	fastfetch \
 	fpaste \
-	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell} \
+	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell,caffeine} \
 	just \
 	powertop \
 	tuned-ppd \
@@ -57,9 +57,8 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-${MAJOR_VERSION_NUMBER}/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
 # FIXME: gsconnect EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349097
-# FIXME: caffeine EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349098
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
-	gnome-shell-extension-{search-light,logo-menu,caffeine,gsconnect}
+	gnome-shell-extension-{search-light,logo-menu,gsconnect}
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
 dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts

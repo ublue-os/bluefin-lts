@@ -19,24 +19,37 @@ dnf -y --enablerepo docker-ce-stable install \
 	docker-buildx-plugin \
 	docker-compose-plugin
 
-STABLE_KUBE_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+STABLE_KUBE_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)"
 STABLE_KUBE_VERSION_MAJOR="${STABLE_KUBE_VERSION%.*}"
 GITHUB_LIKE_ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
 KIND_LATEST_VERSION="$(curl -L https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | jq -r ".tag_name")"
+KZERO_LATEST_VERSION="$(curl -L https://api.github.com/repos/k0sproject/k0s/releases/latest | jq -r ".tag_name")"
+KZEROCTL_LATEST_VERSION="$(curl -L https://api.github.com/repos/k0sproject/k0sctl/releases/latest | jq -r ".tag_name")"
+KUBE_TMP="$(mktemp -d)"
 
-KIND_TMP="$(mktemp -d)"
-
-clean_kind() {
-  rm -rf "${KIND_TMP}"
-}
-trap clean_kind EXIT
+trap "rm -rf ${KUBE_TMP}" EXIT
 
 SHA_TYPE="256"
 KIND_BIN_NAME="kind-linux-${GITHUB_LIKE_ARCH}"
-curl --retry 3 -Lo "${KIND_TMP}/${KIND_BIN_NAME}" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_LATEST_VERSION}/kind-linux-${GITHUB_LIKE_ARCH}"
-curl --retry 3 -Lo "${KIND_TMP}/${KIND_BIN_NAME}.sha${SHA_TYPE}sum" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_LATEST_VERSION}/kind-linux-${GITHUB_LIKE_ARCH}.sha${SHA_TYPE}sum"
-pushd "${KIND_TMP}"
-"sha${SHA_TYPE}sum" --strict -c "${KIND_TMP}/${KIND_BIN_NAME}.sha${SHA_TYPE}sum"
+DEFAULT_RETRY=3
+pushd "${KUBE_TMP}"
+curl --retry "${DEFAULT_RETRY}" -Lo "${KIND_BIN_NAME}" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_LATEST_VERSION}/kind-linux-${GITHUB_LIKE_ARCH}"
+curl --retry "${DEFAULT_RETRY}" -Lo "${KIND_BIN_NAME}.sha${SHA_TYPE}sum" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_LATEST_VERSION}/kind-linux-${GITHUB_LIKE_ARCH}.sha${SHA_TYPE}sum"
+curl --retry "${DEFAULT_RETRY}" -LO "https://dl.k8s.io/release/${STABLE_KUBE_VERSION}/bin/linux/${GITHUB_LIKE_ARCH}/kubectl"
+curl --retry "${DEFAULT_RETRY}" -LO "https://dl.k8s.io/release/${STABLE_KUBE_VERSION}/bin/linux/${GITHUB_LIKE_ARCH}/kubectl.sha${SHA_TYPE}"
+curl --retry "${DEFAULT_RETRY}" -LO "https://github.com/k0sproject/k0sctl/releases/download/${KZEROCTL_LATEST_VERSION}/k0sctl-linux-${GITHUB_LIKE_ARCH}"
+curl --retry "${DEFAULT_RETRY}" -Lo "kzeroctl-checksums.txt" "https://github.com/k0sproject/k0sctl/releases/download/${KZEROCTL_LATEST_VERSION}/checksums.txt"
+curl --retry "${DEFAULT_RETRY}" -LO "https://github.com/k0sproject/k0s/releases/download/${KZERO_LATEST_VERSION}/k0s-${KZERO_LATEST_VERSION}-${GITHUB_LIKE_ARCH}"
+curl --retry "${DEFAULT_RETRY}" -Lo "kzero-checksums.txt" "https://github.com/k0sproject/k0s/releases/download/${KZERO_LATEST_VERSION}/sha256sums.txt"
+
+grep "k0s-${KZERO_LATEST_VERSION}-${GITHUB_LIKE_ARCH}" kzero-checksums.txt | grep -v "sig\|exe" | sha256sum --strict --check
+grep "k0sctl-linux-${GITHUB_LIKE_ARCH}" kzeroctl-checksums.txt | sha256sum --strict --check
+"sha${SHA_TYPE}sum" --strict --check "${KUBE_TMP}/${KIND_BIN_NAME}.sha${SHA_TYPE}sum"
+echo "$(cat kubectl.sha256)  kubectl" | sha256sum --strict --check
+
+install -Dpm0755 "${KIND_BIN_NAME}" "/usr/bin/kind"
+install -Dpm0755 "./kubectl" "/usr/bin/kubectl"
+install -Dpm0755 "./k0sctl-linux-${GITHUB_LIKE_ARCH}" "/usr/bin/k0sctl"
+install -Dpm0755 "./k0s-${KZERO_LATEST_VERSION}-${GITHUB_LIKE_ARCH}" "/usr/bin/k0s"
 popd
 
-install -Dpm0755 "${KIND_TMP}/${KIND_BIN_NAME}" "/usr/bin/kind"
