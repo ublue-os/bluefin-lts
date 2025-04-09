@@ -11,7 +11,7 @@ dnf config-manager --set-disabled "epel-nvidia"
 # These are necessary for building the nvidia drivers
 # Also make sure the kernel is locked before this is run whenever the kernel updates
 # kernel-devel might pull in an entire new kernel if you dont do
-dnf -y install "kernel-devel-$QUALIFIED_KERNEL" "kernel-devel-matched-$QUALIFIED_KERNEL" "kernel-headers-$QUALIFIED_KERNEL"  dkms gcc-c++
+dnf -y --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" install "kernel-devel-$QUALIFIED_KERNEL" "kernel-devel-matched-$QUALIFIED_KERNEL" "kernel-headers-$QUALIFIED_KERNEL"  dkms gcc-c++
 
 dnf install -y --enablerepo="epel-nvidia" \
   cuda nvidia-driver{,-cuda} dkms-nvidia
