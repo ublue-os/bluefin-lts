@@ -31,7 +31,7 @@ s/^NAME=.*/NAME=\"${IMAGE_PRETTY_NAME}\"/
 s|^VERSION_CODENAME=.*|VERSION_CODENAME=\"${CODE_NAME}\"|
 s/^ID="centos"/ID=bluefin_lts/
 s/^VARIANT_ID=.*/VARIANT_ID=${IMAGE_NAME}/
-s/^PRETTY_NAME=.*/PRETTY_NAME=\"${IMAGE_PRETTY_NAME} (FROM $OLD_PRETTY_NAME)\"/
+s/^PRETTY_NAME=.*/PRETTY_NAME=\"${IMAGE_PRETTY_NAME}\"/
 s|^HOME_URL=.*|HOME_URL=\"${HOME_URL}\"|
 s|^BUG_REPORT_URL=.*|BUG_REPORT_URL=\"${BUG_SUPPORT_URL}\"|
 s|^CPE_NAME=\"cpe:/o:centos:centos|CPE_NAME=\"cpe:/o:universal-blue:bluefin-lts|
