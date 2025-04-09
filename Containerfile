@@ -21,3 +21,6 @@ RUN --mount=type=tmpfs,dst=/opt \
   --mount=type=tmpfs,dst=/tmp \
   --mount=type=bind,from=context,source=/,target=/run/context \
   /run/context/build_scripts/build.sh
+# Makes `/opt` writeable by default
+# Needs to be here to make the main image build strict (no /opt there)
+RUN rm -rf /opt && ln -s /var/opt /opt 
