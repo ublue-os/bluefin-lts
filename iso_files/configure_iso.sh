@@ -5,7 +5,7 @@ set -x
 dnf install -y centos-release-hyperscale
 dnf config-manager --set-enabled crb
 
-dnf install -y \
+dnf --enablerepo="centos-hyperscale" install -y \
   anaconda \
   anaconda-install-env-deps \
   anaconda-live
