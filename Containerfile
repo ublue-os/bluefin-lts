@@ -10,7 +10,6 @@ ARG MAJOR_VERSION="${MAJOR_VERSION:-c10s}"
 FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 
 ARG ENABLE_DX="${ENABLE_DX:-0}"
-ARG ENABLE_HWE="${ENABLE_HWE:-0}"
 ARG ENABLE_GDX="${ENABLE_GDX:-0}"
 ARG IMAGE_NAME="${IMAGE_NAME:-bluefin}"
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
@@ -26,4 +25,4 @@ RUN --mount=type=tmpfs,dst=/opt \
 
 # Makes `/opt` writeable by default
 # Needs to be here to make the main image build strict (no /opt there)
-RUN rm -r /opt && ln -sf /var/opt /opt
+RUN rm -rf /opt && ln -s /var/opt /opt 
