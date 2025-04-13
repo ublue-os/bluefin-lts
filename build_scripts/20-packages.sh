@@ -21,7 +21,8 @@ dnf -y install \
 	wl-clipboard \
 	gum \
 	jetbrains-mono-fonts-all \
-	buildah
+	buildah \
+        xhost
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
