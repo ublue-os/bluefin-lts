@@ -21,5 +21,6 @@
       "automerge": true,
       "matchUpdateTypes": ["digest"],
       "matchDepNames": ["quay.io/centos-bootc/centos-bootc"],
+    }
   ]
 }
