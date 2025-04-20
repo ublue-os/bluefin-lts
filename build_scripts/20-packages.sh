@@ -34,8 +34,12 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
+
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/packages/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-packages-epel-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
+	centos-logos bluefin-logos
+
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
 	ublue-os-just \
@@ -51,9 +55,6 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 # FIXME: remove this once https://github.com/ublue-os/packages/issues/245 is closed
 cp -avf /usr/etc/. /etc
 rm -rvf /usr/etc
-
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
-	centos-logos bluefin-logos
 
 dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-${MAJOR_VERSION_NUMBER}/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
