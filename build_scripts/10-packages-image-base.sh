@@ -15,7 +15,7 @@ dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y 
 dnf -y install 'dnf-command(versionlock)'
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
-dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+dnf -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${MAJOR_VERSION_NUMBER}.noarch.rpm"
 dnf config-manager --set-enabled crb
 
 # Multimidia codecs
