@@ -15,6 +15,7 @@ dnf versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kern
 dnf -y --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" install "kernel-devel-$QUALIFIED_KERNEL" "kernel-headers-$QUALIFIED_KERNEL"  dkms gcc-c++
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
+
 dnf install -y --enablerepo="epel-nvidia" \
   cuda nvidia-driver{,-cuda} dkms-nvidia
 
