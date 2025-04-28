@@ -24,6 +24,10 @@ sed -i "/^show-boxbuddy=.*/d" /etc/dconf/db/distro.d/04-bluefin-logomenu-extensi
 sed -i "/^show-boxbuddy=.*/d" /usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override
 sed -i "/.*io.github.dvlv.boxbuddyrs.*/d" /etc/ublue-os/system-flatpaks.list
 
+# Offline Bluefin documentation
+curl --retry 3 -Lo /tmp/bluefin.pdf https://github.com/ublue-os/bluefin-docs/releases/download/0.1/bluefin.pdf
+install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
+
 # Add Flathub by default
 mkdir -p /etc/flatpak/remotes.d
 curl --retry 3 -o /etc/flatpak/remotes.d/flathub.flatpakrepo "https://dl.flathub.org/repo/flathub.flatpakrepo"
