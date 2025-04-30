@@ -19,7 +19,10 @@ dnf -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${MAJO
 dnf config-manager --set-enabled crb
 
 # Multimidia codecs
-dnf -y install @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl
+dnf config-manager --add-repo=https://negativo17.org/repos/epel-multimedia.repo
+dnf config-manager --set-disabled epel-multimedia
+dnf -y install --enablerepo=epel-multimedia \
+	ffmpeg libavcodec @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl ffmpegthumbnailer
 
 # `dnf group info Workstation` without GNOME
 dnf group install -y --nobest \
@@ -77,8 +80,7 @@ dnf -y install \
 	plymouth-system-theme \
 	fwupd \
 	systemd-{resolved,container,oomd} \
-	libcamera{,-{v4l2,gstreamer,tools}} \
-	ffmpegthumbnailer
+	libcamera{,-{v4l2,gstreamer,tools}}
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
 dnf -y remove console-login-helper-messages
