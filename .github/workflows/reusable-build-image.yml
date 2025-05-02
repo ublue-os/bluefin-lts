@@ -145,7 +145,7 @@ jobs:
       - name: Setup Syft
         id: setup-syft
         if: ${{ inputs.sbom && inputs.publish }}
-        uses: anchore/sbom-action/download-syft@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0
+        uses: anchore/sbom-action/download-syft@9f7302141466aa6482940f15371237e9d9f4c34a # v0
 
       - name: Generate SBOM
         if: ${{ inputs.sbom && inputs.publish }}
@@ -234,6 +234,7 @@ jobs:
 
       - name: Add SBOM Attestation
         if: ${{ inputs.sbom }}
+        env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
@@ -258,7 +259,7 @@ jobs:
 
       - name: Upload Output Artifacts
         if: ${{ inputs.publish }}
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
           retention-days: 1
@@ -355,7 +356,7 @@ jobs:
 
       - name: Fetch Build Outputs
         if: ${{ inputs.publish }}
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: ${{ env.IMAGE_NAME }}-*
           merge-multiple: true
