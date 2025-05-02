@@ -19,6 +19,11 @@ dnf -y --enablerepo docker-ce-stable install \
 	docker-buildx-plugin \
 	docker-compose-plugin
 
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
+  libvirt \
+  libvirt-nss \
+  ublue-os-libvirt-workarounds
+
 STABLE_KUBE_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)"
 STABLE_KUBE_VERSION_MAJOR="${STABLE_KUBE_VERSION%.*}"
 GITHUB_LIKE_ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
