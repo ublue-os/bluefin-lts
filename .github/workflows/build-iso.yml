@@ -13,9 +13,9 @@ on:
     branches:
       - main
     paths:
-      - './iso.toml'
-      - './.github/workflows/build-iso.yml'
-      - './Justfile'
+      - '.github/workflows/build-iso.yml'
+      - 'iso_files/*'
+      - 'Justfile'
 
 env:
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
@@ -33,8 +33,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [arm64, amd64]
-        flavor: ["", "hwe", "gdx"]
+        platform: [amd64,arm64]
+        flavor: ["", "gdx"]
     permissions:
       contents: read
       packages: read
@@ -58,62 +58,57 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Setup Just
-        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
-
-      - name: Patch ISO configuration to fit flavor
+      - name: Format image ref
+        id: image_ref
         env:
           FLAVOR: ${{ matrix.flavor }}
         run: |
-          set -x
-          if [ "${FLAVOR}" != "" ] ; then
-            IMAGE_NAME="${IMAGE_NAME}-${FLAVOR}"
-            export IMAGE_NAME
-            echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
-            sed -i "s/bluefin\:lts/bluefin-$FLAVOR\:lts/g" ./iso.toml
+          OUTPUT_NAME="${IMAGE_REGISTRY}/${IMAGE_NAME}"
+          if [ "$FLAVOR" != "" ] ; then
+            OUTPUT_NAME="${OUTPUT_NAME}-${FLAVOR}"
           fi
+          echo "image_ref=$OUTPUT_NAME" >> "${GITHUB_OUTPUT}"
+          
 
       - name: Build ISO
         id: build
-        uses: ublue-os/bootc-image-builder-action@main
+        uses: ublue-os/titanoboa@anaconda-webui-format
         with:
-          bootc-image-builder-image: ghcr.io/centos-workstation/bootc-image-builder:latest
-          use-librepo: true
-          config-file: ./iso.toml
-          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-
-      - name: Patch ISO with our branding
-        run: |
-          set -x
-          just patch-iso-branding 1 ${{ steps.build.outputs.output-path }}
+          image-ref: ${{ steps.image_ref.outputs.image_ref }}:lts
+          flatpaks-list: ${{ github.workspace }}/system_files/etc/ublue-os/system-flatpaks.list
+          hook-post-rootfs: ${{ github.workspace }}/iso_files/configure_iso.sh
 
       - name: Rename ISO
         id: rename
         env:
-          OUTPUT_PATH: ${{ steps.build.outputs.output-path }}
-          OUTPUT_DIRECTORY: ${{ steps.build.outputs.output-directory }}
-          CHECKSUM_PATH: ${{ steps.build.outputs.checksum-path }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          OUTPUT_PATH: ${{ steps.build.outputs.iso-dest }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}-live
           PLATFORM: ${{ matrix.platform }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
           FLAVOR: ${{ matrix.flavor }}
         run: |
           set -x
-          if [ $PLATFORM == "amd64" ]; then
-            mv "${OUTPUT_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}.iso"
-            mv "${CHECKSUM_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}.iso-CHECKSUM"
-          else
-            mv "${OUTPUT_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}-${PLATFORM}.iso"
-            mv "${CHECKSUM_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}-${PLATFORM}.iso-CHECKSUM"
+          mkdir -p output
+          OUTPUT_DIRECTORY="$(realpath output)"
+          if [ "${FLAVOR}" != "" ] ; then
+            IMAGE_NAME="${IMAGE_NAME}-${FLAVOR}"
           fi
+          if [ $PLATFORM == "amd64" ]; then
+            sha256sum "${OUTPUT_PATH}" | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}.iso-CHECKSUM"
+            mv "${OUTPUT_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}.iso"
+          else
+            sha256sum "${OUTPUT_PATH}" | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}-${PLATFORM}.iso-CHECKSUM"
+            mv "${OUTPUT_PATH}" "${OUTPUT_DIRECTORY}/${IMAGE_NAME}-${DEFAULT_TAG}-${PLATFORM}.iso"
+          fi
+          echo "output_directory=$OUTPUT_DIRECTORY" >> "${GITHUB_OUTPUT}"
 
       - name: Upload to Job Artifacts
         if: inputs.upload-to-cloudflare == false || github.event_name == 'pull_request'
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}-${{ matrix.platform }}-iso
           if-no-files-found: error
-          path: ${{ steps.build.outputs.output-directory }}
+          path: ${{ steps.rename.outputs.output_directory }}
 
       - name: Upload to CloudFlare
         if: inputs.upload-to-cloudflare == true && github.event_name != 'pull_request'
@@ -125,8 +120,8 @@ jobs:
           RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_R2_REGION: auto
           RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          SOURCE_DIR: ${{ steps.build.outputs.output-directory }}
+          SOURCE_DIR: ${{ steps.rename.outputs.output_directory }}
         run: |
           sudo apt-get update
           sudo apt-get install -y rclone
-          rclone copy $SOURCE_DIR R2:bluefin
+          rclone copy "${SOURCE_DIR}" R2:bluefin

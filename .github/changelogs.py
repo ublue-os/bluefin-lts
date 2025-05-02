@@ -11,7 +11,7 @@ REGISTRY = "docker://ghcr.io/ublue-os/"
 IMAGE_MATRIX = {
     "experience": ["base", "dx", "gdx"],
     "de": ["gnome"],
-    "image_flavor": ["main", "hwe"],
+    "image_flavor": ["main"],
 }
 
 RETRIES = 3
@@ -31,7 +31,6 @@ OTHER_NAMES = {
     "gdx": "### [Graphical Developer Experience Images](https://docs.projectbluefin.io/gdx)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
     "gnome": "### [Bluefin LTS Images](https://docs.projectbluefin.io/lts)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
     "nvidia": "### Nvidia Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "hwe": "### HWE Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
 }
 
 COMMITS_FORMAT = "### Commits\n| Hash | Subject |\n| --- | --- |{commits}\n\n"
@@ -105,8 +104,6 @@ def get_images(target: str):
             img += "-dx"
 
         if experience == "gdx":
-            if image_flavor == "hwe":
-                continue
             img += "-gdx"
 
         if image_flavor != "main":
@@ -212,8 +209,6 @@ def get_package_groups(target: str, prev: dict[str, Any], manifests: dict[str, A
             if img not in pkg:
                 continue
 
-            if t == "hwe" and "hwe" not in image_flavor:
-                continue
             if t == "nvidia" and "nvidia" not in image_flavor:
                 continue
             if t == "gnome" and de != "gnome":

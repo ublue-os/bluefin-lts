@@ -1,4 +1,5 @@
-io.github.dvlv.boxbuddyrs
+org.gtk.Gtk3theme.adw-gtk3
+org.gtk.Gtk3theme.adw-gtk3-dark
 com.github.rafostar.Clapper
 io.gitlab.adhami3310.Impression
 com.github.tchx84.Flatseal
@@ -27,10 +28,4 @@ io.missioncenter.MissionCenter
 org.mozilla.firefox
 org.mozilla.Thunderbird
 page.tesk.Refine
-runtime/org.gtk.Gtk3theme.adw-gtk3
-runtime/org.gtk.Gtk3theme.adw-gtk3-dark
-io.podman_desktop.PodmanDesktop
 io.github.pwr_solaar.solaar
-io.github.input_leap.input-leap
-org.virt_manager.virt-manager
-org.virt_manager.virt_manager.Extension.Qemu
