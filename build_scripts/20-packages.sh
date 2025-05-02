@@ -42,6 +42,7 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
+	-x bluefin-readymade-config \
 	ublue-os-just \
 	ublue-os-luks \
 	ublue-os-signing \
