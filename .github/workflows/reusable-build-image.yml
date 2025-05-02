@@ -127,20 +127,18 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
           set -x
+          just=$(which just)
+
           ENABLE_GDX=0
           ENABLE_DX=0
-          ENABLE_HWE=0
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
           fi
           if [[ "${FLAVOR}" =~ "dx" ]] ; then
             ENABLE_DX=1
           fi
-          if [[ "${FLAVOR}" =~ "hwe" ]] ; then
-            ENABLE_HWE=1
-          fi
 
-          just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_HWE}" "${ENABLE_GDX}"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}"
 
       - name: Setup Syft
         id: setup-syft
@@ -148,16 +146,17 @@ jobs:
         uses: anchore/sbom-action/download-syft@9f7302141466aa6482940f15371237e9d9f4c34a # v0
 
       - name: Generate SBOM
+        id: generate-sbom
         if: ${{ inputs.sbom && inputs.publish }}
         env:
           IMAGE: ${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
           SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
         run: |
-          systemctl start --user podman.socket
+          sudo systemctl start podman.socket
           OUTPUT_PATH="$(mktemp -d)/sbom.json"
           export SYFT_PARALLELISM=$(($(nproc)*2))
-          "$SYFT_CMD" "${IMAGE}:${DEFAULT_TAG}" -o "spdx-json=${OUTPUT_PATH}"
+          sudo "$SYFT_CMD" "${IMAGE}:${DEFAULT_TAG}" -o "spdx-json=${OUTPUT_PATH}"
           echo "OUTPUT_PATH=${OUTPUT_PATH}" >> "${GITHUB_OUTPUT}"
 
       - name: Run Rechunker
@@ -219,7 +218,7 @@ jobs:
           echo "remote_image_digest=${REMOTE_IMAGE_DIGEST}" >> $GITHUB_OUTPUT
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
         if: ${{ inputs.publish }}
 
       - name: Sign Image
@@ -449,7 +448,7 @@ jobs:
       - name: Login to GitHub Container Registry
         if: ${{ inputs.publish }}
         env:
-          registry: ghcr.io
+          REGISTRY: ghcr.io
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
