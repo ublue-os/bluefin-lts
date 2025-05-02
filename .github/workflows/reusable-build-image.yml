@@ -54,7 +54,7 @@ on:
         required: false
 
 env:
-  IMAGE_NAME: t-test-gh-actions-${{ inputs.image-name }}
+  IMAGE_NAME: ${{ inputs.image-name }}
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "lts"
@@ -194,7 +194,7 @@ jobs:
       - name: Login to GitHub Container Registry
         if: ${{ inputs.publish }}
         env:
-          registry: ghcr.io
+          REGISTRY: ghcr.io
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
@@ -412,7 +412,7 @@ jobs:
       - name: Login to GitHub Container Registry
         if: ${{ inputs.publish }}
         env:
-          registry: ghcr.io
+          REGISTRY: ghcr.io
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
