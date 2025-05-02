@@ -21,6 +21,7 @@ dnf -y --enablerepo docker-ce-stable install \
 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
   libvirt \
+  libvirt-daemon-kvm \
   libvirt-nss \
   ublue-os-libvirt-workarounds
 
