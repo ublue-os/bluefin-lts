@@ -9,6 +9,7 @@ set -x
 # GLOBAL
 KARGS=$(rpm-ostree kargs)
 NEEDED_KARGS=()
+echo "Current kargs: $KARGS"
 
 if [[ $KARGS =~ "nomodeset" ]]; then
 	echo "Removing nomodeset"
