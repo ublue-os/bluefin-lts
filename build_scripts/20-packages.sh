@@ -62,7 +62,7 @@ dnf -y copr disable ublue-os/staging
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	gnome-shell-extension-{search-light,logo-menu,gsconnect}
 
-dnf -y copr enable che/nerd-fonts
+dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
 dnf -y copr disable che/nerd-fonts
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 	nerd-fonts
