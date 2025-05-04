@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+source /usr/lib/ublue/setup-services/libsetup.sh
+
+version-script kargs-lts system 1 || exit 0
+
+set -x
 
 # GLOBAL
 KARGS=$(rpm-ostree kargs)
