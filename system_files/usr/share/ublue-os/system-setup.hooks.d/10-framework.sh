@@ -2,19 +2,13 @@
 
 source /usr/lib/ublue/setup-services/libsetup.sh
 
-version-script kargs-lts system 1 || exit 0
+version-script framework-lts system 1 || exit 0
 
 set -x
 
 # GLOBAL
 KARGS=$(rpm-ostree kargs)
 NEEDED_KARGS=()
-echo "Current kargs: $KARGS"
-mkdir -p /etc/ublue
-
-if [[ "$IMAGE_FLAVOR" =~ "nvidia" && ! "$KARGS" =~ "initcall_blacklist=simpledrm_platform_driver_init" ]]; then
-	NEEDED_KARGS+=("--append-if-missing=initcall_blacklist=simpledrm_platform_driver_init")
-fi
 
 if [[ $KARGS =~ "nomodeset" ]]; then
 	echo "Removing nomodeset"
