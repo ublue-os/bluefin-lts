@@ -22,6 +22,7 @@ dnf -y install \
 	gum \
 	jetbrains-mono-fonts-all \
 	buildah \
+	btrfs-progs \
         xhost
 
 # Everything that depends on external repositories should be after this.
