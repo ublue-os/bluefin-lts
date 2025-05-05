@@ -240,9 +240,25 @@ jobs:
           SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
         run: |
           cd "$(dirname "$SBOM_OUTPUT")"
+
+          # Compress the SBOM and create the predicate
+          TYPE="urn:ublue-os:attestation:spdx+json+zstd:v1"
+          zstd -19 "./sbom.json" -o "./sbom.json.zst"
+          BASE64_SBOM_FILE="payload.b64"
+          base64 "./sbom.json.zst" | tr -d '\n' > "${BASE64_SBOM_FILE}"
+          PREDICATE_FILE="payload.json"
+          jq -n \
+            --arg compression "zstd" \
+            --arg mediaType "application/spdx+json" \
+            --rawfile payload "${BASE64_SBOM_FILE}" \
+            '{compression: $compression, mediaType: $mediaType, payload: $payload}' \
+            > "$PREDICATE_FILE"
+          rm -f "${BASE64_SBOM_FILE}"
+
+          # Create the attestation
           cosign attest -y \
-            --predicate ./sbom.json \
-            --type spdxjson \
+            --predicate ${PREDICATE_FILE} \
+            --type $TYPE \
             --key env://COSIGN_PRIVATE_KEY \
             "${IMAGE}@${DIGEST}"
 
