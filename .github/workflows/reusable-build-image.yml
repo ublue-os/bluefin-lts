@@ -415,7 +415,6 @@ jobs:
           REGISTRY: ghcr.io
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
 
       - name: Push Manifest
         if: github.event_name != 'pull_request'
