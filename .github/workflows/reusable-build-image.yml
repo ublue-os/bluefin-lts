@@ -257,7 +257,7 @@ jobs:
 
           # Create the attestation
           cosign attest -y \
-            --predicate ${PREDICATE_FILE} \
+            --predicate "${PREDICATE_FILE}" \
             --type $TYPE \
             --key env://COSIGN_PRIVATE_KEY \
             "${IMAGE}@${DIGEST}"
