@@ -22,7 +22,8 @@ dnf -y install \
 	gum \
 	jetbrains-mono-fonts-all \
 	buildah \
-	xhost
+	btrfs-progs \
+  xhost
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.

@@ -20,3 +20,6 @@ jobs:
     with:
       image-name: bluefin-gdx
       flavor: gdx
+      rechunk: ${{ github.event_name != 'pull_request' }}
+      sbom: ${{ github.event_name != 'pull_request' }}
+      publish: ${{ github.event_name != 'pull_request' }}
