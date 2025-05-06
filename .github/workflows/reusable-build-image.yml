@@ -466,6 +466,7 @@ jobs:
           REGISTRY: ghcr.io
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
+          cat ${XDG_RUNTIME_DIR}/containers/auth.json > ~/.docker/config.json
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
