@@ -48,7 +48,7 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	ublue-os-signing \
 	ublue-os-udev-rules \
 	ublue-os-update-services \
-	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules} \
+	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew} \
 	uupd \
 	bluefin-*
 
@@ -67,3 +67,9 @@ dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)
 dnf -y copr disable che/nerd-fonts
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 	nerd-fonts
+
+# This is required so homebrew works indefinitely.
+# Symlinking it makes it so whenever another GCC version gets released it will break if the user has updated it without-
+# the homebrew package getting updated through our builds.
+# We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
+dnf -y --setopt=install_weak_deps=False install gcc
