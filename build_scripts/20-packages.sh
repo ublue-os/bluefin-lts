@@ -22,7 +22,8 @@ dnf -y install \
 	gum \
 	jetbrains-mono-fonts-all \
 	buildah \
-        xhost
+	btrfs-progs \
+  xhost
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
@@ -34,20 +35,20 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
-
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/packages/repo/epel-$MAJOR_VERSION_NUMBER/ublue-os-packages-epel-$MAJOR_VERSION_NUMBER.repo"
-dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
+dnf -y copr enable ublue-os/packages
+dnf -y copr disable ublue-os/packages
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 	centos-logos bluefin-logos
 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
+	-x bluefin-readymade-config \
 	ublue-os-just \
 	ublue-os-luks \
 	ublue-os-signing \
 	ublue-os-udev-rules \
 	ublue-os-update-services \
-	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules} \
+	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew} \
 	uupd \
 	bluefin-*
 
@@ -56,13 +57,19 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 cp -avf /usr/etc/. /etc
 rm -rvf /usr/etc
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/epel-${MAJOR_VERSION_NUMBER}/ublue-os-staging-epel-$MAJOR_VERSION_NUMBER.repo"
-dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging"
+dnf -y copr enable ublue-os/staging
+dnf -y copr disable ublue-os/staging
 # FIXME: gsconnect EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349097
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
 	gnome-shell-extension-{search-light,logo-menu,gsconnect}
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
-dnf config-manager --set-disabled copr:copr.fedorainfracloud.org:che:nerd-fonts
+dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
+dnf -y copr disable che/nerd-fonts
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 	nerd-fonts
+
+# This is required so homebrew works indefinitely.
+# Symlinking it makes it so whenever another GCC version gets released it will break if the user has updated it without-
+# the homebrew package getting updated through our builds.
+# We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
+dnf -y --setopt=install_weak_deps=False install gcc

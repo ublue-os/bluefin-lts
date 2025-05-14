@@ -19,3 +19,6 @@ jobs:
     secrets: inherit
     with:
       image-name: bluefin
+      rechunk: ${{ github.event_name != 'pull_request' }}
+      sbom: ${{ github.event_name != 'pull_request' }}
+      publish: ${{ github.event_name != 'pull_request' }}

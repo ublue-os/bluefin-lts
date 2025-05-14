@@ -15,11 +15,14 @@ dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y 
 dnf -y install 'dnf-command(versionlock)'
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
-dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+dnf -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${MAJOR_VERSION_NUMBER}.noarch.rpm"
 dnf config-manager --set-enabled crb
 
 # Multimidia codecs
-dnf -y install @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl
+dnf config-manager --add-repo=https://negativo17.org/repos/epel-multimedia.repo
+dnf config-manager --set-disabled epel-multimedia
+dnf -y install --enablerepo=epel-multimedia \
+	ffmpeg libavcodec @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl ffmpegthumbnailer
 
 # `dnf group info Workstation` without GNOME
 dnf group install -y --nobest \
@@ -77,8 +80,7 @@ dnf -y install \
 	plymouth-system-theme \
 	fwupd \
 	systemd-{resolved,container,oomd} \
-	libcamera{,-{v4l2,gstreamer,tools}} \
-	ffmpegthumbnailer
+	libcamera{,-{v4l2,gstreamer,tools}}
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
 dnf -y remove console-login-helper-messages

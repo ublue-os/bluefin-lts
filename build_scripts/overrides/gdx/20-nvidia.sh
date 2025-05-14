@@ -11,15 +11,16 @@ dnf config-manager --set-disabled "epel-nvidia"
 # These are necessary for building the nvidia drivers
 # Also make sure the kernel is locked before this is run whenever the kernel updates
 # kernel-devel might pull in an entire new kernel if you dont do
-dnf -y --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" install "kernel-devel-$QUALIFIED_KERNEL" "kernel-devel-matched-$QUALIFIED_KERNEL" "kernel-headers-$QUALIFIED_KERNEL"  dkms gcc-c++
+dnf versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
+dnf -y --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" install "kernel-devel-$QUALIFIED_KERNEL" "kernel-headers-$QUALIFIED_KERNEL"  dkms gcc-c++
+dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
+
 
 dnf install -y --enablerepo="epel-nvidia" \
   cuda nvidia-driver{,-cuda} dkms-nvidia
 
 sed -i -e 's/kernel$/kernel-open/g' /etc/nvidia/kernel.conf
 cat /etc/nvidia/kernel.conf
-
-
 
 # The nvidia-open driver tries to use the kernel from the host. (uname -r), just override it and let it do whatever otherwise
 # FIXME: remove this workaround please at some point
