@@ -8,7 +8,9 @@ dnf install -y \
 # VSCode on the base image!
 dnf config-manager --add-repo "https://packages.microsoft.com/yumrepos/vscode"
 dnf config-manager --set-disabled packages.microsoft.com_yumrepos_vscode
-dnf -y --enablerepo packages.microsoft.com_yumrepos_vscode --nogpgcheck  install code
+update-crypto-policies --set LEGACY
+dnf -y --enablerepo packages.microsoft.com_yumrepos_vscode install code
+update-crypto-policies --set DEFAULT
 
 dnf config-manager --add-repo "https://download.docker.com/linux/centos/docker-ce.repo"
 dnf config-manager --set-disabled docker-ce-stable
