@@ -5,12 +5,14 @@ on:
     branches:
       - main
       - alma
+      - alma-kitten
       - rhel
       - fedora
   push:
     branches:
       - main
       - alma
+      - alma-kitten
       - rhel
       - fedora
   schedule:
