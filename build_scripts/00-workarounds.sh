@@ -15,7 +15,7 @@ set -xeuo pipefail
 # cat /etc/yum.repos.d/compose.repo
 
 
-
+dnf setopt -y 
 
 mkdir -p /var/roothome
 chmod 0700 /var/roothome
