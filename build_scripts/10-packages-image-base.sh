@@ -49,7 +49,6 @@ dnf -y install \
 	-x PackageKit-command-not-found \
 	-x gnome-software-fedora-langpacks \
 	"NetworkManager-adsl" \
-	"almalinux-backgrounds" \
 	"gdm" \
 	"gnome-bluetooth" \
 	"gnome-color-manager" \
