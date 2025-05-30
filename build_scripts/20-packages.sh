@@ -29,8 +29,8 @@ dnf -y install \
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
 # We do, however, leave crb and EPEL enabled by default.
 
-dnf config-manager --add-repo "https://pkgs.tailscale.com/stable/fedora/${MAJOR_VERSION_NUMBER}/tailscale.repo"
-dnf config-manager --set-disabled "tailscale-stable"
+dnf config-manager addrepo "https://pkgs.tailscale.com/stable/fedora/${MAJOR_VERSION_NUMBER}/tailscale.repo"
+dnf config-manager setopt tailscale-stable.enabled=0
 # FIXME: tailscale EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349099
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
