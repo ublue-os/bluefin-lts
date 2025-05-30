@@ -8,11 +8,10 @@ set -xeuo pipefail
 # This thing slows down downloads A LOT for no reason
 # dnf remove -y subscription-manager
 
-dnf -y install centos-release-hyperscale-kernel
-dnf config-manager --set-disabled "centos-hyperscale,centos-hyperscale-kernel"
-dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y update kernel
+# dnf -y install centos-release-hyperscale-kernel
+# dnf config-manager --set-disabled "centos-hyperscale,centos-hyperscale-kernel"
+# dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y update kernel
 
-# The base images take super long to update, this just updates manually for now
 dnf -y install 'dnf-command(versionlock)'
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
@@ -22,10 +21,10 @@ dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-
 # dnf config-manager --set-enabled crb
 
 # Multimidia codecs
-dnf config-manager --add-repo=https://negativo17.org/repos/epel-multimedia.repo
-dnf config-manager --set-disabled epel-multimedia
-dnf -y install --enablerepo=epel-multimedia \
-	ffmpeg libavcodec @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl ffmpegthumbnailer
+# dnf config-manager --add-repo=https://negativo17.org/repos/epel-multimedia.repo
+# dnf config-manager --set-disabled epel-multimedia
+dnf -y install \
+	ffmpeg @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl ffmpegthumbnailer
 
 # # `dnf group info Workstation` without GNOME
 # dnf group install -y --nobest \
@@ -86,7 +85,7 @@ dnf -y install \
 	plymouth \
 	plymouth-system-theme \
 	fwupd \
-	systemd-{resolved,container,oomd} \
+	systemd-{resolved,container} \
 	libcamera{,-{v4l2,gstreamer,tools}}
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup

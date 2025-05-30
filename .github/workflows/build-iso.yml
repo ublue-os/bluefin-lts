@@ -9,27 +9,9 @@ on:
         required: false
         default: false
         type: boolean
-      image-name:
-        description: "Image name to build"
-        required: false
-        default: "bluefin"
-        type: choice
-        options:
-          - bluefin
-          - bluefin-gdx
-          - bluefin-dx
   pull_request:
     branches:
       - main
-      - F42
-      - a10
-      - 10-kitten
-  push:
-    branches:
-      - main
-      - F42
-      - a10
-      - 10-kitten
     paths:
       - '.github/workflows/build-iso.yml'
       - 'iso_files/*'
@@ -37,7 +19,7 @@ on:
 
 env:
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  IMAGE_NAME: ${{ github.event.inputs.image-name != '' && github.event.inputs.image-name || 'bluefin'}}
+  IMAGE_NAME: "bluefin"
   DEFAULT_TAG: ${{ github.ref_name == 'main' && 'lts' || github.ref_name }}
 
 
