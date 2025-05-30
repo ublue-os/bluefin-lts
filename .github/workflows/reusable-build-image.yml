@@ -349,8 +349,6 @@ jobs:
         id: metadata
         with:
           tags: |
-            type=raw,value=lts
-            type=raw,value=lts-{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.MAJOR_VERSION }}
             type=raw,value=${{ env.MAJOR_VERSION }}.{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.MAJOR_VERSION_NUMBER }}
