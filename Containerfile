@@ -1,4 +1,3 @@
-ARG MAJOR_VERSION="${MAJOR_VERSION:-10-kitten}"
 FROM scratch as context
 
 COPY system_files /files
@@ -12,7 +11,7 @@ ARG ENABLE_DX="${ENABLE_DX:-0}"
 ARG ENABLE_GDX="${ENABLE_GDX:-0}"
 ARG IMAGE_NAME="${IMAGE_NAME:-bluefin}"
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
-ARG MAJOR_VERSION="${MAJOR_VERSION:-lts}"
+ARG MAJOR_VERSION="${MAJOR_VERSION:-10-kitten}"
 ARG SHA_HEAD_SHORT="${SHA_HEAD_SHORT:-deadbeef}"
 
 RUN --mount=type=tmpfs,dst=/opt \

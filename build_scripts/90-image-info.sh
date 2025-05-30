@@ -12,7 +12,7 @@ cat >$IMAGE_INFO <<EOF
   "image-ref": "${IMAGE_REF}",
   "image-flavor": "${IMAGE_FLAVOR}",
   "image-vendor": "${IMAGE_VENDOR}",
-  "image-tag": "lts",
+  "image-tag": "10-kitten",
   "centos-version": "${MAJOR_VERSION_NUMBER}"
 }
 EOF
