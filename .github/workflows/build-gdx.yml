@@ -4,6 +4,15 @@ on:
   pull_request:
     branches:
       - main
+      - alma
+      - alma-kitten
+      - fedora
+  push:
+    branches:
+      - main
+      - alma
+      - alma-kitten
+      - fedora
   schedule:
     - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
   merge_group:
