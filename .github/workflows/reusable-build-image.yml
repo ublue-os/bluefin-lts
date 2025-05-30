@@ -349,11 +349,9 @@ jobs:
         id: metadata
         with:
           tags: |
-            type=raw,value=${{ github.ref_name }}
+            type=raw,value=${{ env.DEFAULT_TAG}}
             type=raw,value=${{ env.MAJOR_VERSION }}
             type=raw,value=${{ env.MAJOR_VERSION }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.MAJOR_VERSION_NUMBER }}
-            type=raw,value=${{ env.MAJOR_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
             type=ref,event=pr
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
