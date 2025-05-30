@@ -24,12 +24,10 @@ dnf config-manager --set-disabled epel-multimedia
 dnf -y install --enablerepo=epel-multimedia \
 	ffmpeg libavcodec @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl ffmpegthumbnailer
 
+dnf swap -y coreutils-single coreutils
+
 # `dnf group info Workstation` without GNOME
 dnf group install -y --nobest \
-	-x rsyslog* \
-	-x cockpit \
-	-x cronie* \
-	-x crontabs \
 	-x PackageKit \
 	-x PackageKit-command-not-found \
 	"Common NetworkManager submodules" \
