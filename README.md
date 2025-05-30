@@ -6,7 +6,7 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10098/badge)](https://www.bestpractices.dev/projects/10098)
 [![Bluefin LTS on ArtifactHub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/bluefin)](https://artifacthub.io/packages/container/bluefin/bluefin)
 
-Larger, more lethal [Bluefin](https://projectbluefin.io). `bluefin:lts` is built on CentOS Stream10.
+Larger, more lethal [Bluefin](https://projectbluefin.io). `bluefin:a10s` is built on CentOS Stream10.
 
 ![image](https://github.com/user-attachments/assets/2e160934-44e6-4aee-b2b8-accb3bcf0a41)
 
