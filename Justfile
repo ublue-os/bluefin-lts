@@ -1,7 +1,7 @@
 export repo_organization := env("GITHUB_REPOSITORY_OWNER", "ublue-os")
 export image_name := env("IMAGE_NAME", "bluefin")
-export centos_version := env("CENTOS_VERSION", "10-kitten")
-export default_tag := env("DEFAULT_TAG", "10-kitten")
+export centos_version := env("CENTOS_VERSION", "10")
+export default_tag := env("DEFAULT_TAG", "a10s")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
 
 alias build-vm := build-qcow2
