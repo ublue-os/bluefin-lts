@@ -4,15 +4,15 @@ on:
   pull_request:
     branches:
       - main
-      - alma
-      - alma-kitten
-      - fedora
+      - F42
+      - a10
+      - 10-kitten
   push:
     branches:
       - main
-      - alma
-      - alma-kitten
-      - fedora
+      - F42
+      - a10
+      - 10-kitten
   schedule:
     - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
   merge_group:
@@ -29,6 +29,7 @@ jobs:
     with:
       image-name: bluefin-gdx
       flavor: gdx
+      default-tag: ${{ github.ref_name == 'main' && 'lts' || github.ref_name }}
       rechunk: ${{ github.event_name != 'pull_request' }}
       sbom: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' }}

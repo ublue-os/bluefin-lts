@@ -27,6 +27,11 @@ on:
         required: false
         type: string
         default: "stream10"
+      default-tag:
+        description: "The default tag to use for the image"
+        required: false
+        type: string
+        default: "lts"
       rechunk:
         description: "Rechunk the build"
         required: false
@@ -57,7 +62,7 @@ env:
   IMAGE_NAME: ${{ inputs.image-name }}
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  DEFAULT_TAG: "lts"
+  DEFAULT_TAG: ${{ inputs.default-tag }}
   CENTOS_VERSION: ${{ inputs.centos-version }}
   PLATFORMS: ${{ inputs.platforms }}
 
