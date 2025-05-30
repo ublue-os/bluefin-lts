@@ -9,17 +9,37 @@ on:
         required: false
         default: false
         type: boolean
+      image-name:
+        description: "Image name to build"
+        required: false
+        default: "bluefin"
+        type: choice
+        options:
+          - bluefin
+          - bluefin-gdx
+          - bluefin-dx
   pull_request:
     branches:
       - main
+      - F42
+      - a10
+      - 10-kitten
+  push:
+    branches:
+      - main
+      - F42
+      - a10
+      - 10-kitten
     paths:
-      - './.github/workflows/build-iso.yml'
-      - './Justfile'
+      - '.github/workflows/build-iso.yml'
+      - 'iso_files/*'
+      - 'Justfile'
 
 env:
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  IMAGE_NAME: "bluefin"
-  DEFAULT_TAG: "42-bootc"
+  IMAGE_NAME: ${{ github.event.inputs.image-name != '' && github.event.inputs.image-name || 'bluefin'}}
+  DEFAULT_TAG: ${{ github.ref_name == 'main' && 'lts' || github.ref_name }}
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -33,7 +53,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [amd64,arm64]
-        flavor: ["", "hwe", "gdx"]
+        flavor: ["", "gdx"]
     permissions:
       contents: read
       packages: read
@@ -71,9 +91,9 @@ jobs:
 
       - name: Build ISO
         id: build
-        uses: ublue-os/titanoboa@main
+        uses: ublue-os/titanoboa@anaconda-webui-format
         with:
-          image-ref: ${{ steps.image_ref.outputs.image_ref }}:42-bootc
+          image-ref: ${{ steps.image_ref.outputs.image_ref }}:${{ env.DEFAULT_TAG }}
           flatpaks-list: ${{ github.workspace }}/system_files/etc/ublue-os/system-flatpaks.list
           hook-post-rootfs: ${{ github.workspace }}/iso_files/configure_iso.sh
 
@@ -107,7 +127,7 @@ jobs:
         with:
           name: ${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}-${{ matrix.platform }}-iso
           if-no-files-found: error
-          path: ${{ steps.build.outputs.iso-dest }}
+          path: ${{ steps.rename.outputs.output_directory }}
 
       - name: Upload to CloudFlare
         if: inputs.upload-to-cloudflare == true && github.event_name != 'pull_request'

@@ -11,7 +11,7 @@ on:
         description: "The description of the image to build"
         required: false
         type: string
-        default: "Bluefin LTS, built on Fedora with bootc"
+        default: "Bluefin LTS, built on CentOS Stream with bootc"
       flavor:
         description: "The flavor of the image to build"
         required: false
@@ -22,11 +22,37 @@ on:
         required: false
         type: string
         default: "amd64,arm64"
-      fedora-version:
-        description: "The version of Fedora to build the image on"
+      centos-version:
+        description: "The version of CentOS to build the image on"
         required: false
         type: string
-        default: "42"
+        default: "stream10"
+      default-tag:
+        description: "The default tag to use for the image"
+        required: false
+        type: string
+        default: "lts"
+      rechunk:
+        description: "Rechunk the build"
+        required: false
+        type: boolean
+        default: true
+      sbom:
+        description: "Generate/publish SBOMs for the artifacts"
+        required: false
+        type: boolean
+        default: true
+      cleanup_runner:
+        description: "Use the ublue cleanup action to clean up the runner before running the build"
+        required: false
+        type: boolean
+        default: true
+      publish:
+        description: "Publish this image"
+        required: false
+        type: boolean
+        # default: ${{ github.event_name != 'pull_request' }}
+        default: true
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -36,8 +62,8 @@ env:
   IMAGE_NAME: ${{ inputs.image-name }}
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  DEFAULT_TAG: "lts"
-  FEDORA_VERSION: ${{ inputs.centos-version }}
+  DEFAULT_TAG: ${{ inputs.default-tag }}
+  CENTOS_VERSION: ${{ inputs.centos-version }}
   PLATFORMS: ${{ inputs.platforms }}
 
 jobs:
@@ -48,16 +74,18 @@ jobs:
     steps:
       - name: Set matrix
         id: set-matrix
+        env:
+          PLATFORMS: "${{ inputs.platforms }}"
         run: |
           # turn the comma separated string into a list
           platforms=()
-          IFS=',' read -r -a platforms <<< "${{ inputs.platforms }}"
+          IFS=',' read -r -a platforms <<< "${PLATFORMS}"
 
           MATRIX="{\"include\":[]}"
           for platform in "${platforms[@]}"; do
-            MATRIX=$(echo $MATRIX | jq ".include += [{\"platform\": \"$platform\"}]")
+            MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\"}]")"
           done
-          echo "matrix=$(echo $MATRIX | jq -c '.')" >> $GITHUB_OUTPUT
+          echo "matrix=$(echo "${MATRIX}" | jq -c '.')" >> $GITHUB_OUTPUT
 
   build_push:
     name: Build and push image
@@ -84,7 +112,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Maximize build space
-        if: matrix.platform != 'arm64'
+        if: ${{ matrix.platform != 'arm64' && inputs.cleanup_runner }}
         uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
         with:
           remove-codeql: true
@@ -108,103 +136,100 @@ jobs:
 
           ENABLE_GDX=0
           ENABLE_DX=0
-          ENABLE_HWE=0
-          if [[ "$FLAVOR" =~ "gdx" ]] ; then
+          if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
           fi
-          if [[ "$FLAVOR" =~ "dx" ]] ; then
+          if [[ "${FLAVOR}" =~ "dx" ]] ; then
             ENABLE_DX=1
           fi
-          if [[ "$FLAVOR" =~ "hwe" ]] ; then
-            ENABLE_HWE=1
-          fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_HWE}" "${ENABLE_GDX}"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}"
 
       - name: Setup Syft
         id: setup-syft
-        if: false
-        uses: anchore/sbom-action/download-syft@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0
+        if: ${{ inputs.sbom && inputs.publish }}
+        uses: anchore/sbom-action/download-syft@e11c554f704a0b820cbf8c51673f6945e0731532 # v0
 
       - name: Generate SBOM
-        if: false
+        id: generate-sbom
+        if: ${{ inputs.sbom && inputs.publish }}
         env:
           IMAGE: ${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
           SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
         run: |
           sudo systemctl start podman.socket
-          
           OUTPUT_PATH="$(mktemp -d)/sbom.json"
           export SYFT_PARALLELISM=$(($(nproc)*2))
-          sudo $SYFT_CMD ${IMAGE}:${DEFAULT_TAG} -o spdx-json=${OUTPUT_PATH}
-          echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
+          sudo "$SYFT_CMD" "${IMAGE}:${DEFAULT_TAG}" -o "spdx-json=${OUTPUT_PATH}"
+          echo "OUTPUT_PATH=${OUTPUT_PATH}" >> "${GITHUB_OUTPUT}"
 
       - name: Run Rechunker
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.rechunk && inputs.publish }}
         id: rechunk
-        uses: hhd-dev/rechunk@c945e9ec8ad4466f888e41ab7f4d5ba2f74a8ee4 # v1.2.1
+        uses: hhd-dev/rechunk@ca77507401f8700bb0b25ebecbbf980a078cd180 # v1.2.2
         with:
-          rechunk: "ghcr.io/hhd-dev/rechunk:v1.2.1"
-          ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          rechunk: ghcr.io/hhd-dev/rechunk:v1.2.1
+          ref: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          prev-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           skip_compression: true
-          version: ${{ env.FEDORA_VERSION }}
+          version: ${{ env.CENTOS_VERSION }}
 
       - name: Load Image
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: load
+        env:
+          RECHUNK_RAN: ${{ inputs.rechunk }}
+          RECHUNK_REF: ${{ steps.rechunk.outputs.ref }}
+          RECHUNK_LOCATION: ${{ steps.rechunk.outputs.location }}
         run: |
-          IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
-          sudo rm -rf ${{ steps.rechunk.outputs.location }}
-          podman image tag $IMAGE ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          if [ "${RECHUNK_RAN}" == "true" ] ; then
+            IMAGE="$(podman pull "${RECHUNK_REF}")"
+            sudo rm -rf "${RECHUNK_LOCATION}"
+          else
+            IMAGE="localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
+          fi
+          podman image tag "${IMAGE}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
 
-          IMAGE=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          IMAGE_DIGEST=$(podman image inspect --format '{{.Digest}}' $IMAGE)
-          echo "image=$IMAGE" >> $GITHUB_OUTPUT
-          echo "digest=$IMAGE_DIGEST" >> $GITHUB_OUTPUT
+          IMAGE="${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
+          IMAGE_DIGEST="$(podman image inspect --format '{{.Digest}}' "${IMAGE}")"
+          echo "image=${IMAGE}" >> "${GITHUB_OUTPUT}"
+          echo "digest=${IMAGE_DIGEST}" >> "${GITHUB_OUTPUT}"
 
       - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         env:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ghcr.io
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | podman login -u ${{ github.actor }} --password-stdin $registry
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.actor }} --password-stdin $registry
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
 
-      # Push the image to GHCR (Image Registry)
       - name: Push to GHCR
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: push
         env:
           IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           IMAGE_DIGEST: ${{ steps.load.outputs.digest }}
           PLATFORM: ${{ matrix.platform }}
+          MAX_RETRIES: 3
         run: |
           set -x
-          podman tag ${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}:${DEFAULT_TAG} $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM
-          for i in {1..3}; do
-            podman push --digestfile=/tmp/digestfile $IMAGE_REGISTRY/$IMAGE_NAME:$DEFAULT_TAG-$PLATFORM && break || sleep $((5 * i));
+          podman tag "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}"
+          for i in $(seq "${MAX_RETRIES}"); do
+            podman push --digestfile=/tmp/digestfile "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
           done
           REMOTE_IMAGE_DIGEST=$(cat /tmp/digestfile)
-          echo "remote_image_digest=$REMOTE_IMAGE_DIGEST" >> $GITHUB_OUTPUT
-          cat /tmp/digestfile
+          echo "remote_image_digest=${REMOTE_IMAGE_DIGEST}" >> $GITHUB_OUTPUT
 
-      # This section is optional and only needs to be enabled in you plan on distributing
-      # your project to others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
       - name: Install Cosign
-        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
-        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
+        if: ${{ inputs.publish }}
 
       - name: Sign Image
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         run: |
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${IMAGE_NAME}"
+          IMAGE_FULL="${IMAGE_REGISTRY}/${IMAGE_NAME}"
           cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_FULL}@${{ steps.push.outputs.remote_image_digest }}
         env:
           TAGS: ${{ steps.push.outputs.digest }}
@@ -212,7 +237,7 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       - name: Add SBOM Attestation
-        if: false
+        if: ${{ inputs.sbom }}
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
@@ -220,24 +245,40 @@ jobs:
           SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
         run: |
           cd "$(dirname "$SBOM_OUTPUT")"
+
+          # Compress the SBOM and create the predicate
+          TYPE="urn:ublue-os:attestation:spdx+json+zstd:v1"
+          zstd -19 "./sbom.json" -o "./sbom.json.zst"
+          BASE64_SBOM_FILE="payload.b64"
+          base64 "./sbom.json.zst" | tr -d '\n' > "${BASE64_SBOM_FILE}"
+          PREDICATE_FILE="payload.json"
+          jq -n \
+            --arg compression "zstd" \
+            --arg mediaType "application/spdx+json" \
+            --rawfile payload "${BASE64_SBOM_FILE}" \
+            '{compression: $compression, mediaType: $mediaType, payload: $payload}' \
+            > "$PREDICATE_FILE"
+          rm -f "${BASE64_SBOM_FILE}"
+
+          # Create the attestation
           cosign attest -y \
-            --predicate ./sbom.json \
-            --type spdxjson \
+            --predicate "${PREDICATE_FILE}" \
+            --type $TYPE \
             --key env://COSIGN_PRIVATE_KEY \
             "${IMAGE}@${DIGEST}"
 
       - name: Create Job Outputs
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           PLATFORM: ${{ matrix.platform }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
         run: |
           mkdir -p /tmp/outputs/digests
-          echo "${DIGEST}" > /tmp/outputs/digests/${IMAGE_NAME}-${PLATFORM}.txt
+          echo "${DIGEST}" > "/tmp/outputs/digests/${IMAGE_NAME}-${PLATFORM}.txt"
 
       - name: Upload Output Artifacts
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
@@ -266,16 +307,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apk add \
-            jq \
-            git \
-            podman \
-            uutils \
-            bash \
-            conmon \
-            crun \
-            netavark \
-            fuse-overlayfs
+          apk add jq git podman uutils bash conmon crun netavark fuse-overlayfs
           ln -sf /bin/bash /bin/sh
           mkdir -p /etc/containers
           echo '{"default":[{"type":"insecureAcceptAnything"}]}' | jq . > /etc/containers/policy.json
@@ -287,7 +319,7 @@ jobs:
           echo "Job status:"
           echo $JOBS | jq -r 'to_entries[] | " - \(.key): \(.value.result)"'
 
-          for i in $(echo $JOBS | jq -r 'to_entries[] | .value.result'); do
+          for i in $(echo "${JOBS}" | jq -r 'to_entries[] | .value.result'); do
             if [ "$i" != "success" ] && [ "$i" != "skipped" ]; then
               echo ""
               echo "Status check not okay!"
@@ -306,9 +338,11 @@ jobs:
 
       - name: Extract numbers from input
         id: extract-numbers
+        env:
+          CENTOS_VERSION: ${{ env.CENTOS_VERSION }}
         run: |
-          numbers_only=$(echo "${{ env.FEDORA_VERSION }}" | tr -cd '0-9')
-          echo "FEDORA_VERSION_NUMBER=$numbers_only" >> $GITHUB_ENV
+          numbers_only=$(echo "${CENTOS_VERSION}" | tr -cd '0-9')
+          echo "CENTOS_VERSION_NUMBER=${numbers_only}" >> "${GITHUB_ENV}"
 
       - name: Image Metadata
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
@@ -317,10 +351,10 @@ jobs:
           tags: |
             type=raw,value=lts
             type=raw,value=lts-{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.FEDORA_VERSION }}
-            type=raw,value=${{ env.FEDORA_VERSION }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.FEDORA_VERSION_NUMBER }}
-            type=raw,value=${{ env.FEDORA_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION }}
+            type=raw,value=${{ env.CENTOS_VERSION }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
             type=ref,event=pr
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
@@ -331,7 +365,7 @@ jobs:
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
             org.opencontainers.image.url=https://projectbluefin.io
             org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.version=${{ env.FEDORA_VERSION }}
+            org.opencontainers.image.version=${{ env.CENTOS_VERSION }}
             io.artifacthub.package.deprecated=false
             io.artifacthub.package.keywords=bootc,centos,bluefin,ublue,universal-blue
             io.artifacthub.package.license=Apache-2.0
@@ -341,60 +375,67 @@ jobs:
             containers.bootc=1
 
       - name: Fetch Build Outputs
-        if: github.event_name != 'pull_request'
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
+        if: ${{ inputs.publish }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: ${{ env.IMAGE_NAME }}-*
           merge-multiple: true
           path: /tmp/artifacts
 
       - name: Load Outputs
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: load-outputs
         run: |
-          DIGESTS_JSON=$(jq -n '{}')
+          DIGESTS_JSON="$(jq -n '{}')"
           for digest_file in /tmp/artifacts/*.txt; do
             # Extract the platform from the file name
-            PLATFORM=$(basename $digest_file | rev | cut -d'-' -f1 | rev | cut -d'.' -f1)
-            DIGEST=$(cat $digest_file)
+            PLATFORM="$(basename "${digest_file}" | rev | cut -d'-' -f1 | rev | cut -d'.' -f1)"
+            DIGEST="$(cat "${digest_file}")"
             # Add the platform and digest to the JSON object
-            DIGESTS_JSON=$(echo "$DIGESTS_JSON" | jq --arg key "$PLATFORM" --arg value "$DIGEST" '. + {($key): $value}')
+            DIGESTS_JSON="$(echo "${DIGESTS_JSON}" | jq --arg key "${PLATFORM}" --arg value "${DIGEST}" '. + {($key): $value}')"
           done
-          echo "DIGESTS_JSON=$(echo $DIGESTS_JSON | jq -c '.')" >> $GITHUB_OUTPUT
+          echo "DIGESTS_JSON=$(echo "$DIGESTS_JSON" | jq -c '.')" >> "${GITHUB_OUTPUT}"
 
       - name: Create Manifest
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: create-manifest
+        env:
+          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
-          podman manifest create ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          echo "MANIFEST=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+          podman manifest create ${IMAGE_REGISTRY}/${IMAGE_NAME}
+          echo "MANIFEST=${IMAGE_REGISTRY}/${IMAGE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Populate Manifest
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         env:
           MANIFEST: ${{ steps.create-manifest.outputs.MANIFEST }}
           DIGESTS_JSON: ${{ steps.load-outputs.outputs.DIGESTS_JSON }}
           LABELS: ${{ steps.metadata.outputs.labels }}
+          PLATFORMS: "${{ inputs.platforms }}"
         run: |
           DIGESTS=$(echo "$DIGESTS_JSON" | jq -c '.')
           # turn the comma separated string into a list
           platforms=()
-          IFS=',' read -r -a platforms <<< "${{ inputs.platforms }}"
+          IFS=',' read -r -a platforms <<< "${PLATFORMS}"
           for platform in ${platforms[@]}; do
-            digest=$(echo $DIGESTS | jq -r ".$platform")
-            echo "Adding ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$digest for $platform"
-            podman manifest add $MANIFEST ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$digest --arch $platform
+            digest="$(echo $DIGESTS | jq -r ".$platform")"
+            echo "Adding ${IMAGE_REGISTRY}/${IMAGE_NAME}@${digest} for ${platform}"
+            podman manifest add "${MANIFEST}" "${IMAGE_REGISTRY}/${IMAGE_NAME}@${digest}" --arch "${platform}"
           done
 
           # Apply the labels to the manifest (separated by newlines)
           while IFS= read -r label; do
-            echo "Applying label $label to manifest"
-            podman manifest annotate --index --annotation "$label" $MANIFEST
-          done <<< "$LABELS"
+            echo "Applying label ${label} to manifest"
+            podman manifest annotate --index --annotation "$label" "${MANIFEST}"
+          done <<< "${LABELS}"
 
-      - name: Login to GHCR
-        if: github.event_name != 'pull_request'
-        run: echo ${{ secrets.GITHUB_TOKEN }} | podman login -u ${{ github.actor }} --password-stdin ghcr.io
+      - name: Login to GitHub Container Registry
+        if: ${{ inputs.publish }}
+        env:
+          REGISTRY: ghcr.io
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
 
       - name: Push Manifest
         if: github.event_name != 'pull_request'
@@ -424,19 +465,22 @@ jobs:
       packages: write
       id-token: write
     steps:
-      - name: Login to GHCR
+      - name: Login to GitHub Container Registry
+        if: ${{ inputs.publish }}
+        env:
+          REGISTRY: ghcr.io
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login -u ${{ github.actor }} --password-stdin ghcr.io
-          echo ${{ secrets.GITHUB_TOKEN }} | podman login -u ${{ github.actor }} --password-stdin ghcr.io
+          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
+          cat ${XDG_RUNTIME_DIR}/containers/auth.json > ~/.docker/config.json
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
 
       - name: Sign Manifest
-        run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE@$DIGEST
         env:
           DIGEST: ${{ needs.manifest.outputs.digest }}
           IMAGE: ${{ needs.manifest.outputs.image }}
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+        run: |
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
