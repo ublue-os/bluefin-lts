@@ -6,13 +6,13 @@ on:
       - main
       - F42
       - a10
-      - 10-kitten
+      - a10s
   push:
     branches:
       - main
       - F42
       - a10
-      - 10-kitten
+      - a10s
   schedule:
     - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
   merge_group:

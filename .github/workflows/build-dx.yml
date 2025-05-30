@@ -1,18 +1,7 @@
 name: Build Bluefin LTS DX
 
 on:
-  pull_request:
-    branches:
-      - main
-      - F42
-      - a10
-      - 10-kitten
-  push:
-    branches:
-      - main
-      - F42
-      - a10
-      - 10-kitten
+
   schedule:
     - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
   merge_group:
