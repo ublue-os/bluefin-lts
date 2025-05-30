@@ -40,12 +40,10 @@ dnf -y copr disable ublue-os/packages
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 	almalinux-logos bluefin-logos
 
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
-	plymouth-theme-spinner bluefin-plymouth
-
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
 	-x bluefin-readymade-config \
+	-x bluefin-plymouth \
 	ublue-os-just \
 	ublue-os-luks \
 	ublue-os-signing \
