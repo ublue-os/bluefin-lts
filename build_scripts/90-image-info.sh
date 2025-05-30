@@ -19,6 +19,7 @@ EOF
 
 OLD_PRETTY_NAME="$(sh -c '. /usr/lib/os-release ; echo $NAME $VERSION')"
 IMAGE_PRETTY_NAME="Bluefin LTS"
+IMAGE_LIKE="fedora"
 HOME_URL="https://projectbluefin.io"
 DOCUMENTATION_URL="https://docs.projectbluefin.io"
 SUPPORT_URL="https://github.com/ublue-os/bluefin-lts/issues/"
@@ -29,7 +30,8 @@ CODE_NAME="Achillobator"
 sed -i -f - /usr/lib/os-release <<EOF
 s/^NAME=.*/NAME=\"${IMAGE_PRETTY_NAME}\"/
 s|^VERSION_CODENAME=.*|VERSION_CODENAME=\"${CODE_NAME}\"|
-s/^ID=fedora/ID=${IMAGE_PRETTY_NAME,}\nID_LIKE=\"${IMAGE_LIKE}\"/
+s/^ID=fedora/ID=${IMAGE_PRETTY_NAME,}\
+ID_LIKE=\"${IMAGE_LIKE}\"/
 s/^VARIANT_ID=.*/VARIANT_ID=${IMAGE_NAME}/
 s/^PRETTY_NAME=.*/PRETTY_NAME=\"${IMAGE_PRETTY_NAME}\"/
 s|^HOME_URL=.*|HOME_URL=\"${HOME_URL}\"|
