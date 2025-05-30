@@ -20,7 +20,11 @@
     {
       "automerge": true,
       "matchUpdateTypes": ["digest"],
-      "matchDepNames": ["quay.io/centos-bootc/centos-bootc"],
+      "matchDepNames": [
+        "quay.io/centos-bootc/centos-bootc",
+        "ghcr.io/hanthor/almalinux-bootc",
+        "quay.io/fedora/fedora-bootc",
+      ],
     }
   ]
 }
