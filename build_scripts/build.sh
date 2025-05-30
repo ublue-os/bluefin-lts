@@ -10,7 +10,7 @@ set -eo pipefail
 
 CONTEXT_PATH="$(realpath "$(dirname "$0")/..")" # should return /run/context
 BUILD_SCRIPTS_PATH="$(realpath "$(dirname "$0")")"
-MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo $VERSION_ID')"
+MAJOR_VERSION_NUMBER="$(sh -c '. /usr/lib/os-release ; echo ${VERSION_ID%.*}')"
 SCRIPTS_PATH="$(realpath "$(dirname "$0")/scripts")"
 export SCRIPTS_PATH
 export MAJOR_VERSION_NUMBER
@@ -61,13 +61,6 @@ if [ "$ENABLE_GDX" == "1" ]; then
 	run_buildscripts_for gdx
 	copy_systemfiles_for "$(arch)-gdx"
 	run_buildscripts_for "$(arch)/gdx"
-fi
-
-if [ "$ENABLE_HWE" == "1" ]; then
-	copy_systemfiles_for hwe
-	run_buildscripts_for hwe
-	copy_systemfiles_for "$(arch)-hwe"
-	run_buildscripts_for "$(arch)/hwe"
 fi
 
 printf "::group:: ===Image Cleanup===\n"
