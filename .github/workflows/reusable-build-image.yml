@@ -349,6 +349,7 @@ jobs:
         id: metadata
         with:
           tags: |
+            type=raw,value=${{ github.ref_name }}
             type=raw,value=${{ env.MAJOR_VERSION }}
             type=raw,value=${{ env.MAJOR_VERSION }}.{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.MAJOR_VERSION_NUMBER }}
