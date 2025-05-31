@@ -26,6 +26,8 @@ dnf -y install --enablerepo=epel-multimedia \
 
 dnf swap -y coreutils-single coreutils
 
+dnf -y copr enable @centoshyperscale/c10s-gnome-48 
+
 # `dnf group info Workstation` without GNOME
 dnf group install -y --nobest \
 	-x PackageKit \
