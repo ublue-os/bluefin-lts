@@ -13,7 +13,7 @@ dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y 
 
 if [ "${ENABLE_TESTING}" == "1" ] ; then
 	# GNOME 48 backport COPR
-	dnf copr enable -y '@centoshyperscale/c${MAJOR_VERSION_NUMBER}s-gnome-48'
+	dnf copr enable -y "@centoshyperscale/c${MAJOR_VERSION_NUMBER}s-gnome-48"
 fi
 
 # The base images take super long to update, this just updates manually for now
