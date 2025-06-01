@@ -14,6 +14,7 @@ dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y 
 if [ "${ENABLE_TESTING}" == "1" ] ; then
 	# GNOME 48 backport COPR
 	dnf copr enable -y "@centoshyperscale/c${MAJOR_VERSION_NUMBER}s-gnome-48"
+        dnf -y install https://kojipkgs.fedoraproject.org//packages/xdg-desktop-portal/1.20.3/1.fc42/x86_64/xdg-desktop-portal-1.20.3-1.fc42.x86_64.rpm
 fi
 
 dnf -y install 'dnf-command(versionlock)'
