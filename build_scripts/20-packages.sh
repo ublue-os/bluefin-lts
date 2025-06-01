@@ -5,7 +5,8 @@ set -xeuo pipefail
 dnf -y remove \
 	setroubleshoot
 
-dnf -y install -x \
+dnf -y install \
+        -x gnome-extensions-app \
         buildah \
 	btrfs-progs \
 	distrobox \
@@ -14,7 +15,6 @@ dnf -y install -x \
         fzf \
 	glow \
         gnome-disk-utility \
-        gnome-extensions-app \
 	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell,caffeine} \
         gum \
         jetbrains-mono-fonts-all \
