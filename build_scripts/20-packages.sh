@@ -5,25 +5,26 @@ set -xeuo pipefail
 dnf -y remove \
 	setroubleshoot
 
-dnf -y install \
-	-x gnome-extensions-app \
-	system-reinstall-bootc \
-	gnome-disk-utility \
+dnf -y install -x \
+        buildah \
+	btrfs-progs \
 	distrobox \
 	fastfetch \
 	fpaste \
-	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell,caffeine} \
-	just \
-	powertop \
-	tuned-ppd \
-	fzf \
+        fzf \
 	glow \
-	wl-clipboard \
-	gum \
-	jetbrains-mono-fonts-all \
-	buildah \
-	btrfs-progs \
-  xhost
+        gnome-disk-utility \
+        gnome-extensions-app \
+	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell,caffeine} \
+        gum \
+        jetbrains-mono-fonts-all \
+        just \
+        nss-mdns \ 
+        powertop \
+        system-reinstall-bootc \	
+        tuned-ppd \
+        wl-clipboard \
+        xhost
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
