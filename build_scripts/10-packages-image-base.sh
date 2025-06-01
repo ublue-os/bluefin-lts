@@ -11,6 +11,11 @@ dnf -y install centos-release-hyperscale-kernel
 dnf config-manager --set-disabled "centos-hyperscale,centos-hyperscale-kernel"
 dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y update kernel
 
+if [ "${ENABLE_TESTING}" == "1" ] ; then
+	# GNOME 48 backport COPR
+	dnf copr enable -y 'centoshyperscale/c10s-gnome-48'
+fi
+
 # The base images take super long to update, this just updates manually for now
 dnf -y install 'dnf-command(versionlock)'
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt

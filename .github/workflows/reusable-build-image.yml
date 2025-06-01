@@ -42,6 +42,11 @@ on:
         required: false
         type: boolean
         default: true
+      testing:
+        description: "Enable experimental things during builds, such as gnome backport. Will build an extra `-testing` tag."
+        required: false
+        type: boolean
+        default: true
       publish:
         description: "Publish this image"
         required: false
@@ -78,7 +83,12 @@ jobs:
 
           MATRIX="{\"include\":[]}"
           for platform in "${platforms[@]}"; do
-            MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\"}]")"
+            if [[ "${ENABLE_TESTING}" == "true" ]] ; then
+              MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\", \"testing\": "true"}]")"
+              MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\", \"testing\": "false"}]")"
+            else
+              MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\"}]")"
+            fi
           done
           echo "matrix=$(echo "${MATRIX}" | jq -c '.')" >> $GITHUB_OUTPUT
 
@@ -124,13 +134,18 @@ jobs:
         shell: bash
         env:
           FLAVOR: ${{ inputs.flavor }}
+          TESTING_ENABLED: ${{ matrix.testing }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
           set -x
           just=$(which just)
 
+          ENABLE_TESTING=0
           ENABLE_GDX=0
           ENABLE_DX=0
+          if [[ "${TESTING}" == true ]] ; then
+            ENABLE_TESTING=1
+          fi
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
           fi
@@ -138,7 +153,7 @@ jobs:
             ENABLE_DX=1
           fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_TESTING}"
 
       - name: Setup Syft
         id: setup-syft
