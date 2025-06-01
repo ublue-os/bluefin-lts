@@ -76,6 +76,7 @@ jobs:
         id: set-matrix
         env:
           PLATFORMS: "${{ inputs.platforms }}"
+          ENABLE_TESTING: "${{ inputs.testing }}"
         run: |
           # turn the comma separated string into a list
           platforms=()
