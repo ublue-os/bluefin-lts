@@ -105,6 +105,8 @@ jobs:
       contents: read
       packages: write
       id-token: write
+    outputs:
+      image_tag: ${{ steps.build-image.outputs.image_tag }}
 
     steps:
       - name: Install dependencies
@@ -156,6 +158,7 @@ jobs:
           fi
 
           sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_TESTING}"
+          echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Setup Syft
         id: setup-syft
@@ -362,8 +365,8 @@ jobs:
         id: metadata
         with:
           tags: |
-            type=raw,value=${{ env.DEFAULT_TAG }}
-            type=raw,value=${{ env.DEFAULT_TAG }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ needs.build_push.outputs.image_tag }}
+            type=raw,value=${{ needs.build_push.outputs.image_tag }}-{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.CENTOS_VERSION }}
             type=raw,value=${{ env.CENTOS_VERSION }}.{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}
@@ -468,7 +471,7 @@ jobs:
           echo "IMAGE=$IMAGE_REGISTRY/$IMAGE_NAME" >> $GITHUB_OUTPUT
 
   # Cosign throws errors when ran inside the Fedora container for one reason or another
-  # so we move this to another step in order to run on Ubuntu
+  # so we move this to another step in order to run on Ubuntu
   sign:
     needs: manifest
     if: github.event_name != 'pull_request'
