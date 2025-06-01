@@ -14,6 +14,7 @@ dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y 
 if [ "${ENABLE_TESTING}" == "1" ] ; then
 	# GNOME 48 backport COPR
 	dnf copr enable -y "@centoshyperscale/c${MAJOR_VERSION_NUMBER}s-gnome-48"
+        dnf -y install glib2
 fi
 
 dnf -y install 'dnf-command(versionlock)'
