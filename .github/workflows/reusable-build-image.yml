@@ -145,6 +145,7 @@ jobs:
           ENABLE_DX=0
           if [[ "${TESTING}" == "true" ]] ; then
             export DEFAULT_TAG="${DEFAULT_TAG}-testing"
+            echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
             ENABLE_TESTING=1
           fi
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
