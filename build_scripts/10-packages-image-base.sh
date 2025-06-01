@@ -26,7 +26,7 @@ dnf -y install --enablerepo=epel-multimedia \
 
 dnf swap -y coreutils-single coreutils
 
-dnf -y copr enable @centoshyperscale/c10s-gnome-48 
+dnf -y copr enable @centoshyperscale/c10s-gnome-48
 
 # `dnf group info Workstation` without GNOME
 dnf group install -y --nobest \
@@ -49,6 +49,7 @@ dnf -y install \
 	-x PackageKit-command-not-found \
 	-x gnome-software-fedora-langpacks \
 	"NetworkManager-adsl" \
+ 	"glib2" \
 	"gdm" \
 	"gnome-bluetooth" \
 	"gnome-color-manager" \
