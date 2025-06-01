@@ -46,7 +46,7 @@ on:
         description: "Enable experimental things during builds, such as gnome backport. Will build an extra `-testing` tag."
         required: false
         type: boolean
-        default: true
+        default: false
       publish:
         description: "Publish this image"
         required: false
@@ -84,12 +84,7 @@ jobs:
 
           MATRIX="{\"include\":[]}"
           for platform in "${platforms[@]}"; do
-            if [[ "${ENABLE_TESTING}" == "true" ]] ; then
-              MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\", \"testing\": "true"}]")"
-              MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\", \"testing\": "false"}]")"
-            else
-              MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\"}]")"
-            fi
+            MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\"}]")"
           done
           echo "matrix=$(echo "${MATRIX}" | jq -c '.')" >> $GITHUB_OUTPUT
 
@@ -137,7 +132,7 @@ jobs:
         shell: bash
         env:
           FLAVOR: ${{ inputs.flavor }}
-          TESTING: ${{ matrix.testing }}
+          TESTING: ${{ inputs.testing }}
         run: |
           set -x
           just=$(which just)
@@ -287,7 +282,7 @@ jobs:
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           PLATFORM: ${{ matrix.platform }}
-          TESTING: ${{ matrix.testing }}
+          TESTING: ${{ inputs.testing }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
         run: |
           mkdir -p /tmp/outputs/digests
@@ -372,6 +367,8 @@ jobs:
             type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}
             type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
             type=ref,event=pr
+          flavor: |
+            ${{ inputs.testing && 'suffix=-testing' || '' }}
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
