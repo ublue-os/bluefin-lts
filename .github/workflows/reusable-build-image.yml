@@ -284,10 +284,11 @@ jobs:
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           PLATFORM: ${{ matrix.platform }}
+          TESTING: ${{ matrix.testing }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
         run: |
           mkdir -p /tmp/outputs/digests
-          echo "${DIGEST}" > "/tmp/outputs/digests/${IMAGE_NAME}-${PLATFORM}.txt"
+          echo "${DIGEST}" > "/tmp/outputs/digests/${IMAGE_NAME}-${TESTING}-${PLATFORM}.txt"
 
       - name: Upload Output Artifacts
         if: ${{ inputs.publish }}
