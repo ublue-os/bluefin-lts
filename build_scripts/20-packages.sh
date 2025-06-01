@@ -13,6 +13,7 @@ dnf -y install \
 	fastfetch \
 	fpaste \
         fzf \
+		glib2 \ 
 	glow \
         gnome-disk-utility \
 	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell,caffeine} \
