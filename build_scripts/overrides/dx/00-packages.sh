@@ -27,6 +27,7 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
   libvirt-daemon-kvm \
   libvirt-nss \
   virt-install \
+  qemu-kvm \
   ublue-os-libvirt-workarounds
 
 STABLE_KUBE_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)"

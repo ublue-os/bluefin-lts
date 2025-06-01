@@ -1,7 +1,7 @@
 export repo_organization := env("GITHUB_REPOSITORY_OWNER", "ublue-os")
 export image_name := env("IMAGE_NAME", "bluefin")
-export fedora_version := env("FEDORA_VERSION", "42")
-export default_tag := env("DEFAULT_TAG", "lts")
+export centos_version := env("CENTOS_VERSION", "42")
+export default_tag := env("DEFAULT_TAG", "F42")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
 
 alias build-vm := build-qcow2
@@ -90,20 +90,32 @@ sudoif command *args:
 # just build $target_image $tag $dx $gdx
 #
 # Example usage:
-#   just build bluefin lts 1 0 1
+#   just build bluefin lts 1 0
 #
 # This will build an image 'bluefin:lts' with DX and GDX enabled.
 #
 
 # Build the image using the specified parameters
+rechunk $target_image=image_name $tag=default_tag:
+    #!/usr/bin/env bash
+    just sudoif podman pull ${target_image}:${tag} || true
+    just sudoif podman tag ${target_image}:${tag} unchunked${target_image}:${tag} || true
+    just sudoif podman run \
+    --rm --privileged \
+    -v /var/lib/containers:/var/lib/containers \
+    quay.io/centos-bootc/centos-bootc:stream10 \
+    /usr/libexec/bootc-base-imagectl rechunk \
+    unchunked${target_image}:${tag} ${target_image}:${tag}
+    just sudoif podman rmi unchunked${target_image}:${tag} || true
+
 build $target_image=image_name $tag=default_tag $dx="0" $gdx="0":
     #!/usr/bin/env bash
 
     # Get Version
-    ver="${tag}-${fedora_version}.$(date +%Y%m%d)"
+    ver="${tag}-${centos_version}.$(date +%Y%m%d)"
 
     BUILD_ARGS=()
-    BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${fedora_version}")
+    BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${centos_version}")
     BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
     BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR=${repo_organization}")
     BUILD_ARGS+=("--build-arg" "ENABLE_DX=${dx}")
@@ -188,7 +200,8 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
     fi
 
     args="--type ${type} "
-    args+="--use-librepo=True"
+    args+="--use-librepo=True "
+    args+="--rootfs=ext4 "
 
     if [[ $target_image == localhost/* ]]; then
       args+=" --local"
@@ -274,13 +287,13 @@ _run-vm $target_image $tag $type $config:
     run_args+=(--pull=newer)
     run_args+=(--publish "127.0.0.1:${port}:8006")
     run_args+=(--env "CPU_CORES=4")
-    run_args+=(--env "RAM_SIZE=8G")
+    run_args+=(--env "RAM_SIZE=3G")
     run_args+=(--env "DISK_SIZE=64G")
     run_args+=(--env "TPM=Y")
     run_args+=(--env "GPU=Y")
     run_args+=(--device=/dev/kvm)
     run_args+=(--volume "${PWD}/${image_file}":"/boot.${type}")
-    run_args+=(docker.io/qemux/qemu-docker)
+    run_args+=(docker.io/qemux/qemu)
 
     # Run the VM and open the browser to connect
     podman run "${run_args[@]}" &
@@ -363,7 +376,7 @@ patch-iso-branding override="0" iso_path="output/bootiso/install.iso":
         --privileged \
         -v ./output:/output \
         -v ./iso_files:/iso_files \
-        quay.io/fedora/fedora:42 \
+        quay.io/centos/centos:stream10 \
         bash -c 'dnf install -y lorax && \
     	mkdir /images && cd /iso_files/product && find . | cpio -c -o | gzip -9cv > /images/product.img && cd / \
             && mkksiso --add images --volid bluefin-boot /{{ iso_path }} /output/final.iso'
@@ -379,3 +392,44 @@ lint:
 # Runs shfmt on all Bash scripts
 format:
     /usr/bin/find . -iname "*.sh" -type f -exec shfmt --write "{}" ';'
+
+run-bootc-libvirt $target_image=("localhost/" + image_name) $tag=default_tag $image_name=image_name: (_rootful_load_image target_image tag)
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    mkdir -p "output/"
+
+    # clean up previous builds
+    echo "Cleaning up previous build"
+    just sudoif rm -rf "output/${image_name}_${tag}.raw" || true
+    mkdir -p "output/"
+
+     # build the disk image
+    truncate -s 20G output/${image_name}_${tag}.raw
+    # just sudoif podman run \
+    # --rm --privileged \
+    # -v /var/lib/containers:/var/lib/containers \
+    # quay.io/centos-bootc/centos-bootc:stream10 \
+    # /usr/libexec/bootc-base-imagectl rechunk \
+    # ${target_image}:${tag} ${target_image}:re${tag}
+    just sudoif podman run \
+    --pid=host --network=host --privileged \
+    --security-opt label=type:unconfined_t \
+    -v $(pwd)/output:/output:Z \
+    ${target_image}:${tag} bootc install to-disk --via-loopback --generic-image /output/${image_name}_${tag}.raw
+    QEMU_DISK_QCOW2=$(pwd)/output/${image_name}_${tag}.raw
+    # Run the VM using QEMU
+    echo "Running VM with QEMU using disk: ${QEMU_DISK_QCOW2}"
+    # Ensure the disk file exists
+    if [[ ! -f "${QEMU_DISK_QCOW2}" ]]; then
+        echo "Disk file ${QEMU_DISK_QCOW2} does not exist. Please build the image first."
+        exit 1
+    fi
+    sudo virt-install --os-variant almalinux9 --boot hd \
+        --name "${image_name}-${tag}" \
+        --memory 2048 \
+        --vcpus 2 \
+        --disk path="${QEMU_DISK_QCOW2}",format=raw,bus=scsi,discard=unmap \
+        --network bridge=virbr0,model=virtio \
+        --console pty,target_type=virtio \
+        --noautoconsole
