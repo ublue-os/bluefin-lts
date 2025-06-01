@@ -146,6 +146,7 @@ jobs:
           ENABLE_DX=0
           if [[ "${TESTING}" == true ]] ; then
             ENABLE_TESTING=1
+            export DEFAULT_TAG="${DEFAULT_TAG}-testing"
           fi
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
