@@ -15,7 +15,6 @@ on:
     paths:
       - '.github/workflows/build-iso.yml'
       - 'iso_files/*'
-      - 'Justfile'
 
 env:
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
