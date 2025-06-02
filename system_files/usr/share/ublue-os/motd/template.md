@@ -9,7 +9,7 @@
 | `ujust bluefin-cli` | Enable terminal bling | 
 | `brew help` | Manage command line packages | 
 
-NOTE: Use `ujust install-system-flatpaks` to finish the installation
+%TIP%
 
 - **󰊤** [Issues](https://issues.projectbluefin.io)
 - **󰈙** [Documentation](http://docs.projectbluefin.io/)
