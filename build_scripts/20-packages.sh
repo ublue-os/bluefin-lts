@@ -81,6 +81,7 @@ if [ "${ENABLE_TESTING}" == "1" ] ; then
 	dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/fedora-${FEDORA_MAJOR_SPOOF}/ublue-os-staging-fedora-${FEDORA_MAJOR_SPOOF}.repo"
 	REPO_FILE="/etc/yum.repos.d/ublue-os-staging-fedora-${FEDORA_MAJOR_SPOOF}.repo"
 	sed -i "s/\:staging/&:fedora/" $REPO_FILE
+	sed -i "s/\$releasever/$FEDORA_MAJOR_SPOOF/" $REPO_FILE
 	dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging:fedora"
 	dnf -y \
 		--enablerepo "copr:copr.fedorainfracloud.org:ublue-os:staging" \
