@@ -1,4 +1,4 @@
-name: Build Bluefin LTS
+name: Build Bluefin LTS Testing
 
 on:
   pull_request:
@@ -22,3 +22,4 @@ jobs:
       rechunk: ${{ github.event_name != 'pull_request' }}
       sbom: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' }}
+      testing: true

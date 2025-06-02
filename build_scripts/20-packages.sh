@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 
 set -xeuo pipefail
 
@@ -12,7 +12,7 @@ dnf -y install \
 	distrobox \
 	fastfetch \
 	fpaste \
-	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell,caffeine} \
+	gnome-shell-extension-{dash-to-dock,caffeine} \
 	just \
 	powertop \
 	tuned-ppd \
@@ -59,9 +59,8 @@ rm -rvf /usr/etc
 
 dnf -y copr enable ublue-os/staging
 dnf -y copr disable ublue-os/staging
-# FIXME: gsconnect EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349097
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
-	gnome-shell-extension-{search-light,logo-menu,gsconnect}
+	gnome-shell-extension-{appindicator,blur-my-shell,search-light,logo-menu,gsconnect}
 
 dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
 dnf -y copr disable che/nerd-fonts
@@ -73,3 +72,18 @@ dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 # the homebrew package getting updated through our builds.
 # We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
 dnf -y --setopt=install_weak_deps=False install gcc
+
+if [ "${ENABLE_TESTING}" == "1" ] ; then
+	# We need the fedora (LATEST_MAJOR) builds because f41 and el10 namespaces under copr arent customizeable so we cant build using the g48 backport
+	# Using the f(LATEST_MAJOR) should provide the dependencies we need just fine.
+	FEDORA_MAJOR_SPOOF=42
+	dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/fedora-${FEDORA_MAJOR_SPOOF}/ublue-os-staging-fedora-${FEDORA_MAJOR_SPOOF}.repo"
+	REPO_FILE="/etc/yum.repos.d/ublue-os-staging-fedora-${FEDORA_MAJOR_SPOOF}.repo"
+	sed -i "s/\:staging/&:fedora/" $REPO_FILE
+	sed -i "s/\$releasever/$FEDORA_MAJOR_SPOOF/" $REPO_FILE
+	dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:staging:fedora"
+	dnf -y \
+		--enablerepo "copr:copr.fedorainfracloud.org:ublue-os:staging" \
+		--enablerepo "copr:copr.fedorainfracloud.org:ublue-os:staging:fedora" \
+		install bazaar
+fi
