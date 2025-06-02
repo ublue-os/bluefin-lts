@@ -12,7 +12,7 @@ dnf -y install \
 	distrobox \
 	fastfetch \
 	fpaste \
-	gnome-shell-extension-{appindicator,dash-to-dock,blur-my-shell,caffeine} \
+	gnome-shell-extension-{dash-to-dock,caffeine} \
 	just \
 	powertop \
 	tuned-ppd \
@@ -59,9 +59,8 @@ rm -rvf /usr/etc
 
 dnf -y copr enable ublue-os/staging
 dnf -y copr disable ublue-os/staging
-# FIXME: gsconnect EPEL10 request: https://bugzilla.redhat.com/show_bug.cgi?id=2349097
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
-	gnome-shell-extension-{search-light,logo-menu,gsconnect}
+	gnome-shell-extension-{appindicator,blur-my-shell,search-light,logo-menu,gsconnect}
 
 dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
 dnf -y copr disable che/nerd-fonts
