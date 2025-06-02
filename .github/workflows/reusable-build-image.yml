@@ -360,8 +360,8 @@ jobs:
         id: metadata
         with:
           tags: |
-            type=raw,value=${{ needs.build_push.outputs.image_tag }}
-            type=raw,value=${{ needs.build_push.outputs.image_tag }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.DEFAULT_TAG }}
+            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.CENTOS_VERSION }}
             type=raw,value=${{ env.CENTOS_VERSION }}.{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}
