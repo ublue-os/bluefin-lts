@@ -48,7 +48,7 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	ublue-os-signing \
 	ublue-os-udev-rules \
 	ublue-os-update-services \
-	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew} \
+	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew,branding-logos} \
 	uupd \
 	bluefin-*
 
