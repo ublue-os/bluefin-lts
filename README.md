@@ -1,3 +1,6 @@
+# UP FOR ADOPTION
+The Bluefin team has decided to not pursue a Bluefin LTS. This project will not be graduating out of beta. This project is up for adoption, please let us know if you are interested in rebranding this and pursuing the idea.
+
 # Bluefin LTS
 *Achillobator giganticus*
 
