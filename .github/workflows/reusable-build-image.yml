@@ -318,7 +318,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apk add jq git podman uutils bash conmon crun netavark fuse-overlayfs
+          apk add jq git podman uutils bash conmon crun netavark fuse-overlayfs libstdc++
           ln -sf /bin/bash /bin/sh
           mkdir -p /etc/containers
           echo '{"default":[{"type":"insecureAcceptAnything"}]}' | jq . > /etc/containers/policy.json
