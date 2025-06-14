@@ -17,7 +17,7 @@ dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-
 
 
 dnf install -y --enablerepo="epel-nvidia" \
-  cuda nvidia-driver{,-cuda} dkms-nvidia
+  nvidia-driver{,-cuda} dkms-nvidia
 
 sed -i -e 's/kernel$/kernel-open/g' /etc/nvidia/kernel.conf
 cat /etc/nvidia/kernel.conf
