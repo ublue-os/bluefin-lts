@@ -1,4 +1,4 @@
-name: Build Bluefin LTS Testing
+name: Build Bluefin DX LTS Testing
 
 on:
   pull_request:
