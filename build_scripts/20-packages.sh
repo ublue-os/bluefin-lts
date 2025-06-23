@@ -14,6 +14,7 @@ dnf -y install \
 	fpaste \
 	gnome-shell-extension-{dash-to-dock,caffeine} \
 	just \
+	nss-mdns \
 	powertop \
 	tuned-ppd \
 	fzf \
