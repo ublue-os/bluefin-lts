@@ -114,11 +114,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Maximize build space
+      - name: Mount BTRFS for podman storage
         if: ${{ matrix.platform != 'arm64' && inputs.cleanup_runner }}
         uses: ublue-os/container-storage-action@main
-        with:
-          target-dir: /var/lib/containers
 
       - name: Setup Just
         uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
