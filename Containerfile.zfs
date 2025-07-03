@@ -23,6 +23,7 @@ RUN --mount=type=tmpfs,dst=/opt \
   --mount=type=tmpfs,dst=/boot \
   --mount=type=bind,from=context,source=/,target=/run/context \
   --mount=type=bind,from=akmods_zfs,source=/kernel-rpms,dst=/tmp/kernel-rpms \
+  --mount=type=bind,from=akmods_zfs,src=/rpms,dst=/tmp/akmods-zfs-rpms \
   /run/context/build_scripts/build.sh
 
 
