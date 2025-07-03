@@ -1,4 +1,4 @@
-set ${CI:+-x} -euo pipefail
+set -euo pipefail
 
 # /*
 # Get Kernel Version
