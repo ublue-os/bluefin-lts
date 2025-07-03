@@ -3,7 +3,7 @@ set ${CI:+-x} -euo pipefail
 # /*
 # Get Kernel Version
 # */
-KERNEL_VRA="$(rpm -q "$KERNEL_NAME" --queryformat '%{EVR}.%{ARCH}')"
+KERNEL_VRA="$(rpm -q kernel --queryformat '%{EVR}.%{ARCH}')"
 
 # /*
 ### install base server ZFS packages and sanoid dependencies

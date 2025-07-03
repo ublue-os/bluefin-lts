@@ -11,7 +11,7 @@ set ${CI:+-x} -euo pipefail
 find /tmp/kernel-rpms
 
 pushd /tmp/kernel-rpms
-CACHED_VERSION=$(find $KERNEL_NAME-*.rpm | grep -P "$KERNEL_NAME-\d+\.\d+\.\d+-\d+$(rpm -E %{dist})" | sed -E "s/$KERNEL_NAME-//;s/\.rpm//")
+CACHED_VERSION=$(find kernel-*.rpm | grep -P "kernel-\d+\.\d+\.\d+-\d+$(rpm -E %{dist})" | sed -E "s/kernel-//;s/\.rpm//")
 popd
 
 # /*
@@ -21,18 +21,18 @@ for pkg in kernel kernel-core kernel-modules kernel-modules-core kernel-modules-
   rpm --erase $pkg --nodeps || true
 done
 dnf -y install \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-core-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-modules-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-modules-core-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-modules-extra-"$CACHED_VERSION".rpm
+  /tmp/kernel-rpms/kernel-"$CACHED_VERSION".rpm \
+  /tmp/kernel-rpms/kernel-core-"$CACHED_VERSION".rpm \
+  /tmp/kernel-rpms/kernel-modules-"$CACHED_VERSION".rpm \
+  /tmp/kernel-rpms/kernel-modules-core-"$CACHED_VERSION".rpm \
+  /tmp/kernel-rpms/kernel-modules-extra-"$CACHED_VERSION".rpm
 
 # /*
 ### Version Lock kernel pacakges
 # */
 dnf versionlock add \
-  "$KERNEL_NAME" \
-  "$KERNEL_NAME"-core \
-  "$KERNEL_NAME"-modules \
-  "$KERNEL_NAME"-modules-core \
-  "$KERNEL_NAME"-modules-extra
+  kernel \
+  kernel-core \
+  kernel-modules \
+  kernel-modules-core \
+  kernel-modules-extra
