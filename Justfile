@@ -113,7 +113,7 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $testing="0":
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
     fi
 
-    just sudoif podman build \
+    podman build \
         "${BUILD_ARGS[@]}" \
         --pull=newer \
         --tag "${target_image}:${tag}" \
