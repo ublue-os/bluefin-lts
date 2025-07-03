@@ -1,0 +1,235 @@
+#!/bin/bash
+
+# Tailscale exit node picker
+
+ERROR_TEXT="..this should not have happned please report a bug at https://github.com/ublue-os/packages"
+
+# --- Prerequisite Checks ---
+if ! command -v gum &> /dev/null; then
+    echo "gum could not be found. Please install gum: https://github.com/charmbracelet/gum"
+    exit 1
+fi
+if ! command -v tailscale &> /dev/null; then
+    echo "tailscale could not be found. Please install tailscale."
+    exit 1
+fi
+
+# --- AWK Script to get unique Country Keywords for Stage 1 ---
+AWK_UNIQUE_COUNTRY_KEYWORDS='
+NR > 1 { 
+    country_keyword = $3; 
+    if (country_keyword != "" && country_keyword != "-") {
+        keywords[country_keyword] = 1;
+    } else if (country_keyword == "-") {
+        keywords["1. Exit Nodes not on Mullvad"] = 1; 
+    }
+}
+END {
+    for (k in keywords) { print k; }
+}
+'
+
+# --- AWK Script to Format Nodes for Gum Display (Stage 2) ---
+AWK_FORMAT_NODES_FOR_GUM='
+# Process lines that are data lines: Skip header (NR>1), first field is IP, second field (hostname) contains a dot.
+NR > 1 && $1 ~ /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/ && $2 ~ /\./ {
+    hostname = $2; 
+    description = "";
+    
+    if (NF > 3) { 
+        for (i = 3; i < NF; i++) { 
+            description = description $i " ";
+        }
+        sub(/[[:space:]]+$/, "", description); 
+    }
+
+    clean_desc = description;
+    if (clean_desc == "- -" || clean_desc == "-") {
+        clean_desc = ""; 
+    } else {
+        if (clean_desc ~ /[[:space:]]-$/) { clean_desc = substr(clean_desc, 1, length(clean_desc)-2); }
+        if (clean_desc ~ /^- /) { clean_desc = substr(clean_desc, 3); }
+        gsub(/  +/, " ", clean_desc); 
+        gsub(/^ | $/, "", clean_desc); 
+    }
+
+    if (clean_desc == "" || clean_desc == hostname) {
+        printf "%s\n", hostname;
+    } else {
+        printf "%s (%s)\n", clean_desc, hostname;
+    }
+}
+'
+
+# --- Fetch initial node list ONCE ---
+# This will be used for displaying current status and for Stage 1 options
+initial_node_list_raw=$(tailscale exit-node list 2>&1)
+ts_initial_list_status=$?
+
+# --- Display Current Exit Node (derived from initial_node_list_raw) ---
+current_display_node="None" # Default if no node is selected or list is empty
+if [ $ts_initial_list_status -eq 0 ] && [[ -n "$initial_node_list_raw" ]] && ! (echo "$initial_node_list_raw" | grep -q "No exit nodes found"); then
+    # Find the line where the last field is "selected", skip header with NR > 1
+    selected_node_line=$(echo "$initial_node_list_raw" | awk 'NR > 1 && $NF == "selected" {print; exit}')
+    
+    if [[ -n "$selected_node_line" ]]; then
+        selected_hostname=$(echo "$selected_node_line" | awk '{print $2}')
+        selected_ip=$(echo "$selected_node_line" | awk '{print $1}')
+        
+        # Attempt to get Country and City for a richer display
+        location_info=$(echo "$selected_node_line" | awk '{
+            desc = ""; 
+            for (i = 3; i < NF; i++) { # Iterate from 3rd field to one before last (STATUS)
+                # Only add if not "-"
+                if ($i != "-") {
+                    desc = desc $i " ";
+                }
+            } 
+            sub(/[[:space:]]+$/, "", desc); # Remove trailing space
+            # If after processing, desc is empty (e.g. both country/city were "-"), make it empty
+            if (desc == "" || desc == "-") { desc = "" } 
+            print desc 
+        }')
+        
+        if [[ -n "$location_info" ]]; then
+            current_display_node="$selected_hostname ($location_info, IP: $selected_ip)"
+        else
+            current_display_node="$selected_hostname (IP: $selected_ip)"
+        fi
+    fi
+else echo "No exit nodes found on your Tailnet please add some or enable Mullvad VPN for your account at https://login.tailscale.com/admin/settings/general/mullvad"
+fi
+
+echo "This is a tool to quickly set/change your Exit Node for Tailscale"
+
+gum style --border double --border-foreground 212 --padding "0 1" \
+    "Current Tailscale Exit Node: $(gum style --bold "$current_display_node")"
+echo
+
+
+# --- Stage 1: Select Country Keyword or Action ---
+gum style --bold "Select Country Keyword or Action"
+
+unique_country_keywords=$(echo "$initial_node_list_raw" | awk "$AWK_UNIQUE_COUNTRY_KEYWORDS" | sort -u)
+
+stage1_options_array=()
+stage1_options_array+=("0. Turn off Exit Node")
+
+if [[ -n "$unique_country_keywords" ]]; then
+    while IFS= read -r keyword; do
+        stage1_options_array+=("$keyword")
+    done <<< "$unique_country_keywords"
+fi
+
+if [ ${#stage1_options_array[@]} -le 2 ] && ! (echo "$initial_node_list_raw" | grep -q "No exit nodes found") ; then
+     gum style --faint "(No specific country keywords could be extracted for filtering Stage 1)"
+fi
+
+printf -v stage1_options_string '%s\n' "${stage1_options_array[@]}"
+stage1_options_string=${stage1_options_string%?} 
+
+selected_stage1_choice=$(echo -e "$stage1_options_string" | gum filter \
+    --placeholder="Select a country keyword to filter by, or an action..." \
+    --height="${GUM_FILTER_HEIGHT_STAGE1:-12}" \
+    --prompt="❯ " --indicator="◉" --selected-prefix="✅ " \
+    --header="Stage 1: Filter target or Action" \
+    --strict)
+gum_stage1_exit_code=$?
+
+if [ $gum_stage1_exit_code -ne 0 ]; then
+    gum style --faint "Stage 1 selection cancelled. Exiting."
+    exit 0
+fi
+
+# --- Stage 2: Select Specific Node from (Potentially) Filtered List ---
+nodes_for_stage2_raw_output=""
+header_for_stage2="" 
+
+if [[ "$selected_stage1_choice" == "0. Turn off Exit Node" ]]; then
+    gum spin --show-output --spinner dot --title "Turning off Tailscale exit node..." -- tailscale set --exit-node=
+    if [ $? -eq 0 ]; then gum style "✅ Tailscale exit node turned off."; else gum style --error "❌ Failed to turn off exit node."; fi
+    exit 0
+fi
+
+gum style --bold "Select Specific Exit Node"
+
+if [[ "$selected_stage1_choice" == "1. Exit Nodes not on Mullvad" ]]; then
+    header_for_stage2=$(echo "$initial_node_list_raw" | head -n1)
+    body_no_country=$(echo "$initial_node_list_raw" | awk 'NR > 1 && $3 == "-"')
+    if [[ -n "$body_no_country" ]]; then
+        nodes_for_stage2_raw_output="$header_for_stage2"$'\n'"$body_no_country"
+    else
+        nodes_for_stage2_raw_output="$header_for_stage2" 
+    fi
+else
+    # User selected a specific country keyword, use tailscale's filter
+    # Corrected gum style flag from --dim to --faint
+    gum style --faint "Fetching nodes for filter: '$selected_stage1_choice'..." 
+    
+    nodes_for_stage2_raw_output=$(tailscale exit-node list --filter="$selected_stage1_choice" 2>&1)
+    ts_filter_status=$? 
+
+    if [[ $ts_filter_status -ne 0 ]]; then
+        gum style --error "Failed to fetch filtered exit node list for '$selected_stage1_choice'."
+        echo "$nodes_for_stage2_raw_output" >&2 
+        exit 1
+    fi
+fi
+
+formatted_nodes_for_stage2="" # Initialize
+if [[ -n "$nodes_for_stage2_raw_output" && "$nodes_for_stage2_raw_output" != *"No exit nodes found"* ]]; then
+    # Check if there's more than just a header (or if it's an empty valid list)
+    if (echo "$nodes_for_stage2_raw_output" | awk 'NR > 1 {found=1; exit} END{exit !found}'); then
+        formatted_nodes_for_stage2=$(echo "$nodes_for_stage2_raw_output" | awk "$AWK_FORMAT_NODES_FOR_GUM")
+    else
+        # Contains only header or is an error/empty message we already logged
+        gum style --faint "No actual node data to format for '$selected_stage1_choice' $ERROR_TEXT"
+    fi
+else
+    gum style --warning "No exit nodes found matching the filter: '$selected_stage1_choice'."
+fi
+
+
+if [[ -z "$formatted_nodes_for_stage2" ]]; then
+     gum style --faint "No exit nodes matched the filter"
+fi
+
+final_node_selection=$(echo -e "$formatted_nodes_for_stage2" | gum filter \
+    --placeholder="Select exit node..." \
+    --height="${GUM_FILTER_HEIGHT_STAGE2:-15}" \
+    --prompt="❯ " --indicator="◉" --selected-prefix="✅ " \
+    --header="Stage 2: Node Selection" \
+    --strict)
+gum_stage2_exit_code=$?
+
+if [ $gum_stage2_exit_code -ne 0 ]; then
+    gum style --faint "Selection cancelled. Exiting."
+    exit 0
+fi
+
+# --- Set Exit Node ---
+if [[ -z "$final_node_selection" ]]; then
+    gum style --error "No node selected. Exiting." 
+    exit 1
+fi
+
+actual_hostname=""
+if [[ "$final_node_selection" =~ ^(.*)[[:space:]]\(([^()]+)\)$ ]]; then
+    actual_hostname="${BASH_REMATCH[2]}"
+else
+    actual_hostname="$final_node_selection"
+fi
+
+if [[ -z "$actual_hostname" ]]; then
+    gum style --error "Could not extract a valid hostname from '$final_node_selection'. Exiting."
+    exit 1
+fi
+
+gum spin --show-output --spinner dot --title "Setting Tailscale exit node to '$actual_hostname'..." -- tailscale set --exit-node="$actual_hostname"
+if [ $? -eq 0 ]; then
+    gum style "✅ Tailscale exit node set to $(gum style --bold "$actual_hostname")."
+else
+    gum style --error "❌ Failed to set exit node to $(gum style --bold "$actual_hostname")."
+fi
+
+exit 0

@@ -7,9 +7,9 @@ set -xeuo pipefail
 # This thing slows down downloads A LOT for no reason
 dnf remove -y subscription-manager
 
-dnf -y install centos-release-hyperscale-kernel
-dnf config-manager --set-disabled "centos-hyperscale,centos-hyperscale-kernel"
-dnf --enablerepo="centos-hyperscale" --enablerepo="centos-hyperscale-kernel" -y update kernel
+dnf -y install centos-release-kmods-kernel
+dnf config-manager --set-disabled "centos-kmods-kernel"
+dnf --enablerepo="centos-kmods-kernel" -y update kernel --allowerasing --exclude=kernel-uki-virt
 
 if [ "${ENABLE_TESTING}" == "1" ] ; then
 	# GNOME 48 backport COPR
