@@ -22,3 +22,5 @@ dnf -y install \
 # depmod ran automatically with zfs 2.1 but not with 2.2
 # */
 depmod -a "${KERNEL_VRA}"
+/usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v -f
+
