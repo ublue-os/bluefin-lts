@@ -1,1 +1,0 @@
-aarch64/05-pixi.sh
