@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -xeuo pipefail
 
@@ -34,6 +34,8 @@ curl --retry 3 -o /etc/flatpak/remotes.d/flathub.flatpakrepo "https://dl.flathub
 
 # move the custom just
 mv /usr/share/ublue-os/just/61-lts-custom.just /usr/share/ublue-os/just/60-custom.just 
+
+/usr/sbin/depmod -a `ls -1 /lib/modules/ | tail -1`
 
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage
 # Add resume module so that hibernation works

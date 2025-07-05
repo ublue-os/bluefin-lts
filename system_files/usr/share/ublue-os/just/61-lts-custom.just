@@ -16,3 +16,6 @@ rebase-helper:
 
 toggle-devmode:
     /usr/libexec/ublue-dx-helper
+
+tailscale-exitnode:
+    /usr/libexec/ublue-ts-exit-node
