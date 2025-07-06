@@ -92,7 +92,7 @@ sudoif command *args:
 # Example usage:
 #   just build bluefin lts 1 0 1
 #
-# This will build an image 'bluefin:lts' with DX and GDX enabled.
+# This will build an image 'bluefin:lts' with DX and Testing enabled.
 #
 
 # Build the image using the specified parameters

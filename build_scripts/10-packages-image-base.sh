@@ -13,7 +13,7 @@ dnf --enablerepo="centos-kmods-kernel" -y update kernel --allowerasing --exclude
 
 if [ "${ENABLE_TESTING}" == "1" ] ; then
 	# GNOME 48 backport COPR
-	dnf copr enable -y "@centoshyperscale/c${MAJOR_VERSION_NUMBER}s-gnome-48"
+	dnf copr enable -y "jreilly1821/c10s-gnome-48"
         dnf -y install glib2
 fi
 
