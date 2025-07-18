@@ -7,14 +7,15 @@ set -xeuo pipefail
 # This thing slows down downloads A LOT for no reason
 dnf remove -y subscription-manager
 
-dnf -y install centos-release-kmods-kernel
-dnf config-manager --set-disabled "centos-kmods-kernel"
-dnf --enablerepo="centos-kmods-kernel" -y update kernel --allowerasing --exclude=kernel-uki-virt
 
 if [ "${ENABLE_TESTING}" == "1" ] ; then
 	# GNOME 48 backport COPR
 	dnf copr enable -y "jreilly1821/c10s-gnome-48"
         dnf -y install glib2
+	dnf -y install centos-release-kmods-kernel
+	dnf config-manager --set-disabled "centos-kmods-kernel"
+	dnf --enablerepo="centos-kmods-kernel" -y update kernel --allowerasing --exclude=kernel-uki-virt
+
 fi
 
 dnf -y install 'dnf-command(versionlock)'
