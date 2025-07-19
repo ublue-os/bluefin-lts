@@ -74,7 +74,7 @@ dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 # We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
 dnf -y --setopt=install_weak_deps=False install gcc
 
-if [ "${ENABLE_TESTING}" == "1" ] ; then
+if [ "0" == "1" ] ; then
 	# We need the fedora (LATEST_MAJOR) builds because f41 and el10 namespaces under copr arent customizeable so we cant build using the g48 backport
 	# Using the f(LATEST_MAJOR) should provide the dependencies we need just fine.
 	FEDORA_MAJOR_SPOOF=42
