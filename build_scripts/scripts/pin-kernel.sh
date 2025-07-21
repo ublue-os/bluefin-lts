@@ -4,10 +4,10 @@ TARGET_MAJOR_MINOR="6.15"
 echo "--- Pinning Kernel to ${TARGET_MAJOR_MINOR}.x ---"
 
 rpm -q python3-dnf-plugin-versionlock &> /dev/null || \
-    { echo "Installing dnf-plugin-versionlock..."; sudo dnf install -y python3-dnf-plugin-versionlock || { echo "Error: Failed to install versionlock plugin."; exit 1; } }
+    { echo "Installing dnf-plugin-versionlock..."; dnf install -y python3-dnf-plugin-versionlock || { echo "Error: Failed to install versionlock plugin."; exit 1; } }
 
 # Find the newest target kernel version
-TARGET_KERNEL_FULL_VERSION=$(sudo dnf list available kernel --showduplicates | \
+TARGET_KERNEL_FULL_VERSION=$(dnf list available kernel --showduplicates | \
     grep "^kernel.${ARCH}.*${TARGET_MAJOR_MINOR}\." | \
     awk '{print $2}' | sort -V | tail -n 1)
 
@@ -26,13 +26,13 @@ INSTALL_PKGS=(
     "kernel-modules-${KERNEL_VERSION_ONLY}"
     "kernel-modules-extra-${KERNEL_VERSION_ONLY}"
 )
-# sudo dnf install -y "${INSTALL_PKGS[@]/%/.${ARCH}}" || { echo "Error: Failed to install kernel packages."; exit 1; }
+dnf install -y "${INSTALL_PKGS[@]/%/.${ARCH}}" || { echo "Error: Failed to install kernel packages."; exit 1; }
 echo "Installing kernel packages: ${INSTALL_PKGS[@]/%/.${ARCH}}"
 
 # Add versionlocks
 for pkg in "${INSTALL_PKGS[@]}"; do
     echo "Locking package: ${pkg}.${ARCH}"
-    # sudo dnf versionlock add "${pkg}.${ARCH}" || { echo "Error: Failed to lock ${pkg}.${ARCH}."; exit 1; }
+    dnf versionlock add "${pkg}.${ARCH}" || { echo "Error: Failed to lock ${pkg}.${ARCH}."; exit 1; }
 done
 
 echo "Kernel ${KERNEL_VERSION_ONLY} installed, set as default, and locked."
