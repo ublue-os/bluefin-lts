@@ -6,6 +6,7 @@ set -xeuo pipefail
 
 # This thing slows down downloads A LOT for no reason
 dnf remove -y subscription-manager
+dnf -y install 'dnf-command(versionlock)'
 
 
 if [ "${ENABLE_TESTING}" == "1" ] ; then
@@ -13,12 +14,11 @@ if [ "${ENABLE_TESTING}" == "1" ] ; then
 	dnf copr enable -y "jreilly1821/c10s-gnome-48"
         dnf -y install glib2
 	dnf -y install centos-release-kmods-kernel
+	# Install and pin the kernel to the last minor version
+	./run/context/build_scripts/scripts/pin-kernel.sh
 	dnf config-manager --set-disabled "centos-kmods-kernel"
-	dnf --enablerepo="centos-kmods-kernel" -y update kernel --allowerasing --exclude=kernel-uki-virt
-
 fi
 
-dnf -y install 'dnf-command(versionlock)'
 # This fixes a lot of skew issues on GDX because kernel-devel wont update then
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
