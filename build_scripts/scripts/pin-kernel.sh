@@ -25,7 +25,7 @@ INSTALL_PKGS=(
     "kernel-core-${KERNEL_VERSION_ONLY}"
     "kernel-modules-${KERNEL_VERSION_ONLY}"
 )
-dnf install -y "${INSTALL_PKGS[@]/%/.${ARCH}}" || { echo "Error: Failed to install kernel packages."; exit 1; }
+dnf install --alowerasing -y "${INSTALL_PKGS[@]/%/.${ARCH}}" || { echo "Error: Failed to install kernel packages."; exit 1; }
 echo "Installing kernel packages: ${INSTALL_PKGS[@]/%/.${ARCH}}"
 
 # Add versionlocks
