@@ -2,3 +2,5 @@ cosign.key
 output/
 *.raw
 *.qcow2
+__pycache__/
+*.pyc
