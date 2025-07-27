@@ -81,14 +81,14 @@ HANDWRITTEN_PLACEHOLDER = """\
 This is an automatically generated changelog for release `{curr}`."""
 
 BLACKLIST_VERSIONS = [
-    "kernel",
-    "gnome-control-center-filesystem",
-    "mesa-filesystem",
-    "podman",
     "docker-ce",
+    "gnome-control-center-filesystem",
     "incus",
+    "kernel",
+    "mesa-filesystem",
+    "nvidia-driver",
+    "podman",
     "vscode",
-    "nvidia-driver"
 ]
 
 

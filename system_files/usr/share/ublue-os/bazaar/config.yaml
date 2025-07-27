@@ -54,18 +54,18 @@ sections:
     classes:
       - bazzite-section
     appids:
-      - re.sonny.Eloquent
-      - io.github.fabrialberio.pinapp
+      - app.drey.Damask
       - app.fotema.Fotema
       - be.alexandervanhee.gradia
-      - app.drey.Damask
-      - io.github.pleromix.IceBox
       - com.github.ADBeveridge.Raider
+      - com.github.maoschanz.drawing
+      - de.schmidhuberj.DieBahn
+      - io.github.fabrialberio.pinapp
+      - io.github.kelvinnovais.Kasasa
+      - io.github.pleromix.IceBox
       - org.gnome.gitlab.YaLTeR.VideoTrimmer
       - org.gnome.gitlab.cheywood.Buffer
-      - io.github.kelvinnovais.Kasasa
-      - de.schmidhuberj.DieBahn
-      - com.github.maoschanz.drawing
+      - re.sonny.Eloquent
   - title: "Browsers"
     subtitle: "Use the web with your favorite browser"
     rows: 2
@@ -77,12 +77,12 @@ sections:
     classes:
       - bazzite-section
     appids:
-      - org.mozilla.firefox
       - com.brave.Browser
       - com.google.Chrome
       - com.microsoft.Edge
       - com.opera.Opera
       - com.vivaldi.Vivaldi
+      - org.mozilla.firefox
   - title: "Media"
     subtitle: "The Freedom of Music"
     rows: 2
@@ -94,14 +94,14 @@ sections:
     classes:
       - bazzite-section
     appids:
+      - com.github.iwalton3.jellyfin-media-player
+      - com.plexamp.Plexamp
+      - com.rafaelmardojai.Blanket
       - com.spotify.Client
       - de.haeckerfelix.Shortwave
       - io.bassi.Amberol
       - org.videolan.VLC
-      - com.github.iwalton3.jellyfin-media-player
       - tv.plex.PlexDesktop
-      - com.plexamp.Plexamp
-      - com.rafaelmardojai.Blanket
   - title: "Office & Productivity"
     subtitle: "Work Smarter"
     rows: 4
@@ -113,22 +113,22 @@ sections:
     classes:
       - bazzite-section
     appids:
-      - com.slack.Slack
-      - md.obsidian.Obsidian
-      - io.gitlab.theevilskeleton.Upscaler
-      - io.github.alainm23.planify
-      - org.blender.Blender
-      - org.onlyoffice.desktopeditors
-      - org.libreoffice.LibreOffice
-      - org.gimp.GIMP
-      - org.kde.krita
-      - org.inkscape.Inkscape
-      - io.github.nokse22.Exhibit
       - com.logseq.Logseq
-      - org.audacityteam.Audacity
+      - com.slack.Slack
+      - io.github.alainm23.planify
+      - io.github.nokse22.Exhibit
+      - io.gitlab.theevilskeleton.Upscaler
+      - md.obsidian.Obsidian
       - org.ardour.Ardour
+      - org.audacityteam.Audacity
+      - org.blender.Blender
+      - org.gimp.GIMP
       - org.gnome.Fractal
       - org.gnome.gitlab.YaLTeR.VideoTrimmer
+      - org.inkscape.Inkscape
+      - org.kde.krita
+      - org.libreoffice.LibreOffice
+      - org.onlyoffice.desktopeditors
   - title: "Games"
     subtitle: "Protocol Three: Protect the Pilot"
     rows: 3
@@ -140,18 +140,18 @@ sections:
     classes:
       - bazzite-section
     appids:
-      - com.valvesoftware.Steam
-      - com.heroicgameslauncher.hgl
-      - com.discordapp.Discord
-      - net.lutris.Lutris
-      - com.vysp3r.ProtonPlus
       - com.dec05eba.gpu_screen_recorder
-      - com.github.Matoking.protontricks
-      - com.obsproject.Studio
+      - com.discordapp.Discord
       - com.feaneron.Boatswain
+      - com.github.Matoking.protontricks
+      - com.heroicgameslauncher.hgl
+      - com.obsproject.Studio
+      - com.valvesoftware.Steam
       - com.valvesoftware.SteamLink
-      - org.gnome.Mahjongg
+      - com.vysp3r.ProtonPlus
       - io.github.fragglet.sdl_sopwith
+      - net.lutris.Lutris
+      - org.gnome.Mahjongg
       - org.gnome.Sudoku
   - title: "Utilities"
     subtitle: "Gear up and kit out"
@@ -165,22 +165,22 @@ sections:
       - bazzite-section
     appids:
       - app.drey.Warp
-      - org.localsend.localsend_app
-      - com.github.zocker_160.SyncThingy
-      - io.github.nozwock.Packet
-      - org.gnome.gitlab.somas.Apostrophe
-      - org.cockpit_project.CockpitClient
-      - org.gnome.gitlab.cheywood.Pulp
-      - io.github.vikdevelop.SaveDesktop
-      - org.gnome.World.PikaBackup
-      - org.fedoraproject.MediaWriter
-      - org.raspberrypi.rpi-imager
-      - hu.irl.cameractrls
       - com.belmoussaoui.Decoder
-      - io.gitlab.adhami3310.Converter
-      - com.jeffser.Pigment
       - com.github.finefindus.eyedropper
+      - com.github.zocker_160.SyncThingy
+      - com.jeffser.Pigment
+      - hu.irl.cameractrls
+      - io.github.nozwock.Packet
       - io.github.plrigaux.sysd-manager
+      - io.github.vikdevelop.SaveDesktop
+      - io.gitlab.adhami3310.Converter
+      - org.cockpit_project.CockpitClient
+      - org.fedoraproject.MediaWriter
+      - org.gnome.World.PikaBackup
+      - org.gnome.gitlab.cheywood.Pulp
+      - org.gnome.gitlab.somas.Apostrophe
+      - org.localsend.localsend_app
+      - org.raspberrypi.rpi-imager
   - title: "Developers"
     subtitle: "Unleash the power of Cloud Native"
     rows: 4
@@ -192,21 +192,21 @@ sections:
     classes:
       - bazzite-section
     appids:
-      - io.podman_desktop.PodmanDesktop
-      - org.gnome.Builder
-      - com.getpostman.Postman
-      - me.iepure.devtoolbox
-      - io.kinvolk.Headlamp
-      - de.leopoldluley.Clapgrep
-      - io.dbeaver.DBeaverCommunity
       - cc.arduino.IDE2
-      - sh.loft.devpod
+      - com.getpostman.Postman
+      - de.leopoldluley.Clapgrep
       - dev.geopjr.Calligraphy
-      - io.github.lo2dev.Echo
-      - org.gnome.design.IconLibrary
-      - io.github.ronniedroid.concessio
-      - io.github.nokse22.asciidraw
       - dev.geopjr.Collision
+      - io.dbeaver.DBeaverCommunity
+      - io.github.lo2dev.Echo
+      - io.github.nokse22.asciidraw
+      - io.github.ronniedroid.concessio
+      - io.kinvolk.Headlamp
+      - io.podman_desktop.PodmanDesktop
+      - me.iepure.devtoolbox
+      - org.gnome.Builder
+      - org.gnome.design.IconLibrary
+      - sh.loft.devpod
   - title: "Sustainability & Education"
     subtitle: "Invest in the Future"
     rows: 2
@@ -218,13 +218,13 @@ sections:
     classes:
       - bazzite-section
     appids:
-      - org.endlessos.Key
-      - io.github.david_swift.Flashcards
       - dev.bragefuglseth.Keypunch
-      - org.tuxpaint.Tuxpaint
       - im.bernard.Memorado
+      - io.github.david_swift.Flashcards
       - io.github.josephmawa.Egghead
       - io.github.r_sergii.multiElement
+      - org.endlessos.Key
+      - org.tuxpaint.Tuxpaint
   - title: "AI and Machine Learning"
     subtitle: "Explore the best of open source AI"
     rows: 1

@@ -13,7 +13,7 @@
     },
     {
       "enabled": false,
-      "matchUpdateTypes": ["digest", "pinDigest", "pin"],
+      "matchUpdateTypes": ["digest", "pin", "pinDigest"],
       "matchDepTypes": ["container"],
       "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
     },
