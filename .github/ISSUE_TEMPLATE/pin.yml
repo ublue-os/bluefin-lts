@@ -1,10 +1,10 @@
-name: Pin request
-description: Ask to pin a package to a specific version
+name: Pin Request
+description: Ask to pin a package to a specific version in order to avoid regressions
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to fill out this bug report! (She bites sometimes)
+        Thank you for taking the time to fill out this bug report! (She bites sometimes). We can pin packages to older, known working versions if there's an issue with an update in Fedora.
   - type: textarea
     id: package
     attributes:
