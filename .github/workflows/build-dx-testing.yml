@@ -3,6 +3,7 @@ name: Build Bluefin DX LTS HWE
 permissions:
   contents: read
   packages: write
+  id-token: write
 
 on:
   pull_request:
