@@ -43,6 +43,7 @@ jobs:
           docker tag bluefin-dx:lts-hwe  bluefin-dx:lts-testing
 
       - name: Push tagged image
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
           echo "Pushing tagged image"
           docker push bluefin-dx:lts-testing
