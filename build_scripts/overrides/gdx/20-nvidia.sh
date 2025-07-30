@@ -12,7 +12,7 @@ dnf config-manager --set-disabled "epel-nvidia"
 # Also make sure the kernel is locked before this is run whenever the kernel updates
 # kernel-devel might pull in an entire new kernel if you dont do
 dnf versionlock delete kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
-if [ "${ENABLE_TESTING}" == "1" ] ; then
+if [ "${ENABLE_HWE}" == "1" ] ; then
 dnf -y --enablerepo="centos-kmods-kernel" install "kernel-devel-$QUALIFIED_KERNEL" "kernel-headers-$QUALIFIED_KERNEL"  dkms gcc-c++
 else
 dnf -y install "kernel-devel-$QUALIFIED_KERNEL" "kernel-headers-$QUALIFIED_KERNEL"  dkms gcc-c++

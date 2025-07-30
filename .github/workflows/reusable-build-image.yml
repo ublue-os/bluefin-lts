@@ -42,8 +42,8 @@ on:
         required: false
         type: boolean
         default: true
-      testing:
-        description: "Enable experimental things during builds, such as gnome backport. Will build an extra `-testing` tag."
+      hwe:
+        description: "Enable experimental things during builds, such as gnome backport. Will build an extra `-hwe` tag."
         required: false
         type: boolean
         default: false
@@ -76,7 +76,7 @@ jobs:
         id: set-matrix
         env:
           PLATFORMS: "${{ inputs.platforms }}"
-          ENABLE_TESTING: "${{ inputs.testing }}"
+          ENABLE_HWE: "${{ inputs.hwe }}"
         run: |
           # turn the comma separated string into a list
           platforms=()
@@ -132,18 +132,18 @@ jobs:
         shell: bash
         env:
           FLAVOR: ${{ inputs.flavor }}
-          TESTING: ${{ inputs.testing }}
+          HWE: ${{ inputs.hwe }}
         run: |
           set -x
           just=$(which just)
 
-          ENABLE_TESTING=0
+          ENABLE_HWE=0
           ENABLE_GDX=0
           ENABLE_DX=0
-          if [[ "${TESTING}" == "true" ]] ; then
-            export DEFAULT_TAG="${DEFAULT_TAG}-testing"
+          if [[ "${HWE}" == "true" ]] ; then
+            export DEFAULT_TAG="${DEFAULT_TAG}-hwe"
             echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
-            ENABLE_TESTING=1
+            ENABLE_HWE=1
           fi
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
@@ -152,7 +152,7 @@ jobs:
             ENABLE_DX=1
           fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_TESTING}"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}"
           echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Setup Syft
@@ -222,6 +222,7 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           IMAGE_DIGEST: ${{ steps.load.outputs.digest }}
           PLATFORM: ${{ matrix.platform }}
+          HWE: ${{ inputs.hwe }}
           MAX_RETRIES: 3
         run: |
           set -x
@@ -282,11 +283,11 @@ jobs:
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           PLATFORM: ${{ matrix.platform }}
-          TESTING: ${{ inputs.testing }}
+          HWE: ${{ inputs.hwe }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
         run: |
           mkdir -p /tmp/outputs/digests
-          echo "${DIGEST}" > "/tmp/outputs/digests/${IMAGE_NAME}-${TESTING}-${PLATFORM}.txt"
+          echo "${DIGEST}" > "/tmp/outputs/digests/${IMAGE_NAME}-${HWE}-${PLATFORM}.txt"
 
       - name: Upload Output Artifacts
         if: ${{ inputs.publish }}
@@ -368,7 +369,7 @@ jobs:
             type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
             type=ref,event=pr
           flavor: |
-            ${{ inputs.testing && 'suffix=-testing' || '' }}
+            ${{ inputs.hwe && 'suffix=-hwe' || '' }}
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}

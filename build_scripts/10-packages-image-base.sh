@@ -9,7 +9,7 @@ dnf remove -y subscription-manager
 dnf -y install 'dnf-command(versionlock)'
 
 
-if [ "${ENABLE_TESTING}" == "1" ] ; then
+if [ "${ENABLE_HWE}" == "1" ] ; then
 	dnf -y install centos-release-kmods-kernel
 	# Install and pin the kernel to the last minor version
 	./run/context/build_scripts/scripts/pin-kernel.sh

@@ -92,11 +92,11 @@ sudoif command *args:
 # Example usage:
 #   just build bluefin lts 1 0 1
 #
-# This will build an image 'bluefin:lts' with DX and Testing enabled.
+# This will build an image 'bluefin:lts' with DX and HWE enabled.
 #
 
 # Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $testing="0":
+build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0":
     #!/usr/bin/env bash
 
     # Get Version
@@ -108,7 +108,7 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $testing="0":
     BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR=${repo_organization}")
     BUILD_ARGS+=("--build-arg" "ENABLE_DX=${dx}")
     BUILD_ARGS+=("--build-arg" "ENABLE_GDX=${gdx}")
-    BUILD_ARGS+=("--build-arg" "ENABLE_TESTING=${testing}")
+    BUILD_ARGS+=("--build-arg" "ENABLE_HWE=${hwe}")
     if [[ -z "$(git status -s)" ]]; then
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
     fi
