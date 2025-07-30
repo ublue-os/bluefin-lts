@@ -1,6 +1,7 @@
 on:
-  schedule:
-    - cron: '05 11 * * *' # 11:05am UTC everyday
+  push:
+    branches:
+      - main
   workflow_call:
     inputs:
       stream_name:
