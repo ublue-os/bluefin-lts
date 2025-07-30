@@ -1,4 +1,7 @@
 name: Build Bluefin LTS HWE
+permissions:
+  contents: read
+  packages: write
 
 on:
   pull_request:
