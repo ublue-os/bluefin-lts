@@ -1,5 +1,8 @@
 name: Build Bluefin DX LTS HWE
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches:
