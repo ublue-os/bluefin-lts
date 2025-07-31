@@ -60,10 +60,10 @@ jobs:
         id: tag
         run: |
           echo "Tagging hwe image with testing suffix"
-          docker tag ghcr.io/${{ github.repository_owner }}/bluefin:lts-hwe bluefin:lts-testing
+          docker tag ghcr.io/${{ github.repository_owner }}/bluefin:lts-hwe ghcr.io/${{ github.repository_owner }}/bluefin:lts-testing
 
       - name: Push tagged image
         if: ${{ github.event_name != 'pull_request' }}
         run: |
           echo "Pushing tagged image"
-          docker push bluefin:lts-testing
+          docker push ghcr.io/${{ github.repository_owner }}/bluefin:lts-testing
