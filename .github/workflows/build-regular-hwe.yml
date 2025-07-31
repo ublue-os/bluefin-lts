@@ -50,11 +50,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Pull image from registry
+        run: |
+          echo "Pulling hwe image from registry"
+          docker pull ghcr.io/${{ github.repository_owner }}/bluefin:lts-hwe
+
       - name: Tag image
         id: tag
         run: |
           echo "Tagging hwe image with testing suffix"
-          docker tag bluefin:lts-hwe  bluefin:lts-testing
+          docker tag ghcr.io/${{ github.repository_owner }}/bluefin:lts-hwe bluefin:lts-testing
 
       - name: Push tagged image
         if: ${{ github.event_name != 'pull_request' }}
