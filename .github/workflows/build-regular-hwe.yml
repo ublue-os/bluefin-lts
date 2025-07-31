@@ -65,4 +65,4 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         run: |
           echo "Pushing tagged image"
-          docker push bluefin:lts-testing
+          docker push ghcr.io/${{ github.repository_owner }}/bluefin:lts-testing
