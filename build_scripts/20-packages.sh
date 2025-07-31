@@ -13,7 +13,8 @@ dnf -y install \
 	fastfetch \
 	fpaste \
 	gnome-shell-extension-{dash-to-dock,caffeine} \
-	just \
+	hplip \
+        just \
 	nss-mdns \
 	powertop \
 	tuned-ppd \
