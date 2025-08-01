@@ -4,3 +4,7 @@ output/
 *.qcow2
 __pycache__/
 *.pyc
+
+# Changelog generation temporary files
+changelog.md
+output.env
