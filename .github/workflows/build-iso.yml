@@ -39,16 +39,17 @@ jobs:
             echo 'matrix={"include":[{"image_suffix":"","tag_suffix":""},{"image_suffix":"","tag_suffix":"-hwe"},{"image_suffix":"-gdx","tag_suffix":"-hwe"}]}' >> $GITHUB_OUTPUT
           # For manual runs, use the JSON provided in the workflow_dispatch input.
           else
-            echo "matrix={\"include\":${{ inputs.build_combinations }}}" >> $GITHUB_OUTPUT
+            JSON_INPUT='${{ inputs.build_combinations }}'
+            echo "matrix={\"include\":$JSON_INPUT}" >> $GITHUB_OUTPUT
           fi
-
   build:
     needs: determine-matrix
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.determine-matrix.outputs.matrix) }}
 
-    name: Build ISO for ${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}:${{ env.DEFAULT_TAG }}${{ matrix.tag_suffix }}
+    name: Build ISO for bluefin${{ matrix.image_suffix }}:lts${{ matrix.tag_suffix }}
+    
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -57,7 +58,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@v4
 
       - name: Define Build Variables
         id: vars
@@ -65,19 +66,17 @@ jobs:
           echo "FULL_IMAGE_NAME=${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}" >> $GITHUB_ENV
           echo "FULL_TAG_NAME=${{ env.DEFAULT_TAG }}${{ matrix.tag_suffix }}" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}-${{ env.DEFAULT_TAG }}${{ matrix.tag_suffix }}-iso" >> $GITHUB_ENV
-
       - name: Build ISO
         id: build-iso
-        uses: osbuild/bootc-image-builder-action@3dd308c8c20f887a53cddd66a37ee37f7deb38eb # v0.0.2
+        uses: osbuild/bootc-image-builder-action@v0.0.2
         with:
           config-file: ./iso.toml
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.FULL_IMAGE_NAME }}:${{ env.FULL_TAG_NAME }}
           types: |
             iso
-
       - name: Upload to Job Artifacts
         if: github.event.inputs.upload-to-cloudflare == 'false' || github.event_name != 'workflow_dispatch'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}
           if-no-files-found: error
