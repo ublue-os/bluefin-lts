@@ -7,7 +7,7 @@ on:
       build_combinations:
         description: 'JSON array of builds. Ex: [{"image_suffix":"","tag_suffix":"-hwe"}]'
         required: true
-        default: '[{"image_suffix":"","tag_suffix":""},{"image_suffix":"","tag_suffix":"-hwe"},{"image_suffix":"-gdx"]'
+        default: '[{"image_suffix":"","tag_suffix":""},{"image_suffix":"","tag_suffix":"-hwe"},{"image_suffix":"-gdx","tag_suffix":""}]'
         type: string
       upload-to-cloudflare:
         description: "Upload to Cloudflare"
