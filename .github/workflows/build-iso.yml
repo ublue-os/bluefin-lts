@@ -68,7 +68,7 @@ jobs:
           echo "ARTIFACT_NAME=${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}-${{ env.DEFAULT_TAG }}${{ matrix.tag_suffix }}-iso" >> $GITHUB_ENV
       - name: Build ISO
         id: build-iso
-        uses: osbuild/bootc-image-builder-action@3dd308c8c20f887a53cddd66a37ee37f7deb38eb # v0.0.2
+        uses: osbuild/bootc-image-builder-action@019bb59c5100ecec4e78c9e94e18a840110f7a0b # v0.0.2
         with:
           config-file: ./iso.toml
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.FULL_IMAGE_NAME }}:${{ env.FULL_TAG_NAME }}
