@@ -48,7 +48,7 @@ jobs:
         id: changelog
         shell: bash
         run: |
-          force_flag="${{ inputs.force_publish == true && 'true' || 'false' }}"
+          force_flag="${{ inputs.force_publish || 'false' }}"
           ./.github/scripts/publish-changelog.sh "${{ matrix.version }}" "${{ inputs.handwritten }}" "${force_flag}"
 
       - name: Create Release
