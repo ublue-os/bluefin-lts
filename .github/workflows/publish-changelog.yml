@@ -1,0 +1,68 @@
+name: Publish Changelog
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'lts-*'
+  workflow_call:
+    inputs:
+      stream_name:
+        description: "Release Tag (e.g. stream10, latest)"
+        type: string
+        default: "lts"
+        required: false
+      force_publish:
+        description: "Force publish changelog even if tag hasn't changed"
+        type: boolean
+        default: false
+        required: false
+  workflow_dispatch:
+    inputs:
+      handwritten:
+        description: "Small Changelog about changes in this build"
+        required: false
+        type: string
+      force_publish:
+        description: "Force publish changelog even if tag hasn't changed"
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish-changelog:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["lts"]
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper tag detection
+
+      - name: Check for new tags and generate changelog
+        id: changelog
+        shell: bash
+        run: |
+          force_flag="${{ inputs.force_publish == true && 'true' || 'false' }}"
+          ./.github/scripts/publish-changelog.sh "${{ matrix.version }}" "${{ inputs.handwritten }}" "${force_flag}"
+
+      - name: Create Release
+        if: steps.changelog.outputs.SKIP_CHANGELOG != 'true'
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+        with:
+          name: ${{ steps.changelog.outputs.CHANGELOG_TITLE }}
+          tag_name: ${{ steps.changelog.outputs.CHANGELOG_TAG }}
+          body_path: ${{ steps.changelog.outputs.CHANGELOG_PATH }}
+          make_latest: true
+
+      - name: Log skip reason
+        if: steps.changelog.outputs.SKIP_CHANGELOG == 'true'
+        run: |
+          echo "Changelog generation was skipped - no new tags detected since last publish"
