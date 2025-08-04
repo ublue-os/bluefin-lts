@@ -41,7 +41,7 @@ on:
         description: "Use the ublue cleanup action to clean up the runner before running the build"
         required: false
         type: boolean
-        default: true
+        default: false
       hwe:
         description: "Enable experimental things during builds, such as gnome backport. Will build an extra `-hwe` tag."
         required: false
@@ -89,7 +89,8 @@ jobs:
 
   build_push:
     name: Build and push image
-    runs-on: ${{ matrix.platform == 'amd64' && 'blacksmith-4vcpu-ubuntu-2404' || 'blacksmith-4vcpu-ubuntu-2404-arm' }}
+    # runs-on: ${{ matrix.platform == 'amd64' && 'blacksmith-4vcpu-ubuntu-2404' || 'blacksmith-4vcpu-ubuntu-2404-arm' }}
+    runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     timeout-minutes: 60
     needs: generate_matrix
     strategy:
@@ -119,8 +120,8 @@ jobs:
         with:
           target-dir: /var/lib/containers
 
-      - name: Cache Podman image layers
-        uses: ./.github/actions/cache-podman-build
+      - name: Restore Podman Cache
+        uses: ./.github/actions/restore-podman-cache
         with:
           cache-key: podman-${{ matrix.platform }}-${{ inputs.image-name }}-${{ inputs.flavor }}-${{ inputs.hwe }}-${{ github.ref_name }}
           restore-keys: |
@@ -163,6 +164,13 @@ jobs:
           sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}"
           echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
+      - name: Save Podman Cache
+        if: always()
+        uses: ./.github/actions/save-podman-cache
+        with:
+          cache-key: podman-${{ matrix.platform }}-${{ inputs.image-name }}-${{ inputs.flavor }}-${{ inputs.hwe }}-${{ github.ref_name }}
+          use-rootful: true
+
       - name: Setup Syft
         id: setup-syft
         if: ${{ inputs.sbom && inputs.publish }}
@@ -190,7 +198,6 @@ jobs:
           rechunk: ghcr.io/hhd-dev/rechunk:v1.2.1
           ref: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           prev-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          keep-ref: true # Do not cleanup the image since it's needed for cache
           skip_compression: true
           version: ${{ env.CENTOS_VERSION }}
 

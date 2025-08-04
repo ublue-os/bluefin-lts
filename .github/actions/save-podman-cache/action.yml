@@ -1,11 +1,8 @@
-name: Cache Podman Builds
+name: Save Podman Cache
 
 inputs:
   cache-key:
     description: 'A unique key for the cache'
-    required: true
-  restore-keys:
-    description: 'A list of restore keys for the cache'
     required: true
   use-rootful:
     description: 'If true, use rootful Podman image stores'
@@ -19,7 +16,7 @@ runs:
       shell: bash
       run: |
         sudo mv -fv /usr/bin/tar /usr/bin/tar.orig
-        echo -e '#!/bin/sh\n\nsudo /usr/bin/tar.orig "$@"' | sudo tee /usr/bin/tar
+        echo -e '#!/bin/sh\n\nsudo /usr/bin/tar.orig "$@"' | sudo tee /usr/bin/tar > /dev/null
         sudo chmod +x /usr/bin/tar
 
     - name: Determine Podman Cache Paths
@@ -29,15 +26,25 @@ runs:
         if [[ "${{ inputs.use-rootful }}" == "true" ]]; then
           echo "cache_paths=/var/lib/containers" >> $GITHUB_OUTPUT
         else
-          echo "cache_paths=$HOME/.local/share/containers\n$HOME/.config/containers" >> $GITHUB_OUTPUT
+          {
+            echo "cache_paths<<EOF"
+            echo "$HOME/.local/share/containers"
+            echo "$HOME/.config/containers"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
         fi
 
-    - name: Cache Podman Images
-      uses: actions/cache@v4
+    - name: Fix Permissions (if needed)
+      if: ${{ inputs.use-rootful == 'true' }}
+      shell: bash
+      run: |
+        sudo chown -R "$(id -u):$(id -g)" /var/lib/containers || true
+
+    - name: Save Podman Cache
+      uses: actions/cache/save@v4
       with:
         path: ${{ steps.podman-paths.outputs.cache_paths }}
         key: ${{ inputs.cache-key }}
-        restore-keys: ${{ inputs.restore-keys }}
 
     - name: Revert Tar Wrapper
       shell: bash
