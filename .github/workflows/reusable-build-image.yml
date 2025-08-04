@@ -51,7 +51,6 @@ on:
         description: "Publish this image"
         required: false
         type: boolean
-        # default: ${{ github.event_name != 'pull_request' }}
         default: true
     secrets:
       SIGNING_SECRET:
@@ -90,7 +89,7 @@ jobs:
 
   build_push:
     name: Build and push image
-    runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    runs-on: ${{ matrix.platform == 'amd64' && 'blacksmith-4vcpu-ubuntu-2404' || 'blacksmith-4vcpu-ubuntu-2404-arm' }}
     timeout-minutes: 60
     needs: generate_matrix
     strategy:
@@ -119,6 +118,15 @@ jobs:
         uses: ublue-os/container-storage-action@main
         with:
           target-dir: /var/lib/containers
+
+      - name: Cache Podman image layers
+        uses: ./.github/actions/cache-podman
+        with:
+          cache-key: podman-${{ matrix.platform }}-${{ inputs.image-name }}-${{ inputs.flavor }}-${{ inputs.hwe }}-${{ github.ref_name }}
+          restore-keys: |
+            podman-${{ matrix.platform }}-${{ inputs.image-name }}-${{ inputs.flavor }}-${{ inputs.hwe }}-main
+            podman-${{ matrix.platform }}-${{ inputs.image-name }}-${{ inputs.flavor }}-${{ inputs.hwe }}
+          use-rootful: true
 
       - name: Setup Just
         uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
@@ -182,6 +190,7 @@ jobs:
           rechunk: ghcr.io/hhd-dev/rechunk:v1.2.1
           ref: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           prev-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          keep-ref: true # Do not cleanup the image since it's needed for cache
           skip_compression: true
           version: ${{ env.CENTOS_VERSION }}
 
