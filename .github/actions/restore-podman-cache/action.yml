@@ -46,6 +46,7 @@ runs:
 
     - name: Fix Podman Cache Permissions
       if: ${{ inputs.use-rootful }}
+      shell: bash
       run: |
         sudo chown -R "$(id -u):$(id -g)" /var/lib/containers || true
 
