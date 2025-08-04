@@ -15,12 +15,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Tar Root Wrapper
-      shell: bash
-      run: |
-        sudo mv -fv /usr/bin/tar /usr/bin/tar.orig
-        echo -e '#!/bin/sh\n\nsudo /usr/bin/tar.orig "$@"' | sudo tee /usr/bin/tar > /dev/null
-        sudo chmod +x /usr/bin/tar
+    # - name: Setup Tar Root Wrapper
+    #   shell: bash
+    #   run: |
+    #     sudo mv -fv /usr/bin/tar /usr/bin/tar.orig
+    #     echo -e '#!/bin/sh\n\nsudo /usr/bin/tar.orig "$@"' | sudo tee /usr/bin/tar > /dev/null
+    #     sudo chmod +x /usr/bin/tar
 
     - name: Determine Podman Cache Paths
       id: podman-paths
@@ -50,9 +50,9 @@ runs:
       run: |
         sudo chown -R "$(id -u):$(id -g)" /var/lib/containers || true
 
-    - name: Revert Tar Wrapper
-      shell: bash
-      run: |
-        if [ -f /usr/bin/tar.orig ]; then
-          sudo mv -fv /usr/bin/tar.orig /usr/bin/tar
-        fi
+    # - name: Revert Tar Wrapper
+    #   shell: bash
+    #   run: |
+    #     if [ -f /usr/bin/tar.orig ]; then
+    #       sudo mv -fv /usr/bin/tar.orig /usr/bin/tar
+    #     fi
