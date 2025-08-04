@@ -16,7 +16,7 @@ runs:
       shell: bash
       run: |
         sudo mv -fv /usr/bin/tar /usr/bin/tar.orig
-        echo -e '#!/bin/sh\n\nsudo /usr/bin/tar.orig "$@"' | sudo tee /usr/bin/tar > /dev/null
+        echo -e '#!/bin/sh\n\nsudo /usr/bin/tar.orig --ignore-failed-read "$@"' | sudo tee /usr/bin/tar > /dev/null
         sudo chmod +x /usr/bin/tar
 
     - name: Determine Podman Cache Paths
