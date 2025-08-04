@@ -120,7 +120,7 @@ jobs:
           target-dir: /var/lib/containers
 
       - name: Cache Podman image layers
-        uses: ./.github/actions/cache-podman
+        uses: ./.github/actions/cache-podman-build
         with:
           cache-key: podman-${{ matrix.platform }}-${{ inputs.image-name }}-${{ inputs.flavor }}-${{ inputs.hwe }}-${{ github.ref_name }}
           restore-keys: |

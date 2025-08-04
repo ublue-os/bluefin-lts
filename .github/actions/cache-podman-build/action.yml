@@ -33,7 +33,7 @@ runs:
         fi
 
     - name: Cache Podman Images
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.podman-paths.outputs.cache_paths }}
         key: ${{ inputs.cache-key }}
