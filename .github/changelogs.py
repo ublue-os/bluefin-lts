@@ -366,7 +366,21 @@ def generate_changelog(
         if not fedora_version + "." in curr_pretty:
             curr_pretty=fedora_version + "." + curr_pretty
         
-        # Handle LTS releases with simplified format: "LTS YYYYMMDD"
+        # Extract date part for correct c10s.YYYYMMDD format
+        date_match = re.search(r'\.(\d{8})$', curr_pretty)
+        if date_match:
+            date_part = date_match.group(1)
+            pretty = target.upper()
+            pretty += " (c" + fedora_version + "s." + date_part
+        else:
+            # Fallback to original logic if pattern doesn't match
+            pretty = target.upper()
+            pretty += " (c" + curr_pretty + "s"
+        if finish:
+            pretty += ", #" + finish[:7]
+        pretty += ")"
+        
+        # Override format for LTS releases to use simplified "LTS YYYYMMDD" format
         if target == "lts":
             date_match = re.search(r'\.(\d{8})$', curr_pretty)
             if date_match:
@@ -375,16 +389,8 @@ def generate_changelog(
             else:
                 # Fallback for LTS if pattern doesn't match
                 pretty = "LTS " + curr_pretty
-            # Add commit hash for LTS if available
             if finish:
                 pretty += ", #" + finish[:7]
-        else:
-            # Use original format for non-LTS releases
-            pretty = target.capitalize()
-            pretty += " (c" + curr_pretty + "s"
-            if finish:
-                pretty += ", #" + finish[:7]
-            pretty += ")"
 
     title = CHANGELOG_TITLE.format_map(defaultdict(str, tag=curr, pretty=pretty))
 
