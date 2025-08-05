@@ -17,7 +17,7 @@ IMAGE_MATRIX = {
 RETRIES = 3
 RETRY_WAIT = 5
 FEDORA_PATTERN = re.compile(r"\.fc\d\d")
-START_PATTERN = lambda target: re.compile(rf"{target}-\d\d\d+")
+START_PATTERN = lambda target: re.compile(rf"{target}.\d\d\d+")
 
 PATTERN_ADD = "\n| ✨ | {name} | | {version} |"
 PATTERN_CHANGE = "\n| 🔄 | {name} | {prev} | {new} |"
@@ -360,7 +360,7 @@ def generate_changelog(
         # Remove .0 from curr
         curr_pretty = re.sub(r"\.\d{1,2}$", "", curr)
         # Remove target- from curr
-        curr_pretty = re.sub(rf"^[a-z]+-|^[0-9]+-", "", curr_pretty)
+        curr_pretty = re.sub(rf"^[a-z]+.|^[0-9]+-", "", curr_pretty)
         if target == "stable-daily":
             curr_pretty = re.sub(rf"^[a-z]+-", "", curr_pretty)
         if not fedora_version + "." in curr_pretty:
@@ -375,6 +375,7 @@ def generate_changelog(
 
     changelog = CHANGELOG_FORMAT
 
+    # TODO: is this needed?
     if target == "gts":
         changelog = changelog.splitlines()
         del changelog[9]
