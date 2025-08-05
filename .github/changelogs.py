@@ -365,8 +365,17 @@ def generate_changelog(
             curr_pretty = re.sub(rf"^[a-z]+-", "", curr_pretty)
         if not fedora_version + "." in curr_pretty:
             curr_pretty=fedora_version + "." + curr_pretty
-        pretty = target.capitalize()
-        pretty += " (c" + curr_pretty + "s"
+        
+        # Extract date part for correct c10s.YYYYMMDD format
+        date_match = re.search(r'\.(\d{8})$', curr_pretty)
+        if date_match:
+            date_part = date_match.group(1)
+            pretty = target.upper()
+            pretty += " (c" + fedora_version + "s." + date_part
+        else:
+            # Fallback to original logic if pattern doesn't match
+            pretty = target.upper()
+            pretty += " (c" + curr_pretty + "s"
         if finish:
             pretty += ", #" + finish[:7]
         pretty += ")"
