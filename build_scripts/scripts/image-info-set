@@ -14,9 +14,9 @@ cat "${IMAGE_INFO}"
 # a lock or something that makes it so the resulting file is just empty
 ANNOYING_JQ_WORKAROUND=$(mktemp)
 jq -f /dev/stdin "${IMAGE_INFO}" >"${ANNOYING_JQ_WORKAROUND}" <<EOF
-."image-name" = "${IMAGE_NAME}-${FLAVOR}" | \
+."image-name" = "${IMAGE_NAME}" | \
 ."image-flavor" = "${FLAVOR}" | \
-."image-ref" = "${IMAGE_REF}-${FLAVOR}"
+."image-ref" = "${IMAGE_REF}"
 EOF
 
 mv "${ANNOYING_JQ_WORKAROUND}" "${IMAGE_INFO}"
