@@ -363,18 +363,8 @@ def generate_changelog(
             date_str = date_match.group(1)
             pretty = target.upper() + " " + date_str
         else:
-            # Fallback to original format if date extraction fails
-            curr_pretty = re.sub(r"\.\d{1,2}$", "", curr)
-            curr_pretty = re.sub(rf"^[a-z]+-|^[0-9]+-", "", curr_pretty)
-            if target == "stable-daily":
-                curr_pretty = re.sub(rf"^[a-z]+-", "", curr_pretty)
-            if not fedora_version + "." in curr_pretty:
-                curr_pretty=fedora_version + "." + curr_pretty
+            # Fallback if date extraction fails
             pretty = target.capitalize()
-            pretty += " (c" + curr_pretty + "s"
-            if finish:
-                pretty += ", #" + finish[:7]
-            pretty += ")"
 
     title = CHANGELOG_TITLE.format_map(defaultdict(str, tag=curr, pretty=pretty))
 
