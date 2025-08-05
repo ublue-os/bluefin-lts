@@ -36,7 +36,7 @@ OTHER_NAMES = {
 COMMITS_FORMAT = "### Commits\n| Hash | Subject |\n| --- | --- |{commits}\n\n"
 COMMIT_FORMAT = "\n| **[{short}](https://github.com/ublue-os/bluefin-lts/commit/{githash})** | {subject} |"
 
-CHANGELOG_TITLE = "{tag}: {pretty}"
+CHANGELOG_TITLE = "{pretty}"
 CHANGELOG_FORMAT = """\
 {handwritten}
 
@@ -357,19 +357,24 @@ def generate_changelog(
             print(f"Failed to get linux version:\n{e}")
             fedora_version = ""
 
-        # Remove .0 from curr
-        curr_pretty = re.sub(r"\.\d{1,2}$", "", curr)
-        # Remove target- from curr
-        curr_pretty = re.sub(rf"^[a-z]+-|^[0-9]+-", "", curr_pretty)
-        if target == "stable-daily":
-            curr_pretty = re.sub(rf"^[a-z]+-", "", curr_pretty)
-        if not fedora_version + "." in curr_pretty:
-            curr_pretty=fedora_version + "." + curr_pretty
-        pretty = target.capitalize()
-        pretty += " (c" + curr_pretty + "s"
-        if finish:
-            pretty += ", #" + finish[:7]
-        pretty += ")"
+        # Extract date from current tag (e.g., "lts-20250602" -> "20250602")
+        date_match = re.search(r"-(\d{8})(?:\.\d+)?$", curr)
+        if date_match:
+            date_str = date_match.group(1)
+            pretty = target.upper() + " " + date_str
+        else:
+            # Fallback to original format if date extraction fails
+            curr_pretty = re.sub(r"\.\d{1,2}$", "", curr)
+            curr_pretty = re.sub(rf"^[a-z]+-|^[0-9]+-", "", curr_pretty)
+            if target == "stable-daily":
+                curr_pretty = re.sub(rf"^[a-z]+-", "", curr_pretty)
+            if not fedora_version + "." in curr_pretty:
+                curr_pretty=fedora_version + "." + curr_pretty
+            pretty = target.capitalize()
+            pretty += " (c" + curr_pretty + "s"
+            if finish:
+                pretty += ", #" + finish[:7]
+            pretty += ")"
 
     title = CHANGELOG_TITLE.format_map(defaultdict(str, tag=curr, pretty=pretty))
 
