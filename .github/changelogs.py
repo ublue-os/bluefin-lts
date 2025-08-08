@@ -11,6 +11,7 @@ IMAGE_VARIANTS = ["lts", "dx", "gdx"]
 
 RETRIES = 3
 RETRY_WAIT = 5
+
 CENTOS_PATTERN = re.compile(r"\.el\d\d")
 START_PATTERN = lambda target: re.compile(rf"{target}\.\d\d\d+")
 
