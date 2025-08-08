@@ -50,7 +50,7 @@ From previous `{target}` version `{prev}` there have been the following changes.
 | --- | --- |
 | **Docker** | {pkgrel:docker-ce} |
 | **VSCode** | {pkgrel:code} |
-| **Ramalama** | {pkgrel:python3-ramalama} |
+| **Ramalama** | {pkgrel:ramalama} |
 
 ### Major GDX packages
 | Name | Version |
