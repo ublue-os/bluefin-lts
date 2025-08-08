@@ -56,7 +56,7 @@ From previous `{target}` version `{prev}` there have been the following changes.
 | Name | Version |
 | --- | --- |
 | **Nvidia** | {pkgrel:nvidia-driver} |
-
+| **CUDA** | {pkgrel:nvidia-driver-cuda} |
 
 {changes}
 
