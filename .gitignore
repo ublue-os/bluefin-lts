@@ -5,6 +5,11 @@ output/
 __pycache__/
 *.pyc
 
+# IDE
+.idea/
+.vscode/
+.zed/
+
 # Changelog generation temporary files
 changelog.md
 output.env

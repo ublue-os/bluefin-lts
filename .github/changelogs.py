@@ -1,4 +1,3 @@
-from itertools import product
 import subprocess
 import json
 import time
@@ -8,35 +7,30 @@ from collections import defaultdict
 
 REGISTRY = "docker://ghcr.io/ublue-os/"
 
-IMAGE_MATRIX = {
-    "experience": ["base", "dx", "gdx"],
-    "de": ["gnome"],
-    "image_flavor": ["main"],
-}
+IMAGE_VARIANTS = ["lts", "dx", "gdx"]
 
 RETRIES = 3
 RETRY_WAIT = 5
-FEDORA_PATTERN = re.compile(r"\.fc\d\d")
-START_PATTERN = lambda target: re.compile(rf"{target}-\d\d\d+")
+CENTOS_PATTERN = re.compile(r"\.el\d\d")
+START_PATTERN = lambda target: re.compile(rf"{target}\.\d\d\d+")
 
 PATTERN_ADD = "\n| ✨ | {name} | | {version} |"
 PATTERN_CHANGE = "\n| 🔄 | {name} | {prev} | {new} |"
 PATTERN_REMOVE = "\n| ❌ | {name} | {version} | |"
 PATTERN_PKGREL_CHANGED = "{prev} ➡️ {new}"
 PATTERN_PKGREL = "{version}"
-COMMON_PAT = "### All Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n"
+COMMON_PAT = "### {title}\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n"
 OTHER_NAMES = {
-    "base": "### Base Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "dx": "### [Developer Experience Images](https://docs.projectbluefin.io/bluefin-dx)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "gdx": "### [Graphical Developer Experience Images](https://docs.projectbluefin.io/gdx)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "gnome": "### [Bluefin LTS Images](https://docs.projectbluefin.io/lts)\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "nvidia": "### Nvidia Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+    "all": "All Images",
+    "base": "Base Images",
+    "dx": "[Developer Experience Images](https://docs.projectbluefin.io/bluefin-dx)",
+    "gdx": "[Graphical Developer Experience Images](https://docs.projectbluefin.io/gdx)",
 }
 
 COMMITS_FORMAT = "### Commits\n| Hash | Subject |\n| --- | --- |{commits}\n\n"
 COMMIT_FORMAT = "\n| **[{short}](https://github.com/ublue-os/bluefin-lts/commit/{githash})** | {subject} |"
 
-CHANGELOG_TITLE = "{tag}: {pretty}"
+CHANGELOG_TITLE = "{os} {tag}: {pretty}"
 CHANGELOG_FORMAT = """\
 {handwritten}
 
@@ -46,10 +40,10 @@ From previous `{target}` version `{prev}` there have been the following changes.
 | Name | Version |
 | --- | --- |
 | **Kernel** | {pkgrel:kernel} |
+| **HWE Kernel** | {pkgrel:kernel-hwe} |
 | **GNOME** | {pkgrel:gnome-control-center-filesystem} |
 | **Mesa** | {pkgrel:mesa-filesystem} |
 | **Podman** | {pkgrel:podman} |
-| **Nvidia** | {pkgrel:nvidia-driver} |
 
 ### Major DX packages
 | Name | Version |
@@ -57,6 +51,12 @@ From previous `{target}` version `{prev}` there have been the following changes.
 | **Docker** | {pkgrel:docker-ce} |
 | **VSCode** | {pkgrel:code} |
 | **Ramalama** | {pkgrel:python3-ramalama} |
+
+### Major GDX packages
+| Name | Version |
+| --- | --- |
+| **Nvidia** | {pkgrel:nvidia-driver} |
+
 
 {changes}
 
@@ -77,6 +77,7 @@ sudo bootc switch --enforce-container-sigpolicy ghcr.io/ublue-os/$IMAGE_NAME:{cu
 Be sure to read the [documentation](https://docs.projectbluefin.io/lts) for more information
 on how to use your cloud native system.
 """
+
 HANDWRITTEN_PLACEHOLDER = """\
 This is an automatically generated changelog for release `{curr}`."""
 
@@ -91,32 +92,26 @@ BLACKLIST_VERSIONS = [
     "vscode",
 ]
 
+ALL_CAPS_TARGET_LIST = ["lts", "gdx", "dx"]
+OS = "Bluefin"
 
 def get_images(target: str):
-    matrix = IMAGE_MATRIX
+    for experience in IMAGE_VARIANTS:
+        img = "bluefin"
 
-    for experience, de, image_flavor in product(*matrix.values()):
-        img = ""
-        if de == "gnome":
-            img += "bluefin"
+        if "-hwe" in target:
+            yield img, target
+            break
 
-        if experience == "dx":
-            img += "-dx"
+        if not experience.startswith("lts"):
+            img += "-" + experience
 
-        if experience == "gdx":
-            img += "-gdx"
-
-        if image_flavor != "main":
-            img += "-"
-            img += image_flavor
-
-        yield img, experience, de, image_flavor
-
+        yield img, experience
 
 def get_manifests(target: str):
     out = {}
     imgs = list(get_images(target))
-    for j, (img, _, _, _) in enumerate(imgs):
+    for j, (img, _) in enumerate(imgs):
         output = None
         print(f"Getting {img}:{target} manifest ({j+1}/{len(imgs)}).")
         for i in range(RETRIES):
@@ -188,7 +183,7 @@ def get_package_groups(target: str, prev: dict[str, Any], manifests: dict[str, A
 
     # Find common packages
     first = True
-    for img, experience, de, image_flavor in get_images(target):
+    for img, experience in get_images(target):
         if img not in pkg:
             continue
 
@@ -205,14 +200,10 @@ def get_package_groups(target: str, prev: dict[str, Any], manifests: dict[str, A
     # Find other packages
     for t, other in others.items():
         first = True
-        for img, experience, de, image_flavor in get_images(target):
+        for img, experience in get_images(target):
             if img not in pkg:
                 continue
 
-            if t == "nvidia" and "nvidia" not in image_flavor:
-                continue
-            if t == "gnome" and de != "gnome":
-                continue
             if t == "base" and experience != "base":
                 continue
             if t == "dx" and experience != "dx":
@@ -237,7 +228,7 @@ def get_versions(manifests: dict[str, Any]):
     pkgs = get_packages(manifests)
     for img_pkgs in pkgs.values():
         for pkg, v in img_pkgs.items():
-            versions[pkg] = re.sub(FEDORA_PATTERN, "", v)
+            versions[pkg] = re.sub(CENTOS_PATTERN, "", v)
     return versions
 
 
@@ -323,6 +314,12 @@ def get_commits(prev_manifests, manifests, workdir: str):
         print(f"Failed to get commits:\n{e}")
         return ""
 
+def get_hwe_kernel_change(prev: str, curr: str, target: str):
+    hwe_curr_manifest = get_manifests(curr + "-hwe")
+    hwe_prev_manifest = get_manifests(prev + "-hwe")
+    hwe_curr_versions = get_versions(hwe_curr_manifest)
+    hwe_prev_versions = get_versions(hwe_prev_manifest)
+    return (hwe_curr_versions.get("kernel"), hwe_prev_versions.get("kernel"))
 
 def generate_changelog(
     handwritten: str | None,
@@ -337,6 +334,12 @@ def generate_changelog(
     prev_versions = get_versions(prev_manifests)
 
     prev, curr = get_tags(target, manifests)
+
+    hwe_kernel_version, hwe_prev_kernel_version = get_hwe_kernel_change(prev, curr, target)
+
+    version = target.capitalize()
+    if target in ALL_CAPS_TARGET_LIST:
+        version = version.upper()
 
     if not pretty:
         # Generate pretty version since we dont have it
@@ -360,25 +363,15 @@ def generate_changelog(
         # Remove .0 from curr
         curr_pretty = re.sub(r"\.\d{1,2}$", "", curr)
         # Remove target- from curr
-        curr_pretty = re.sub(rf"^[a-z]+-|^[0-9]+-", "", curr_pretty)
-        if target == "stable-daily":
-            curr_pretty = re.sub(rf"^[a-z]+-", "", curr_pretty)
-        if not fedora_version + "." in curr_pretty:
-            curr_pretty=fedora_version + "." + curr_pretty
-        pretty = target.capitalize()
-        pretty += " (c" + curr_pretty + "s"
+        curr_pretty = re.sub(r"^[a-z]+.|^[0-9]+\.", "", curr_pretty)
+        pretty = curr_pretty + " (c" + fedora_version + "s"
         if finish:
             pretty += ", #" + finish[:7]
         pretty += ")"
 
-    title = CHANGELOG_TITLE.format_map(defaultdict(str, tag=curr, pretty=pretty))
+    title = CHANGELOG_TITLE.format_map(defaultdict(str, os=OS, tag=version, pretty=pretty))
 
     changelog = CHANGELOG_FORMAT
-
-    if target == "gts":
-        changelog = changelog.splitlines()
-        del changelog[9]
-        changelog = '\n'.join(changelog)
 
     changelog = (
         changelog.replace("{handwritten}", handwritten if handwritten else HANDWRITTEN_PLACEHOLDER)
@@ -386,6 +379,16 @@ def generate_changelog(
         .replace("{prev}", prev)
         .replace("{curr}", curr)
     )
+
+    if hwe_kernel_version == hwe_prev_kernel_version:
+        changelog = changelog.replace(
+            "{pkgrel:kernel-hwe}", PATTERN_PKGREL.format(version=hwe_kernel_version)
+        )
+    else:
+        changelog = changelog.replace(
+            "{pkgrel:kernel-hwe}",
+            PATTERN_PKGREL_CHANGED.format(prev=hwe_prev_kernel_version, new=hwe_kernel_version),
+        )
 
     for pkg, v in versions.items():
         if pkg not in prev_versions or prev_versions[pkg] == v:
@@ -402,11 +405,11 @@ def generate_changelog(
     changes += get_commits(prev_manifests, manifests, workdir)
     common = calculate_changes(common, prev_versions, versions)
     if common:
-        changes += COMMON_PAT.format(changes=common)
+        changes += COMMON_PAT.format(title=OTHER_NAMES["all"], changes=common)
     for k, v in others.items():
         chg = calculate_changes(v, prev_versions, versions)
         if chg:
-            changes += OTHER_NAMES[k].format(changes=chg)
+            changes += COMMON_PAT.format(title=OTHER_NAMES[k], changes=chg)
 
     changelog = changelog.replace("{changes}", changes)
 
