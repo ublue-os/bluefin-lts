@@ -66,6 +66,13 @@ jobs:
           echo "FULL_IMAGE_NAME=${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}" >> $GITHUB_ENV
           echo "FULL_TAG_NAME=${{ env.DEFAULT_TAG }}${{ matrix.tag_suffix }}" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}-${{ env.DEFAULT_TAG }}${{ matrix.tag_suffix }}-iso" >> $GITHUB_ENV
+
+      - name: Update iso.toml with dynamic image reference
+        run: |
+          DYNAMIC_IMAGE_REF="${{ env.IMAGE_REGISTRY }}/${{ env.FULL_IMAGE_NAME }}:${{ env.FULL_TAG_NAME }}"
+          sed -i "s|^bootc switch --mutate-in-place --transport registry --enforce-container-sigpolicy .*|bootc switch --mutate-in-place --transport registry --enforce-container-sigpolicy ${DYNAMIC_IMAGE_REF}|g" ./iso.toml
+          echo "Updated iso.toml with image: ${DYNAMIC_IMAGE_REF}"
+
       - name: Build ISO
         id: build-iso
         uses: osbuild/bootc-image-builder-action@019bb59c5100ecec4e78c9e94e18a840110f7a0b # v0.0.2
@@ -74,6 +81,7 @@ jobs:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.FULL_IMAGE_NAME }}:${{ env.FULL_TAG_NAME }}
           types: |
             iso
+
       - name: Upload to Job Artifacts
         if: github.event.inputs.upload-to-cloudflare == 'false' || github.event_name != 'workflow_dispatch'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
