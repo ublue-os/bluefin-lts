@@ -7,25 +7,27 @@ dnf -y remove \
 
 dnf -y install \
 	-x gnome-extensions-app \
-	system-reinstall-bootc \
-	gnome-disk-utility \
+	btrfs-progs \
+	buildah \
 	distrobox \
 	fastfetch \
 	fpaste \
+	fzf \
+	gnome-disk-utility \
 	gnome-shell-extension-{dash-to-dock,caffeine} \
+	glow \
+	gum \
 	hplip \
-        just \
+	jetbrains-mono-fonts-all \
+	just \
 	nss-mdns \
 	powertop \
+    rclone \
+	restic \
+	system-reinstall-bootc \
 	tuned-ppd \
-	fzf \
-	glow \
 	wl-clipboard \
-	gum \
-	jetbrains-mono-fonts-all \
-	buildah \
-	btrfs-progs \
-  xhost
+	xhost
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
