@@ -22,7 +22,7 @@ dnf -y install \
 	just \
 	nss-mdns \
 	powertop \
-    rclone \
+	rclone \
 	restic \
 	system-reinstall-bootc \
 	tuned-ppd \
