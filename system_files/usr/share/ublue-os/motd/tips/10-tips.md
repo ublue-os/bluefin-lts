@@ -1,7 +1,6 @@
 Follow us on 󰫑 [@UniversalBlue@fosstodon.org](https://fosstodon.org/@UniversalBlue)
 Bluefin is your gateway to Kubernetes 󱃾 `kind create cluster` to [get started](https://kind.sigs.k8s.io/)
 Bluefin is your gateway to Cloud Native - find your flock at [landscape.cncf.io](https://l.cncf.io)
-Support the app store! Donate to  [Flatpak](https://opencollective.com/flatpak)
 Need more indepth technical information?~Check out the [Bluefin Administrator's Guide](https://docs.projectbluefin.io/administration)
 Like servers? Check out [ucore](https://github.com/ublue-os/ucore)
 Update break something? You can roll back with `sudo bootc rollback`
