@@ -1,6 +1,6 @@
 #!/bin/bash
 ARCH=$(uname -m)
-TARGET_MAJOR_MINOR="6.15"
+TARGET_MAJOR_MINOR="6.14"
 echo "--- Pinning Kernel to ${TARGET_MAJOR_MINOR}.x ---"
 
 rpm -q python3-dnf-plugin-versionlock &> /dev/null || \
