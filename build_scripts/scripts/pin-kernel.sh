@@ -1,40 +1,35 @@
 #!/bin/bash
 ARCH=$(uname -m)
 
+# Fetch the kernel version from Bluefin Stable
 file_content=$(curl -s https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/.github/workflows/build-image-stable.yml)
 TARGET_MAJOR_MINOR_MINOR=$(echo "$file_content" | grep -oP 'kernel_pin: \K\d+\.\d+\.\d+')
 
 echo "--- Pinning Kernel to ${TARGET_MAJOR_MINOR_MINOR} ---"
 
+BASE_URL="https://cbs.centos.org/kojifiles/packages/kernel/${TARGET_MAJOR_MINOR_MINOR}/1.el10/${ARCH}"
+PKGS_URLS=(
+    "${BASE_URL}/kernel-${TARGET_MAJOR_MINOR_MINOR}-1.el10.${ARCH}.rpm"
+    "${BASE_URL}/kernel-core-${TARGET_MAJOR_MINOR_MINOR}-1.el10.${ARCH}.rpm"
+    "${BASE_URL}/kernel-modules-${TARGET_MAJOR_MINOR_MINOR}-1.el10.${ARCH}.rpm"
+    "${BASE_URL}/kernel-headers-${TARGET_MAJOR_MINOR_MINOR}-1.el10.${ARCH}.rpm"
+)
+
+dnf install --allowerasing -y "${PKGS_URLS[@]}" || { echo "Error: Failed to install kernel packages."; exit 1; }
+
+# Add versionlocks
 rpm -q python3-dnf-plugin-versionlock &> /dev/null || \
     { echo "Installing dnf-plugin-versionlock..."; dnf install -y python3-dnf-plugin-versionlock || { echo "Error: Failed to install versionlock plugin."; exit 1; } }
 
-# Find the newest target kernel version
-TARGET_KERNEL_FULL_VERSION=$(dnf list available kernel --showduplicates | \
-    grep "^kernel.${ARCH}.*${TARGET_MAJOR_MINOR_MINOR}\." | \
-    awk '{print $2}' | sort -V | tail -n 1)
-
-if [ -z "$TARGET_KERNEL_FULL_VERSION" ]; then
-    echo "Error: No ${TARGET_MAJOR_MINOR_MINOR} kernel found. Exiting."
-    exit 1
-fi
-
-KERNEL_VERSION_ONLY=$(echo "$TARGET_KERNEL_FULL_VERSION" | sed "s/\.${ARCH}$//")
+KERNEL_VERSION_ONLY=$(echo "${PKGS_URLS[0]}" | sed -E "s/^.*kernel-|-\.[0-9]+\.el[0-9]+\.${ARCH}\.rpm$//")
 echo "Targeting kernel: ${KERNEL_VERSION_ONLY}"
 
-# Install kernel packages
-INSTALL_PKGS=(
-    "kernel-${KERNEL_VERSION_ONLY}"
-    "kernel-core-${KERNEL_VERSION_ONLY}"
-    "kernel-modules-${KERNEL_VERSION_ONLY}"
-)
-dnf install --allowerasing -y "${INSTALL_PKGS[@]/%/.${ARCH}}" || { echo "Error: Failed to install kernel packages."; exit 1; }
-echo "Installing kernel packages: ${INSTALL_PKGS[@]/%/.${ARCH}}"
-
 # Add versionlocks
-for pkg in "${INSTALL_PKGS[@]}"; do
-    echo "Locking package: ${pkg}.${ARCH}"
-    dnf versionlock add "${pkg}.${ARCH}" || { echo "Error: Failed to lock ${pkg}.${ARCH}."; exit 1; }
+for pkg_url in "${PKGS_URLS[@]}"; do
+    # Extract the package name and version from the URL
+    pkg_name=$(basename "$pkg_url" | sed -E "s/\\.${ARCH}\\.rpm$//")
+    echo "Locking package: ${pkg_name}"
+    dnf versionlock add "${pkg_name}" || { echo "Error: Failed to lock ${pkg_name}."; exit 1; }
 done
 
-echo "Kernel ${KERNEL_VERSION_ONLY} installed, set as default, and locked."
+echo "Kernel ${KERNEL_VERSION_ONLY} installed and locked."
