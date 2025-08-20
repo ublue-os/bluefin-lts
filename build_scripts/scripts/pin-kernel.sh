@@ -1,18 +1,21 @@
 #!/bin/bash
 ARCH=$(uname -m)
-TARGET_MAJOR_MINOR="6.14"
-echo "--- Pinning Kernel to ${TARGET_MAJOR_MINOR}.x ---"
+
+file_content=$(curl -s https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/.github/workflows/build-image-stable.yml)
+TARGET_MAJOR_MINOR_MINOR=$(echo "$file_content" | grep -oP 'kernel_pin: \K\d+\.\d+\.\d+')
+
+echo "--- Pinning Kernel to ${TARGET_MAJOR_MINOR_MINOR} ---"
 
 rpm -q python3-dnf-plugin-versionlock &> /dev/null || \
     { echo "Installing dnf-plugin-versionlock..."; dnf install -y python3-dnf-plugin-versionlock || { echo "Error: Failed to install versionlock plugin."; exit 1; } }
 
 # Find the newest target kernel version
 TARGET_KERNEL_FULL_VERSION=$(dnf list available kernel --showduplicates | \
-    grep "^kernel.${ARCH}.*${TARGET_MAJOR_MINOR}\." | \
+    grep "^kernel.${ARCH}.*${TARGET_MAJOR_MINOR_MINOR}\." | \
     awk '{print $2}' | sort -V | tail -n 1)
 
 if [ -z "$TARGET_KERNEL_FULL_VERSION" ]; then
-    echo "Error: No ${TARGET_MAJOR_MINOR}.x kernel found. Exiting."
+    echo "Error: No ${TARGET_MAJOR_MINOR_MINOR} kernel found. Exiting."
     exit 1
 fi
 
