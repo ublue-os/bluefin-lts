@@ -15,6 +15,7 @@ PKGS_URLS=(
     "${BASE_URL}/kernel-headers-${TARGET_MAJOR_MINOR_MINOR}-1.el10.${ARCH}.rpm"
 )
 
+dnf uninstall -y kernel-uki-virt
 dnf install --allowerasing -y "${PKGS_URLS[@]}" || { echo "Error: Failed to install kernel packages."; exit 1; }
 
 # Add versionlocks
