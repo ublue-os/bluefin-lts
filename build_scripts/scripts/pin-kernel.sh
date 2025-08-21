@@ -34,4 +34,4 @@ for pkg_url in "${PKGS_URLS[@]}"; do
 done
 
 echo "Kernel ${KERNEL_VERSION_ONLY} installed and locked."
-rpm -qa | grep kernel*
+rpm -qa | grep 'kernel.*'
