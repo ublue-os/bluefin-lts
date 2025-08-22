@@ -19,8 +19,7 @@ dnf uninstall -y kernel-uki-virt
 dnf install --allowerasing -y "${PKGS_URLS[@]}" || { echo "Error: Failed to install kernel packages."; exit 1; }
 
 # Add versionlocks
-rpm -q python3-dnf-plugin-versionlock &> /dev/null || \
-    { echo "Installing dnf-plugin-versionlock..."; dnf install -y python3-dnf-plugin-versionlock || { echo "Error: Failed to install versionlock plugin."; exit 1; } }
+dnf install -y 'dnf-command(versionlock)'
 
 KERNEL_VERSION_ONLY=$(echo "${PKGS_URLS[0]}" | sed -E "s/^.*kernel-|-\.[0-9]+\.el[0-9]+\.${ARCH}\.rpm$//")
 echo "Targeting kernel: ${KERNEL_VERSION_ONLY}"
