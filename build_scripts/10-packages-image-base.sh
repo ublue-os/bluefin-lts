@@ -17,7 +17,7 @@ if [ "${ENABLE_HWE}" == "1" ] ; then
 fi
 
 # GNOME 48 backport COPR
-dnf copr enable -y "jreilly1821/c10s-gnome-48"
+dnf copr enable -y "jreilly1821/c10s-gnome"
 dnf -y install glib2
 
 # This fixes a lot of skew issues on GDX because kernel-devel wont update then
