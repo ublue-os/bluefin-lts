@@ -3,7 +3,8 @@ on:
     branches:
       - main
     tags:
-      - 'lts-*'
+      - 'lts.*'
+      - 'lts-*'  # Keep legacy support
   workflow_call:
     inputs:
       stream_name:

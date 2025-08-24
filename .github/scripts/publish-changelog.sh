@@ -11,8 +11,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Function to get the latest git tag
 get_latest_tag() {
-    # Get the latest tag that matches the lts-* pattern
-    git tag --sort=-version:refname | grep -E "^lts-[0-9]{8}$" | head -n1 || echo ""
+    # Get the latest tag that matches the lts.* pattern (new format) or lts-* pattern (legacy)
+    git tag --sort=-version:refname | grep -E "^lts[.-][0-9]{8}$" | head -n1 || echo ""
 }
 
 # Function to get the last published tag from file
