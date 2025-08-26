@@ -57,6 +57,7 @@ dnf -y install \
 	-x PackageKit-command-not-found \
 	-x gnome-software-fedora-langpacks \
 	-x gnome-extensions-app \
+	-x gnome-software \
 	"NetworkManager-adsl" \
 	"centos-backgrounds" \
 	"gdm" \
@@ -68,7 +69,6 @@ dnf -y install \
 	"gnome-session-wayland-session" \
 	"gnome-settings-daemon" \
 	"gnome-shell" \
-	"gnome-software" \
 	"gnome-user-docs" \
 	"gvfs-fuse" \
 	"gvfs-goa" \
