@@ -13,3 +13,9 @@ __pycache__/
 # Changelog generation temporary files
 changelog.md
 output.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.zed/
