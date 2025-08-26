@@ -87,7 +87,7 @@ sudoif command *args:
 # The script constructs the version string using the tag and the current date.
 # If the git working directory is clean, it also includes the short SHA of the current HEAD.
 #
-# just build $target_image $tag $dx $gdx
+# just build $target_image $tag $dx $gdx $hwe
 #
 # Example usage:
 #   just build bluefin lts 1 0 1
