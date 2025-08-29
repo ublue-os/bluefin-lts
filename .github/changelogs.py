@@ -390,13 +390,19 @@ class ChangelogGenerator:
         return output
     
     def get_commits(self, prev_manifests: Dict[str, Any], 
-                   manifests: Dict[str, Any], workdir: Optional[str] = None) -> str:
+                   manifests: Dict[str, Any], target: str, workdir: Optional[str] = None) -> str:
         """Extract commit information between versions."""
+        # Check if commits are enabled in configuration
+        if not self.config.defaults.get("enable_commits", False):
+            logger.debug("Commit extraction disabled in configuration")
+            return ""
+            
         if not workdir:
             logger.warning("No workdir provided, skipping commit extraction")
             return ""
             
         try:
+            # Get commit hashes from container manifests
             start = self._get_commit_hash(prev_manifests)
             finish = self._get_commit_hash(manifests)
             
@@ -404,15 +410,20 @@ class ChangelogGenerator:
                 logger.warning("Missing commit hashes, skipping commit extraction")
                 return ""
             
+            if start == finish:
+                logger.info("Same commit hash for both versions, no commits to show")
+                return ""
+            
             logger.info(f"Extracting commits from {start[:7]} to {finish[:7]}")
             
+            # Use git log with commit hashes from container manifests
             commits = subprocess.run(
                 ["git", "-C", workdir, "log", "--pretty=format:%H %h %s", 
                  f"{start}..{finish}"],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                timeout=30  # Add timeout for git commands
+                timeout=30
             ).stdout.decode("utf-8")
             
             output = ""
@@ -428,6 +439,7 @@ class ChangelogGenerator:
                     
                 githash, short, subject = parts
                 
+                # Skip merge commits and chore commits
                 if subject.lower().startswith(("merge", "chore")):
                     continue
                     
@@ -440,13 +452,112 @@ class ChangelogGenerator:
             return self.config.templates["commits_format"].format(commits=output) if output else ""
             
         except subprocess.CalledProcessError as e:
-            logger.error(f"Git command failed: {e}")
+            # Check if the error is due to unknown revision (commit not in repo)
+            stderr_output = e.stderr.decode() if e.stderr else ""
+            if "unknown revision" in stderr_output.lower() or "bad revision" in stderr_output.lower():
+                logger.warning(f"Container commit hashes not found in git repository - trying timestamp-based approach")
+                logger.debug(f"Git error: {stderr_output}")
+                return self._get_commits_by_timestamp(prev_manifests, manifests, workdir)
+            else:
+                logger.warning(f"Git command failed: {stderr_output}")
             return ""
         except subprocess.TimeoutExpired:
             logger.error("Git command timed out")
             return ""
         except Exception as e:
-            logger.error(f"Failed to get commits: {e}")
+            logger.warning(f"Failed to get commits: {e}")
+            return ""
+    
+    def _get_commits_by_timestamp(self, prev_manifests: Dict[str, Any], 
+                                 manifests: Dict[str, Any], workdir: str) -> str:
+        """Get commits using container timestamps as fallback."""
+        try:
+            from datetime import datetime, timedelta
+            import re
+            
+            # Get container creation timestamps
+            prev_timestamp = self._get_container_timestamp(prev_manifests)
+            curr_timestamp = self._get_container_timestamp(manifests)
+            
+            logger.debug(f"Container timestamps: prev={prev_timestamp}, curr={curr_timestamp}")
+            
+            if not prev_timestamp or not curr_timestamp:
+                logger.warning("Missing container timestamps for commit correlation")
+                return ""
+            
+            # Parse ISO 8601 timestamps
+            def parse_timestamp(ts):
+                # Remove microseconds and timezone info for simpler parsing
+                ts = re.sub(r'\.\d+', '', ts)  # Remove microseconds
+                ts = ts.replace('Z', '+00:00')  # Handle Z timezone
+                return datetime.fromisoformat(ts.replace('Z', '+00:00'))
+            
+            prev_dt = parse_timestamp(prev_timestamp)
+            curr_dt = parse_timestamp(curr_timestamp)
+            
+            logger.info(f"Searching commits between {prev_dt.strftime('%Y-%m-%d %H:%M')} and {curr_dt.strftime('%Y-%m-%d %H:%M')}")
+            
+            # Add some buffer time to account for build delays
+            start_time = prev_dt - timedelta(hours=2)
+            end_time = curr_dt + timedelta(hours=2)
+            
+            logger.debug(f"Git time range: {start_time.strftime('%Y-%m-%d %H:%M')} to {end_time.strftime('%Y-%m-%d %H:%M')}")
+            
+            # Use git log with date range
+            git_cmd = [
+                "git", "-C", workdir, "log", 
+                "--pretty=format:%H %h %s %ci",
+                f"--since={start_time.strftime('%Y-%m-%d %H:%M')}",
+                f"--until={end_time.strftime('%Y-%m-%d %H:%M')}",
+                "--no-merges"
+            ]
+            
+            logger.debug(f"Git command: {' '.join(git_cmd)}")
+            
+            commits = subprocess.run(git_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30).stdout.decode("utf-8")
+            
+            logger.debug(f"Raw git output: {commits}")
+            
+            output = ""
+            commit_count = 0
+            for commit in commits.split("\n"):
+                if not commit.strip():
+                    continue
+                    
+                # Parse git output format: "hash short_hash subject date timezone"
+                parts = commit.split(" ")
+                if len(parts) < 4:
+                    logger.debug(f"Skipping malformed commit line: {commit}")
+                    continue
+                    
+                githash = parts[0]
+                short = parts[1] 
+                # Everything from index 2 up to the date (which has format YYYY-MM-DD)
+                subject_parts = []
+                for i, part in enumerate(parts[2:], 2):
+                    if part.startswith("2025-") or part.startswith("2024-"):  # Date part
+                        break
+                    subject_parts.append(part)
+                
+                subject = " ".join(subject_parts)
+                
+                # Skip some chore commits but include dependency updates
+                if (subject.lower().startswith("chore") and 
+                    not any(keyword in subject.lower() for keyword in ["deps", "update", "bump"])):
+                    continue
+                    
+                output += self.config.templates["commit_format"].format(
+                    short=short, subject=subject, githash=githash
+                )
+                commit_count += 1
+            
+            logger.info(f"Found {commit_count} commits in timestamp range")
+            result = self.config.templates["commits_format"].format(commits=output) if output else ""
+            logger.debug(f"Timestamp commit result: {result}")
+            return result
+            
+        except Exception as e:
+            logger.warning(f"Timestamp-based commit search failed: {e}")
             return ""
     
     def _get_commit_hash(self, manifests: Dict[str, Any]) -> str:
@@ -455,9 +566,27 @@ class ChangelogGenerator:
             return ""
             
         manifest = next(iter(manifests.values()))
+        labels = manifest.get("Labels", {})
+        
+        # Try different label keys for commit hash
+        commit_hash = (labels.get("org.opencontainers.image.revision") or 
+                      labels.get("ostree.commit") or 
+                      labels.get("org.opencontainers.image.source") or "")
+        
+        logger.debug(f"Available labels: {list(labels.keys())}")
+        logger.debug(f"Extracted commit hash: {commit_hash}")
+        
+        return commit_hash
+    
+    def _get_container_timestamp(self, manifests: Dict[str, Any]) -> str:
+        """Extract creation timestamp from manifest."""
+        if not manifests:
+            return ""
+            
+        manifest = next(iter(manifests.values()))
         return manifest.get("Labels", {}).get(
-            "org.opencontainers.image.revision",
-            manifest.get("Labels", {}).get("ostree.commit", "")
+            "org.opencontainers.image.created",
+            manifest.get("Created", "")
         )
 
     def get_hwe_kernel_change(self, prev: str, curr: str, target: str) -> Tuple[Optional[str], Optional[str]]:
@@ -548,14 +677,14 @@ class ChangelogGenerator:
         return changelog
 
     def _generate_changes_section(self, prev_manifests: Dict[str, Any], 
-                                 manifests: Dict[str, Any], workdir: Optional[str],
+                                 manifests: Dict[str, Any], target: str, workdir: Optional[str],
                                  common: List[str], others: Dict[str, List[str]],
                                  prev_versions: Dict[str, str], 
                                  versions: Dict[str, str]) -> str:
         """Generate the changes section of the changelog."""
         changes = ""
-        changes += self.get_commits(prev_manifests, manifests, workdir)
         
+        # Add package changes first
         common_changes = self.calculate_changes(common, prev_versions, versions)
         if common_changes:
             changes += self.config.templates["common_pattern"].format(title=self.config.sections["all"], changes=common_changes)
@@ -564,6 +693,11 @@ class ChangelogGenerator:
             chg = self.calculate_changes(v, prev_versions, versions)
             if chg:
                 changes += self.config.templates["common_pattern"].format(title=self.config.sections[k], changes=chg)
+        
+        # Add commits section after all package changes
+        commits_result = self.get_commits(prev_manifests, manifests, target, workdir)
+        logger.debug(f"Commits result from get_commits: '{commits_result}'")
+        changes += commits_result
         
         return changes
 
@@ -619,7 +753,7 @@ class ChangelogGenerator:
             
             # Generate and insert changes section
             changes = self._generate_changes_section(
-                prev_manifests, manifests, workdir, common, others, 
+                prev_manifests, manifests, target, workdir, common, others, 
                 prev_versions, versions
             )
             changelog = changelog.replace("{changes}", changes)
