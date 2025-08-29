@@ -2,4 +2,4 @@ images:
   - name: centos-bootc
     image: quay.io/centos-bootc/centos-bootc
     tag: c10s
-    digest: sha256:3f37450c930e8e7851972b92788e29ea70c16a98161cb2bbd02dae67e2961767
+    digest: sha256:e8734ee814946f36040f8f1e804ce5b6d20e938e909dfcd80b1c15fe81f3f165
