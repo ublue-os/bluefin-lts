@@ -3,8 +3,8 @@ on:
     branches:
       - main
     tags:
+      - 'lts-*'
       - 'lts.*'
-      - 'lts-*'  # Keep legacy support
   workflow_call:
     inputs:
       stream_name:
@@ -45,12 +45,33 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history for proper tag detection
 
+      - name: Setup GitHub CLI
+        run: |
+          # GitHub CLI is already available in GitHub Actions runners
+          gh --version
+
       - name: Check for new tags and generate changelog
         id: changelog
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          force_flag="${{ inputs.force_publish || 'false' }}"
-          ./.github/scripts/publish-changelog.sh "${{ matrix.version }}" "${{ inputs.handwritten }}" "${force_flag}"
+          # Build Python command with optional arguments
+          python_args=("${{ matrix.version }}" --ci)
+          
+          # Add force flag if requested
+          if [[ "${{ inputs.force_publish || 'false' }}" == "true" ]]; then
+            python_args+=(--force)
+          fi
+          
+          # Add handwritten content if provided
+          if [[ -n "${{ inputs.handwritten }}" ]]; then
+            echo "${{ inputs.handwritten }}" > handwritten.txt
+            python_args+=(--handwritten handwritten.txt)
+          fi
+          
+          # Execute the Python script directly
+          python3 .github/changelogs.py "${python_args[@]}"
 
       - name: Create Release
         if: steps.changelog.outputs.SKIP_CHANGELOG != 'true'
@@ -64,5 +85,16 @@ jobs:
       - name: Log skip reason
         if: steps.changelog.outputs.SKIP_CHANGELOG == 'true'
         run: |
-          echo "Changelog generation was skipped - no new tags detected since last publish"
+          echo "Changelog generation was skipped - release already exists for the current tag"
+          echo "Use the 'force_publish' option to regenerate if needed"
+
+      - name: Upload changelog artifacts
+        if: steps.changelog.outputs.SKIP_CHANGELOG != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog-${{ matrix.version }}
+          path: |
+            ./output.env
+            ./changelog.md
+          retention-days: 30
 

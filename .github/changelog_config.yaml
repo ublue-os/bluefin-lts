@@ -1,0 +1,106 @@
+# Changelog Generator Configuration
+# This file contains all constants, templates, and configuration for the changelog generator
+
+# Basic configuration
+os_name: "bluefin-lts"
+targets: ["lts", "dx", "gdx"]
+registry_url: "ghcr.io/ublue-os"
+
+# Package blacklist - packages to exclude from changelog
+package_blacklist:
+  - "firefox"
+  - "firefox-langpacks"
+  - "thunderbird"
+  - "thunderbird-langpacks"
+  - "akmods-keys"
+  - "akmods"
+  - "kmod"
+  - "glibc"
+  - "glibc-common"
+  - "glibc-gconv-extra"
+  - "glibc-langpack"
+  - "glibc-minimal-langpack"
+
+# Image variants for different targets
+image_variants:
+  - ""
+  - "-dx" 
+  - "-gdx"
+
+# Regex patterns
+patterns:
+  centos: "\\.el\\d\\d"
+  start_pattern: "{target}\\.\\d\\d\\d+"
+
+# Template patterns for package changes
+templates:
+  pattern_add: "\n| ✨ | {name} | | {version} |"
+  pattern_change: "\n| 🔄 | {name} | {prev} | {new} |"
+  pattern_remove: "\n| ❌ | {name} | {version} | |"
+  pattern_pkgrel_changed: "{prev} ➡️ {new}"
+  pattern_pkgrel: "{version}"
+  common_pattern: "### {title}\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n"
+  commits_format: "### Commits\n| Hash | Subject |\n| --- | --- |{commits}\n\n"
+  commit_format: "\n| **[{short}](https://github.com/ublue-os/bluefin-lts/commit/{githash})** | {subject} |"
+  changelog_title: "{os} {tag}: {pretty}"
+  handwritten_placeholder: "This is an automatically generated changelog for release `{curr}`."
+  changelog_format: |
+    {handwritten}
+
+    From previous `{target}` version `{prev}` there have been the following changes. **One package per new version shown.**
+
+    ### Major packages
+    | Name | Version |
+    | --- | --- |
+    | **Kernel** | {pkgrel:kernel} |
+    | **HWE Kernel** | {pkgrel:kernel-hwe} |
+    | **GNOME** | {pkgrel:gnome-control-center-filesystem} |
+    | **Mesa** | {pkgrel:mesa-filesystem} |
+    | **Podman** | {pkgrel:podman} |
+
+    ### Major DX packages
+    | Name | Version |
+    | --- | --- |
+    | **Docker** | {pkgrel:docker-ce} |
+    | **VSCode** | {pkgrel:code} |
+    | **Ramalama** | {pkgrel:ramalama} |
+
+    ### Major GDX packages
+    | Name | Version |
+    | --- | --- |
+    | **Nvidia** | {pkgrel:nvidia-driver} |
+    | **CUDA** | {pkgrel:nvidia-driver-cuda} |
+
+    {changes}
+
+    ### How to rebase
+    For current users, type the following to rebase to this version:
+    ```bash
+    # Get Image Name
+    IMAGE_NAME=$(jq -r '.["image-name"]' < /usr/share/ublue-os/image-info.json)
+
+    # For this Stream
+    sudo bootc switch --enforce-container-sigpolicy ghcr.io/ublue-os/$IMAGE_NAME:{target}
+
+    # For this Specific Image:
+    sudo bootc switch --enforce-container-sigpolicy ghcr.io/ublue-os/$IMAGE_NAME:{curr}
+    ```
+
+    ### Documentation
+    Be sure to read the [documentation](https://docs.projectbluefin.io/lts) for more information
+    on how to use your cloud native system.
+
+# Section names for different image types
+sections:
+  all: "All Images"
+  base: "Base Images"
+  dx: "[Developer Experience Images](https://docs.projectbluefin.io/bluefin-dx)"
+  gdx: "[Graphical Developer Experience Images](https://docs.projectbluefin.io/gdx)"
+
+# Default configuration values
+defaults:
+  retries: 3
+  retry_wait: 5
+  timeout_seconds: 30
+  output_file: "changelog.md"
+  env_output_file: "output.env"

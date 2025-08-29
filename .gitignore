@@ -13,3 +13,4 @@ __pycache__/
 # Changelog generation temporary files
 changelog.md
 output.env
+github_output.txt
