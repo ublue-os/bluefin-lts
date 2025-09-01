@@ -38,7 +38,7 @@ done
 dnf -y install "${RPM_NAMES[@]}"
 
 # /*
-### Version Lock kernel pacakges
+### Version Lock kernel packages
 # */
 dnf versionlock add \
   "$KERNEL_NAME" \
