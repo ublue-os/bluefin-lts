@@ -4,8 +4,10 @@ set ${CI:+-x} -euo pipefail
 # /*
 # Get Kernel Version
 # */
+KERNEL_SUFFIX=""
 KERNEL_NAME="kernel"
 KERNEL_VRA="$(rpm -q "$KERNEL_NAME" --queryformat '%{EVR}.%{ARCH}')"
+QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 
 # /*
 ### install base server ZFS packages and sanoid dependencies
