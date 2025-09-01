@@ -12,7 +12,7 @@ QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\
 dnf config-manager --add-repo="https://negativo17.org/repos/epel-nvidia.repo"
 dnf config-manager --set-disabled "epel-nvidia"
 
-### install base server ZFS packages and sanoid dependencies
+### install Nvidia driver packages and dependencies
 # */
 dnf -y install --enablerepo="epel-nvidia"\
     /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
