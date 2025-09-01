@@ -11,9 +11,8 @@ dnf remove -y subscription-manager
 dnf -y install 'dnf-command(versionlock)'
 
 # Kernel Swap on x86-64, for now, skip HWE as we don't have HWE kernels ready.
-if [[ "${ARCH}" == "x86_64" && "${ENABLE_HWE}" == "0" ]]; then
+if [[ "${ARCH}" == "x86_64" ]]; then
   ./run/context/build_scripts/scripts/kernel-swap.sh
-	./run/context/build_scripts/scripts/zfs.sh
 else
 	echo "Skipping kernel swap for non-x86_64 architecture: ${ARCH}"
 fi

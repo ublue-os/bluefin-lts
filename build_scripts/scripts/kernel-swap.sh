@@ -19,18 +19,23 @@ popd
 # /*
 # always remove these packages as kernel cache provides signed versions of kernel or kernel-longterm
 # */
-for pkg in kernel kernel-core kernel-modules kernel-modules-core kernel-modules-extra; do
+PKGS=( "${KERNEL_NAME}" "${KERNEL_NAME}-core" "${KERNEL_NAME}-modules" "${KERNEL_NAME}-modules-core" "${KERNEL_NAME}-modules-extra" "${KERNEL_NAME}-uki-virt" )
+for pkg in "${PKGS[@]}"; do
   rpm --erase $pkg --nodeps || true
 done
-dnf -y install \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-core-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-devel-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-devel-matched-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-modules-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-modules-core-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-modules-extra-"$CACHED_VERSION".rpm \
-  /tmp/kernel-rpms/"$KERNEL_NAME"-uki-virt-"$CACHED_VERSION".rpm
+
+if [[ "$ENABLE_HWE" -eq "1" ]]; then
+  export PKGS=( "${KERNEL_NAME}" "${KERNEL_NAME}-core" "${KERNEL_NAME}-modules" )
+fi
+
+PKGS+=("${KERNEL_NAME}-devel" "${KERNEL_NAME}-devel-matched")
+
+RPM_NAMES=()
+for pkg in "${PKGS[@]}"; do
+  RPM_NAMES+=("/tmp/kernel-rpms/$pkg-$CACHED_VERSION.rpm")
+done
+
+dnf -y install "${RPM_NAMES[@]}"
 
 # /*
 ### Version Lock kernel pacakges
