@@ -371,6 +371,7 @@ jobs:
           flavor: |
             ${{ inputs.hwe && 'suffix=-hwe' || '' }}
           labels: |
+            bluefin.commit=${{ github.sha }}
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
