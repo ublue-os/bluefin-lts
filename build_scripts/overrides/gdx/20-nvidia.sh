@@ -29,7 +29,7 @@ dnf install -y --enablerepo="epel-nvidia" --enablerepo="epel" \
     nvidia-driver-cuda \
     nvidia-settings \
     nvidia-container-toolkit \
-    cuda-devel
+    cuda
 
 # Ensure the version of the Nvidia module matches the driver
 KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
