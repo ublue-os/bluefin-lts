@@ -1,6 +1,11 @@
 ARG MAJOR_VERSION="${MAJOR_VERSION:-c10s}"
 ARG BASE_IMAGE_SHA="${BASE_IMAGE_SHA:-sha256-feea845d2e245b5e125181764cfbc26b6dacfb3124f9c8d6a2aaa4a3f91082ed}"
-FROM scratch as context
+ARG ENABLE_HWE="${ENABLE_HWE:-0}"
+ARG KMODSIG
+# TODO: make the centos version dynamic for the akmod-zfs, needs to be just a number
+FROM ghcr.io/ublue-os/akmods-zfs:centos-${KMODSIG:+kmodsig-}10 AS akmods_zfs
+FROM ghcr.io/ublue-os/akmods-nvidia-open:centos-${KMODSIG:+kmodsig-}10 AS akmods_nvidia_open
+FROM scratch AS context
 
 COPY system_files /files
 COPY system_files_overrides /overrides
@@ -21,6 +26,9 @@ RUN --mount=type=tmpfs,dst=/opt \
   --mount=type=tmpfs,dst=/tmp \
   --mount=type=tmpfs,dst=/var \
   --mount=type=tmpfs,dst=/boot \
+  --mount=type=bind,from=akmods_zfs,src=/rpms,dst=/tmp/akmods-zfs-rpms \
+  --mount=type=bind,from=akmods_zfs,src=/kernel-rpms,dst=/tmp/kernel-rpms \
+  --mount=type=bind,from=akmods_nvidia_open,src=/rpms,dst=/tmp/akmods-nvidia-open-rpms \
   --mount=type=bind,from=context,source=/,target=/run/context \
   /run/context/build_scripts/build.sh
 
