@@ -24,7 +24,7 @@ dnf config-manager --set-enabled "nvidia-container-toolkit"
 
 dnf install -y --enablerepo="epel-nvidia" --enablerepo="epel" \
     libnvidia-fbc \
-#    libnvidia-ml \
+    libnvidia-ml \
     nvidia-driver \
     nvidia-driver-cuda \
     nvidia-settings \
