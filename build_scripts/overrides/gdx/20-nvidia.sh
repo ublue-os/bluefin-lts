@@ -9,7 +9,7 @@ KERNEL_VRA="$(rpm -q "$KERNEL_NAME" --queryformat '%{EVR}.%{ARCH}')"
 KERNEL_SUFFIX=""
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 
-#dnf config-manager --add-repo="https://developer.download.nvidia.com/compute/cuda/repos/rhel10/x86_64/cuda-rhel10.repo"
+dnf config-manager --add-repo="https://developer.download.nvidia.com/compute/cuda/repos/rhel10/x86_64/cuda-rhel10.repo"
 dnf config-manager --add-repo="https://negativo17.org/repos/epel-nvidia.repo"
 dnf config-manager --set-disabled "epel-nvidia"
 
@@ -28,7 +28,8 @@ dnf install -y --enablerepo="epel-nvidia" --enablerepo="epel" \
     nvidia-driver \
     nvidia-driver-cuda \
     nvidia-settings \
-    nvidia-container-toolkit
+    nvidia-container-toolkit \
+    cuda-devel
 
 # Ensure the version of the Nvidia module matches the driver
 KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
