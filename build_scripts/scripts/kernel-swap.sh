@@ -46,3 +46,7 @@ dnf versionlock add \
   "$KERNEL_NAME"-modules \
   "$KERNEL_NAME"-modules-core \
   "$KERNEL_NAME"-modules-extra
+
+# Add akmods secureboot key
+mkdir -p /etc/pki/akmods/certs
+curl --retry 15 -Lo /etc/pki/akmods/certs/akmods-ublue.der "https://github.com/ublue-os/akmods/raw/main/certs/public_key.der"
