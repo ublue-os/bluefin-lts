@@ -10,6 +10,10 @@ ARCH=$(uname -m)
 dnf remove -y subscription-manager
 dnf -y install 'dnf-command(versionlock)'
 
+# Get Secureboot key
+sudo mkdir -p /etc/pki/akmods/certs
+sudo curl --retry 15 -Lo /etc/pki/akmods/certs/akmods-ublue.der "https://github.com/ublue-os/akmods/raw/main/certs/public_key.der"
+
 # Kernel Swap on x86-64, for now, skip HWE as we don't have HWE kernels ready.
 if [[ "${ARCH}" == "x86_64" ]]; then
   ./run/context/build_scripts/scripts/kernel-swap.sh
