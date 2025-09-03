@@ -21,7 +21,7 @@ on:
         description: "The platforms to build the image for"
         required: false
         type: string
-        default: "amd64" # FIXME reenable ARM 701: https://github.com/bluefin/bluefin-lts/issues/701
+        default: "amd64,arm64"
       centos-version:
         description: "The version of CentOS to build the image on"
         required: false
@@ -62,7 +62,7 @@ env:
   IMAGE_NAME: ${{ inputs.image-name }}
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  DEFAULT_TAG: "lts-zfs"
+  DEFAULT_TAG: "lts"
   CENTOS_VERSION: ${{ inputs.centos-version }}
   PLATFORMS: ${{ inputs.platforms }}
 
