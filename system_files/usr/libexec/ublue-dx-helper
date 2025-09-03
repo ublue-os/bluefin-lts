@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# ublue-dx-helper - Toggle developer mode for Bluefin images
+# Custom version for bluefin-lts that handles GDX images properly
+
+# Get current image info from bootc status
+current_image=$(bootc status 2>/dev/null | grep -E "^\s*image:" | head -1 | sed 's/.*image: *//' || echo "")
+
+if [[ -z "$current_image" ]]; then
+    echo "Error: Could not determine current image"
+    exit 1
+fi
+
+echo "Current image: $current_image"
+
+# Check if already on GDX image
+if [[ "$current_image" == *"-gdx:"* ]]; then
+    echo "You are already in developer mode"
+    echo "GDX images include all developer tools and cannot be toggled to DX mode."
+    exit 0
+fi
+
+# Check if on DX image (disable DX mode)
+if [[ "$current_image" == *"-dx:"* ]]; then
+    # Remove -dx from the image name
+    target_image="${current_image/-dx:/:}"
+    echo "Developer mode is currently enabled"
+    echo "Disable developer mode by rebasing to: $target_image"
+    read -p "Continue? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Rebasing to non-developer image..."
+        bootc switch "$target_image"
+    else
+        echo "Operation cancelled"
+        exit 0
+    fi
+# Check if on regular image (enable DX mode)
+elif [[ "$current_image" == *"bluefin:"* ]]; then
+    # Add -dx to the image name
+    target_image="${current_image/bluefin:/bluefin-dx:}"
+    echo "Developer mode is currently disabled"
+    echo "Enable developer mode by rebasing to: $target_image"
+    read -p "Continue? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Rebasing to developer image..."
+        bootc switch "$target_image"
+    else
+        echo "Operation cancelled"
+        exit 0
+    fi
+else
+    echo "Error: Unsupported image type: $current_image"
+    echo "This tool only works with Bluefin images"
+    exit 1
+fi
+
+echo "Reboot required to complete the transition"
