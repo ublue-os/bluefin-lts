@@ -6,3 +6,6 @@ if ! grep -q "^countme=" /etc/dnf/dnf.conf; then
     echo "Adding countme to /etc/dnf/dnf.conf"
     echo "countme=true" >> /etc/dnf/dnf.conf
 fi
+
+# Trigger a dnf operation to send the countme request
+dnf check-update --quiet
