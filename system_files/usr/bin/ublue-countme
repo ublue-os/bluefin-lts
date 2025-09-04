@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+# Check if countme is already in dnf.conf
+if ! grep -q "^countme=" /etc/dnf/dnf.conf; then
+    echo "Adding countme to /etc/dnf/dnf.conf"
+    echo "countme=true" >> /etc/dnf/dnf.conf
+fi
