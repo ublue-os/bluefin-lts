@@ -1,9 +1,12 @@
 [Unit]
 Description=Bazaar Service
 PartOf=graphical-session.target
+ConditionPathExists=/var/lib/flatpak/app/io.github.kolunmi.Bazaar/current/active/files/bin/bazaar
 
 [Service]
 Type=dbus
 BusName=io.github.kolunmi.Bazaar
-ExecStart=/var/lib/flatpak/app/io.github.kolunmi.Bazaar/current/active/files/bin/bazaar service
-ConditionPathExists=/var/lib/flatpak/app/io.github.kolunmi.Bazaar/current/active/files/bin/bazaar
+ExecStart=/usr/bin/flatpak run --command=/app/bin/bazaar io.github.kolunmi.Bazaar service
+
+[Install]
+WantedBy=default.target
