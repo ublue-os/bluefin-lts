@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=io.github.kolunmi.Bazaar
+SystemdService=io.github.kolunmi.Bazaar.service
+Exec=/var/lib/flatpak/app/io.github.kolunmi.Bazaar/current/active/files/bin/bazaar service
