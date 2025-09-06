@@ -12,9 +12,10 @@ sed -i 's/#SleepOperation=.*/SleepOperation=suspend-then-hibernate/g' /usr/lib/s
 systemctl enable brew-setup.service
 systemctl enable gdm.service
 systemctl enable fwupd.service
-systemctl enable rpm-ostree-countme.service
+#systemctl enable rpm-ostree-countme.service
 systemctl --global enable podman-auto-update.timer
-systemctl enable rpm-ostree-countme.service
+#systemctl enable rpm-ostree-countme.service
+systemctl enable ublue-countme.timer
 systemctl disable rpm-ostree.service
 systemctl enable dconf-update.service
 systemctl disable mcelog.service

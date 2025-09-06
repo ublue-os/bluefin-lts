@@ -1,0 +1,6 @@
+[Unit]
+Description=Enable countme for dnf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ublue-countme
