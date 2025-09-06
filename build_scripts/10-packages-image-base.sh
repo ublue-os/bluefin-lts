@@ -2,18 +2,19 @@
 
 set -xeuo pipefail
 
+ARCH=$(uname -m)
+
 # This is the base for a minimal GNOME system on CentOS Stream.
 
 # This thing slows down downloads A LOT for no reason
 dnf remove -y subscription-manager
 dnf -y install 'dnf-command(versionlock)'
 
-
-if [ "${ENABLE_HWE}" == "1" ] ; then
-	dnf -y install centos-release-kmods-kernel
-	# Install and pin the kernel to the last minor version
-	./run/context/build_scripts/scripts/pin-kernel.sh
-	dnf config-manager --set-disabled "centos-kmods-kernel"
+# Kernel Swap on x86-64, for now, skip HWE as we don't have HWE kernels ready.
+if [[ "${ARCH}" == "x86_64" ]]; then
+  ./run/context/build_scripts/scripts/kernel-swap.sh
+else
+	echo "Skipping kernel swap for non-x86_64 architecture: ${ARCH}"
 fi
 
 # GNOME 48 backport COPR

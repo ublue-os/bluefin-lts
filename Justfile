@@ -87,7 +87,7 @@ sudoif command *args:
 # The script constructs the version string using the tag and the current date.
 # If the git working directory is clean, it also includes the short SHA of the current HEAD.
 #
-# just build $target_image $tag $dx $gdx
+# just build $target_image $tag $dx $gdx $hwe
 #
 # Example usage:
 #   just build bluefin lts 1 0 1
@@ -113,6 +113,11 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0":
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
     fi
 
+    if [[ "$hwe" -eq "1" ]]; then
+        BUILD_ARGS+=("--build-arg" "KMODSIG=${hwe}")
+    fi
+
+    echo "Building image ${target_image}:${tag} with args: ${BUILD_ARGS[*]}"
     podman build \
         "${BUILD_ARGS[@]}" \
         --pull=newer \
