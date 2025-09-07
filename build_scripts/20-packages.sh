@@ -11,6 +11,7 @@ dnf -y install \
 	buildah \
 	distrobox \
 	fastfetch \
+	firewalld \
 	fpaste \
 	fzf \
 	gnome-disk-utility \
