@@ -5,6 +5,6 @@
   <service name="dhcpv6-client"/>
   <service name="ssh"/>
   <service name="samba-client"/>
-  <port protocol="udp" port="1025-65535"/>
-  <port protocol="tcp" port="1025-65535"/>
+  <port protocol="udp" port="1024-65535"/>
+  <port protocol="tcp" port="1024-65535"/>
 </zone>
