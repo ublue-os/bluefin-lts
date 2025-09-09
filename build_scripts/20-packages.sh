@@ -20,7 +20,7 @@ dnf -y install \
 	hplip \
 	jetbrains-mono-fonts-all \
 	just \
- 	NetworkManager-openconnect-gnome \
+	NetworkManager-openconnect-gnome \
 	nss-mdns \
 	powertop \
 	rclone \
