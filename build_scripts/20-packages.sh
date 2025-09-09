@@ -20,12 +20,14 @@ dnf -y install \
 	hplip \
 	jetbrains-mono-fonts-all \
 	just \
+ 	NetworkManager-openconnect-gnome \
 	nss-mdns \
 	powertop \
 	rclone \
 	restic \
 	system-reinstall-bootc \
 	tuned-ppd \
+	wireguard-tools \
 	wl-clipboard \
 	xhost
 
