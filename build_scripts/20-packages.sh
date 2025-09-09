@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 set -xeuo pipefail
 
@@ -64,6 +64,7 @@ rm -rvf /usr/etc
 dnf -y copr enable ublue-os/staging
 dnf -y copr disable ublue-os/staging
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
+	-x gnome-extensions-app \
 	gnome-shell-extension-{appindicator,blur-my-shell,search-light,logo-menu,gsconnect}
 
 dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
