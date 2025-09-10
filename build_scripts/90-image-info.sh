@@ -49,5 +49,5 @@ tee -a /usr/lib/os-release <<EOF
 DOCUMENTATION_URL="${DOCUMENTATION_URL}"
 SUPPORT_URL="${SUPPORT_URL}"
 DEFAULT_HOSTNAME="bluefin"
-BUILD_ID="${SHA_HEAD_SHORT:-testing}"
+BUILD_ID="${SHA_HEAD_SHORT:-deadbeef}"
 EOF
