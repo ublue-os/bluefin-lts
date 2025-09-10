@@ -5,6 +5,10 @@ set -xeuo pipefail
 IMAGE_REF="ostree-image-signed:docker://ghcr.io/${IMAGE_VENDOR}/${IMAGE_NAME}"
 IMAGE_INFO="/usr/share/ublue-os/image-info.json"
 IMAGE_FLAVOR="main"
+IMAGE_TAG="lts"
+if [ "${ENABLE_HWE}" == "1" ] ; then
+IMAGE_TAG="${IMAGE_TAG}-hwe"
+fi
 
 cat >$IMAGE_INFO <<EOF
 {
@@ -12,7 +16,7 @@ cat >$IMAGE_INFO <<EOF
   "image-ref": "${IMAGE_REF}",
   "image-flavor": "${IMAGE_FLAVOR}",
   "image-vendor": "${IMAGE_VENDOR}",
-  "image-tag": "lts",
+  "image-tag": "${IMAGE_TAG}",
   "centos-version": "${MAJOR_VERSION_NUMBER}"
 }
 EOF
@@ -45,5 +49,5 @@ tee -a /usr/lib/os-release <<EOF
 DOCUMENTATION_URL="${DOCUMENTATION_URL}"
 SUPPORT_URL="${SUPPORT_URL}"
 DEFAULT_HOSTNAME="bluefin"
-BUILD_ID="${SHA_HEAD_SHORT:-hwe}"
+BUILD_ID="${SHA_HEAD_SHORT:-testing}"
 EOF
