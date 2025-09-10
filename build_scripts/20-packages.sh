@@ -20,12 +20,14 @@ dnf -y install \
 	hplip \
 	jetbrains-mono-fonts-all \
 	just \
+	NetworkManager-openconnect-gnome \
 	nss-mdns \
 	powertop \
 	rclone \
 	restic \
 	system-reinstall-bootc \
 	tuned-ppd \
+	wireguard-tools \
 	wl-clipboard \
 	xhost
 
@@ -64,6 +66,7 @@ rm -rvf /usr/etc
 dnf -y copr enable ublue-os/staging
 dnf -y copr disable ublue-os/staging
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:staging install \
+	-x gnome-extensions-app \
 	gnome-shell-extension-{appindicator,blur-my-shell,search-light,logo-menu,gsconnect}
 
 dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
