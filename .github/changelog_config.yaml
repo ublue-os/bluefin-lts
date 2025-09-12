@@ -104,4 +104,4 @@ defaults:
   timeout_seconds: 30
   output_file: "changelog.md"
   env_output_file: "output.env"
-  enable_commits: false
+  enable_commits: true
