@@ -8,7 +8,6 @@ StartLimitBurst=10
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=flatpak run --command=bazaar io.github.kolunmi.Bazaar service
-Restart=on-failure
 RestartSec=1s
 StandardOutput=journal
 
