@@ -1,0 +1,12 @@
+[Unit]
+Description=DNF countme statistics reporting
+Documentation=https://docs.fedoraproject.org/en-US/quick-docs/dnf/#countme
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/dnf check-update --quiet
+User=root
+# Allow the service to succeed even if check-update returns non-zero (which is normal)
+SuccessExitStatus=0 1 100
