@@ -13,4 +13,4 @@ RestartSec=1s
 StandardOutput=journal
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical-session.target
