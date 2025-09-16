@@ -72,6 +72,11 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
       - name: Set matrix
         id: set-matrix
         env:
@@ -104,6 +109,11 @@ jobs:
       image_tag: ${{ steps.build-image.outputs.image_tag }}
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
       - name: Install dependencies
         if: matrix.platform == 'arm64'
         run: |
@@ -317,6 +327,11 @@ jobs:
       image: ${{ steps.push_manifest.outputs.IMAGE }}
       digest: ${{ steps.push_manifest.outputs.DIGEST }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
       - name: Install dependencies
         run: |
           apk add jq git podman uutils bash conmon crun netavark fuse-overlayfs libstdc++
@@ -480,6 +495,11 @@ jobs:
       packages: write
       id-token: write
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
       - name: Login to GitHub Container Registry
         if: ${{ inputs.publish }}
         env:
