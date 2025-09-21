@@ -22,6 +22,7 @@ dnf -y install \
 	just \
 	NetworkManager-openconnect-gnome \
 	nss-mdns \
+	ntfs-3g \
 	powertop \
 	rclone \
 	restic \
