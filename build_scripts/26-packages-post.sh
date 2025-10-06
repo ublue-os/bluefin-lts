@@ -42,8 +42,10 @@ mv /usr/share/ublue-os/just/61-lts-custom.just /usr/share/ublue-os/just/60-custo
 mkdir -p "/usr/share/ublue-os"
 echo "Cloning the repository with depth 1..."
 git clone --depth 1 "https://github.com/ublue-os/bluefin.git" "/tmp/bluefin_repo"
-cp -avf "/tmp/bluefin_repo/system_files/shared/usr/share/ublue-os/bazaar" "/usr/share/ublue-os/"
+cp -avf "/tmp/bluefin_repo/system_files/shared/usr/share/ublue-os/bazaar" "/etc"
 
+# TODO: remove this when fedora bluefin moved to flatpak
+sed -i 's|/usr/share/ublue-os/|/run/host/etc/|g' /etc/bazaar/config.yaml
 
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage
 # Add resume module so that hibernation works
