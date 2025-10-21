@@ -21,6 +21,7 @@ dnf -y install \
 	jetbrains-mono-fonts-all \
 	just \
 	NetworkManager-openconnect-gnome \
+	NetworkManager-openvpn-gnome \
 	nss-mdns \
 	ntfs-3g \
 	powertop \
