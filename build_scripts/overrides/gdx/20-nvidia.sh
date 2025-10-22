@@ -18,18 +18,18 @@ else
 fi
 
 dnf config-manager --add-repo="https://developer.download.nvidia.com/compute/cuda/repos/rhel10/${NVIDIA_ARCH}/cuda-rhel10.repo"
-dnf config-manager --set-disabled "cuda-rhel10"
+dnf config-manager --set-disabled "cuda-rhel10-${NVIDIA_ARCH}"
 
 ### install Nvidia driver packages and dependencies
 # */
-dnf -y install --enablerepo="cuda-rhel10"\
+dnf -y install --enablerepo="cuda-rhel10-${NVIDIA_ARCH}"\
     /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
     /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
 
 # enable repos provided by ublue-os-nvidia-addons
 dnf config-manager --set-enabled "nvidia-container-toolkit"
 
-dnf install -y --enablerepo="cuda-rhel10" \
+dnf install -y --enablerepo="cuda-rhel10-${NVIDIA_ARCH}" \
     libnvidia-fbc \
     libnvidia-ml \
     nvidia-driver \
