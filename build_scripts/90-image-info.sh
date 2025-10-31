@@ -53,7 +53,7 @@ BUILD_ID="${SHA_HEAD_SHORT:-deadbeef}"
 EOF
 
 # Weekly user count for fastfetch
-ghcurl https://raw.githubusercontent.com/ublue-os/countme/main/badge-endpoints/bluefin-lts.json | jq -r ".message" > /usr/share/ublue-os/fastfetch-user-count
+curl --retry 3 https://raw.githubusercontent.com/ublue-os/countme/main/badge-endpoints/bluefin-lts.json | jq -r ".message" > /usr/share/ublue-os/fastfetch-user-count
 
 # bazaar weekly downloads used for fastfetch
 curl -X 'GET' \
