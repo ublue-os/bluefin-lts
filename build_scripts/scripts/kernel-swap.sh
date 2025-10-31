@@ -65,8 +65,8 @@ if [[ "$ENABLE_HWE" -eq "1" ]]; then
   tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/"$NVIDIA_TARGZ" -C "$HWE_DOWNLOAD_DIR"/akmods-nvidia-open-rpms
   
   # kernel-rpms directory should be extracted to HWE_DOWNLOAD_DIR
-  # Install the downloaded Fedora kernel packages
-  INSTALL_PKGS=( "${KERNEL_NAME}" "${KERNEL_NAME}-core" "${KERNEL_NAME}-modules" "${KERNEL_NAME}-devel" "${KERNEL_NAME}-devel-matched" )
+  # Install the downloaded Fedora kernel packages (all required packages)
+  INSTALL_PKGS=( "${KERNEL_NAME}" "${KERNEL_NAME}-core" "${KERNEL_NAME}-modules" "${KERNEL_NAME}-modules-core" "${KERNEL_NAME}-modules-extra" "${KERNEL_NAME}-devel" "${KERNEL_NAME}-devel-matched" )
   
   RPM_NAMES=()
   for pkg in "${INSTALL_PKGS[@]}"; do
