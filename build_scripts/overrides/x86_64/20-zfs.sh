@@ -26,11 +26,15 @@ dnf -y install \
     "$AKMODS_ZFS_PATH"/kmods/zfs/libzfs6-*.rpm \
     "$AKMODS_ZFS_PATH"/kmods/zfs/libzpool6-*.rpm \
     "$AKMODS_ZFS_PATH"/kmods/zfs/python3-pyzfs-*.rpm \
-    "$AKMODS_ZFS_PATH"/kmods/zfs/zfs-*.rpm
+    "$AKMODS_ZFS_PATH"/kmods/zfs/zfs-*.rpm \
+    pv
 
 # /*
 # depmod ran automatically with zfs 2.1 but not with 2.2
 # */
 depmod -a "${KERNEL_VRA}"
+
+# Autoload ZFS module
+echo "zfs" >/usr/lib/modules-load.d/zfs.conf
 
 /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"

@@ -82,6 +82,15 @@ if [[ "$ENABLE_HWE" -eq "1" ]]; then
   fi
   
   dnf -y install "${RPM_NAMES[@]}"
+  
+  # Install common akmods (matching bluefin's approach)
+  echo "Installing common akmods (xone, openrazer, framework-laptop, v4l2loopback)..."
+  dnf -y install \
+    "$HWE_DOWNLOAD_DIR"/rpms/kmods/*xone*.rpm \
+    "$HWE_DOWNLOAD_DIR"/rpms/kmods/*openrazer*.rpm \
+    "$HWE_DOWNLOAD_DIR"/rpms/kmods/*framework-laptop*.rpm \
+    "$HWE_DOWNLOAD_DIR"/rpms/kmods/*v4l2loopback*.rpm \
+    || echo "Warning: Some common akmods failed to install (non-critical)"
 else
   # For non-HWE mode, use the kernel from the mounted akmods containers
   find /tmp/kernel-rpms
