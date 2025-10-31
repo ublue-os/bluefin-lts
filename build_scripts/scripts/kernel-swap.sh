@@ -23,6 +23,7 @@ if [[ "$ENABLE_HWE" -eq "1" ]]; then
   # This provides better hardware support and compatibility
   
   # Use the same akmods flavor and Fedora version as bluefin stable
+  # NOTE: Update FEDORA_VERSION to match bluefin's stable release
   AKMODS_FLAVOR="coreos-stable"
   FEDORA_VERSION="42"
   
@@ -52,8 +53,8 @@ if [[ "$ENABLE_HWE" -eq "1" ]]; then
   tar -xvzf /tmp/hwe-akmods-zfs/"$ZFS_TARGZ" -C /tmp/
   # Move to expected location for override scripts
   mkdir -p /tmp/akmods-zfs-rpms
-  if [[ -d /tmp/rpms ]]; then
-    mv /tmp/rpms/* /tmp/akmods-zfs-rpms/ 2>/dev/null || true
+  if [[ -d /tmp/rpms ]] && [[ -n "$(ls -A /tmp/rpms 2>/dev/null)" ]]; then
+    mv /tmp/rpms/* /tmp/akmods-zfs-rpms/
   fi
   
   # Fetch Nvidia Open akmods for HWE (Fedora packages)
@@ -63,8 +64,8 @@ if [[ "$ENABLE_HWE" -eq "1" ]]; then
   tar -xvzf /tmp/hwe-akmods-nvidia/"$NVIDIA_TARGZ" -C /tmp/
   # Move to expected location for override scripts
   mkdir -p /tmp/akmods-nvidia-open-rpms
-  if [[ -d /tmp/rpms ]]; then
-    mv /tmp/rpms/* /tmp/akmods-nvidia-open-rpms/ 2>/dev/null || true
+  if [[ -d /tmp/rpms ]] && [[ -n "$(ls -A /tmp/rpms 2>/dev/null)" ]]; then
+    mv /tmp/rpms/* /tmp/akmods-nvidia-open-rpms/
   fi
   
   # kernel-rpms directory should be extracted to /tmp/kernel-rpms
@@ -90,7 +91,7 @@ else
   find /tmp/kernel-rpms
 
   pushd /tmp/kernel-rpms
-  CACHED_VERSION=$(find $KERNEL_NAME-*.rpm | grep -P "$KERNEL_NAME-\d+\.\d+\.\d+-\d+$(rpm -E %{dist})" | sed -E "s/$KERNEL_NAME-//;s/\.rpm//")
+  CACHED_VERSION=$(find "$KERNEL_NAME"-*.rpm | grep -P "$KERNEL_NAME-\d+\.\d+\.\d+-\d+$(rpm -E %{dist})" | sed -E "s/$KERNEL_NAME-//;s/\.rpm//")
   popd
 
   INSTALL_PKGS=( "${KERNEL_NAME}" "${KERNEL_NAME}-core" "${KERNEL_NAME}-modules" "${KERNEL_NAME}-modules-core" "${KERNEL_NAME}-modules-extra" "${KERNEL_NAME}-uki-virt" "${KERNEL_NAME}-devel" "${KERNEL_NAME}-devel-matched" )
