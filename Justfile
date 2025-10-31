@@ -113,10 +113,6 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0":
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
     fi
 
-    if [[ "$hwe" -eq "1" ]]; then
-        BUILD_ARGS+=("--build-arg" "KMODSIG=${hwe}")
-    fi
-
     echo "Building image ${target_image}:${tag} with args: ${BUILD_ARGS[*]}"
     podman build \
         "${BUILD_ARGS[@]}" \
