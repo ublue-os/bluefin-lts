@@ -52,25 +52,17 @@ if [[ "$ENABLE_HWE" -eq "1" ]]; then
   
   # Fetch ZFS akmods for HWE (Fedora packages)
   echo "Downloading akmods-zfs:${AKMODS_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION}..."
+  mkdir -p "$HWE_DOWNLOAD_DIR"/akmods-zfs-rpms
   skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods-zfs:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:"$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs
   ZFS_TARGZ=$(jq -r '.layers[].digest' <"$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs/manifest.json | cut -d : -f 2)
-  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs/"$ZFS_TARGZ" -C "$HWE_DOWNLOAD_DIR"/
-  # Move to expected location for override scripts
-  mkdir -p /tmp/akmods-zfs-rpms
-  if [[ -d "$HWE_DOWNLOAD_DIR"/rpms ]] && [[ -n "$(ls -A "$HWE_DOWNLOAD_DIR"/rpms 2>/dev/null)" ]]; then
-    mv "$HWE_DOWNLOAD_DIR"/rpms/* /tmp/akmods-zfs-rpms/
-  fi
+  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs/"$ZFS_TARGZ" -C "$HWE_DOWNLOAD_DIR"/akmods-zfs-rpms
   
   # Fetch Nvidia Open akmods for HWE (Fedora packages)
   echo "Downloading akmods-nvidia-open:${AKMODS_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION}..."
+  mkdir -p "$HWE_DOWNLOAD_DIR"/akmods-nvidia-open-rpms
   skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods-nvidia-open:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:"$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia
   NVIDIA_TARGZ=$(jq -r '.layers[].digest' <"$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/manifest.json | cut -d : -f 2)
-  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/"$NVIDIA_TARGZ" -C "$HWE_DOWNLOAD_DIR"/
-  # Move to expected location for override scripts
-  mkdir -p /tmp/akmods-nvidia-open-rpms
-  if [[ -d "$HWE_DOWNLOAD_DIR"/rpms ]] && [[ -n "$(ls -A "$HWE_DOWNLOAD_DIR"/rpms 2>/dev/null)" ]]; then
-    mv "$HWE_DOWNLOAD_DIR"/rpms/* /tmp/akmods-nvidia-open-rpms/
-  fi
+  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/"$NVIDIA_TARGZ" -C "$HWE_DOWNLOAD_DIR"/akmods-nvidia-open-rpms
   
   # kernel-rpms directory should be extracted to HWE_DOWNLOAD_DIR
   # Install the downloaded Fedora kernel packages
