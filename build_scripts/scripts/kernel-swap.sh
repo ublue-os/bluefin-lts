@@ -40,48 +40,52 @@ if [[ "$ENABLE_HWE" -eq "1" ]]; then
   
   echo "Using Fedora kernel version: ${KERNEL_VERSION}"
   
+  # Create writable directory for HWE downloads (tmpfs /tmp is read-only)
+  HWE_DOWNLOAD_DIR="/run/hwe-download"
+  mkdir -p "$HWE_DOWNLOAD_DIR"
+  
   # Fetch Common AKMODS & Kernel RPMS from ublue-os (Fedora packages)
   echo "Downloading akmods:${AKMODS_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION}..."
-  skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:/tmp/hwe-akmods
-  AKMODS_TARGZ=$(jq -r '.layers[].digest' </tmp/hwe-akmods/manifest.json | cut -d : -f 2)
-  tar -xvzf /tmp/hwe-akmods/"$AKMODS_TARGZ" -C /tmp/
+  skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:"$HWE_DOWNLOAD_DIR"/hwe-akmods
+  AKMODS_TARGZ=$(jq -r '.layers[].digest' <"$HWE_DOWNLOAD_DIR"/hwe-akmods/manifest.json | cut -d : -f 2)
+  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods/"$AKMODS_TARGZ" -C "$HWE_DOWNLOAD_DIR"/
   
   # Fetch ZFS akmods for HWE (Fedora packages)
   echo "Downloading akmods-zfs:${AKMODS_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION}..."
-  skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods-zfs:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:/tmp/hwe-akmods-zfs
-  ZFS_TARGZ=$(jq -r '.layers[].digest' </tmp/hwe-akmods-zfs/manifest.json | cut -d : -f 2)
-  tar -xvzf /tmp/hwe-akmods-zfs/"$ZFS_TARGZ" -C /tmp/
+  skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods-zfs:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:"$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs
+  ZFS_TARGZ=$(jq -r '.layers[].digest' <"$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs/manifest.json | cut -d : -f 2)
+  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs/"$ZFS_TARGZ" -C "$HWE_DOWNLOAD_DIR"/
   # Move to expected location for override scripts
   mkdir -p /tmp/akmods-zfs-rpms
-  if [[ -d /tmp/rpms ]] && [[ -n "$(ls -A /tmp/rpms 2>/dev/null)" ]]; then
-    mv /tmp/rpms/* /tmp/akmods-zfs-rpms/
+  if [[ -d "$HWE_DOWNLOAD_DIR"/rpms ]] && [[ -n "$(ls -A "$HWE_DOWNLOAD_DIR"/rpms 2>/dev/null)" ]]; then
+    mv "$HWE_DOWNLOAD_DIR"/rpms/* /tmp/akmods-zfs-rpms/
   fi
   
   # Fetch Nvidia Open akmods for HWE (Fedora packages)
   echo "Downloading akmods-nvidia-open:${AKMODS_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION}..."
-  skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods-nvidia-open:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:/tmp/hwe-akmods-nvidia
-  NVIDIA_TARGZ=$(jq -r '.layers[].digest' </tmp/hwe-akmods-nvidia/manifest.json | cut -d : -f 2)
-  tar -xvzf /tmp/hwe-akmods-nvidia/"$NVIDIA_TARGZ" -C /tmp/
+  skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods-nvidia-open:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:"$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia
+  NVIDIA_TARGZ=$(jq -r '.layers[].digest' <"$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/manifest.json | cut -d : -f 2)
+  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/"$NVIDIA_TARGZ" -C "$HWE_DOWNLOAD_DIR"/
   # Move to expected location for override scripts
   mkdir -p /tmp/akmods-nvidia-open-rpms
-  if [[ -d /tmp/rpms ]] && [[ -n "$(ls -A /tmp/rpms 2>/dev/null)" ]]; then
-    mv /tmp/rpms/* /tmp/akmods-nvidia-open-rpms/
+  if [[ -d "$HWE_DOWNLOAD_DIR"/rpms ]] && [[ -n "$(ls -A "$HWE_DOWNLOAD_DIR"/rpms 2>/dev/null)" ]]; then
+    mv "$HWE_DOWNLOAD_DIR"/rpms/* /tmp/akmods-nvidia-open-rpms/
   fi
   
-  # kernel-rpms directory should be extracted to /tmp/kernel-rpms
+  # kernel-rpms directory should be extracted to HWE_DOWNLOAD_DIR
   # Install the downloaded Fedora kernel packages
   INSTALL_PKGS=( "${KERNEL_NAME}" "${KERNEL_NAME}-core" "${KERNEL_NAME}-modules" "${KERNEL_NAME}-devel" "${KERNEL_NAME}-devel-matched" )
   
   RPM_NAMES=()
   for pkg in "${INSTALL_PKGS[@]}"; do
-    rpm_file=$(find /tmp/kernel-rpms -name "$pkg-*.rpm" -type f | head -1)
+    rpm_file=$(find "$HWE_DOWNLOAD_DIR"/kernel-rpms -name "$pkg-*.rpm" -type f | head -1)
     if [[ -n "$rpm_file" ]]; then
       RPM_NAMES+=("$rpm_file")
     fi
   done
   
   if [[ ${#RPM_NAMES[@]} -eq 0 ]]; then
-    echo "ERROR: No kernel RPMs found in /tmp/kernel-rpms"
+    echo "ERROR: No kernel RPMs found in $HWE_DOWNLOAD_DIR/kernel-rpms"
     exit 1
   fi
   
