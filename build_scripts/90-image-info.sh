@@ -51,3 +51,11 @@ SUPPORT_URL="${SUPPORT_URL}"
 DEFAULT_HOSTNAME="bluefin"
 BUILD_ID="${SHA_HEAD_SHORT:-deadbeef}"
 EOF
+
+# Weekly user count for fastfetch
+curl --retry 3 https://raw.githubusercontent.com/ublue-os/countme/main/badge-endpoints/bluefin-lts.json | jq -r ".message" > /usr/share/ublue-os/fastfetch-user-count
+
+# bazaar weekly downloads used for fastfetch
+curl -X 'GET' \
+'https://flathub.org/api/v2/stats/io.github.kolunmi.Bazaar?all=false&days=1' \
+-H 'accept: application/json' | jq -r ".installs_last_7_days" | numfmt --to=si --round=nearest > /usr/share/ublue-os/bazaar-install-count
