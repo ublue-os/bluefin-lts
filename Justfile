@@ -3,7 +3,7 @@ export image_name := env("IMAGE_NAME", "bluefin")
 export centos_version := env("CENTOS_VERSION", "stream10")
 export default_tag := env("DEFAULT_TAG", "lts")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
-
+export coreos_stable_version := env("COREOS_STABLE_VERSION", "42")
 alias build-vm := build-qcow2
 alias rebuild-vm := rebuild-qcow2
 alias run-vm := run-vm-qcow2
@@ -109,6 +109,12 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0":
     BUILD_ARGS+=("--build-arg" "ENABLE_DX=${dx}")
     BUILD_ARGS+=("--build-arg" "ENABLE_GDX=${gdx}")
     BUILD_ARGS+=("--build-arg" "ENABLE_HWE=${hwe}")
+    # Select akmods source tag for mounted ZFS/NVIDIA images
+    if [[ "${hwe}" -eq "1" ]]; then
+        BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=coreos-stable-${coreos_stable_version}")
+    else
+        BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=centos-10")
+    fi
     if [[ -z "$(git status -s)" ]]; then
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
     fi
