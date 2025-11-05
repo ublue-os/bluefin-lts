@@ -42,27 +42,36 @@ if [[ "$ENABLE_HWE" -eq "1" ]]; then
   
   # Create writable directory for HWE downloads (tmpfs /tmp is read-only)
   HWE_DOWNLOAD_DIR="/run/hwe-download"
-  mkdir -p "$HWE_DOWNLOAD_DIR"
+  mkdir -p "$HWE_DOWNLOAD_DIR" "$HWE_DOWNLOAD_DIR"/rpms
   
   # Fetch Common AKMODS & Kernel RPMS from ublue-os (Fedora packages)
   echo "Downloading akmods:${AKMODS_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION}..."
+  mkdir -p "$HWE_DOWNLOAD_DIR"/rpms-temp
   skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:"$HWE_DOWNLOAD_DIR"/hwe-akmods
   AKMODS_TARGZ=$(jq -r '.layers[].digest' <"$HWE_DOWNLOAD_DIR"/hwe-akmods/manifest.json | cut -d : -f 2)
-  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods/"$AKMODS_TARGZ" -C "$HWE_DOWNLOAD_DIR"/
+  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods/"$AKMODS_TARGZ" -C "$HWE_DOWNLOAD_DIR"/rpms-temp
+  # Extract kernel-rpms and rpms from the common akmods
+  [[ -d "$HWE_DOWNLOAD_DIR"/rpms-temp/kernel-rpms ]] && mv "$HWE_DOWNLOAD_DIR"/rpms-temp/kernel-rpms "$HWE_DOWNLOAD_DIR"/
+  [[ -d "$HWE_DOWNLOAD_DIR"/rpms-temp/rpms ]] && mv "$HWE_DOWNLOAD_DIR"/rpms-temp/rpms/* "$HWE_DOWNLOAD_DIR"/rpms/ 2>/dev/null || true
+  rm -rf "$HWE_DOWNLOAD_DIR"/rpms-temp
   
   # Fetch ZFS akmods for HWE (Fedora packages)
   echo "Downloading akmods-zfs:${AKMODS_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION}..."
-  mkdir -p "$HWE_DOWNLOAD_DIR"/akmods-zfs-rpms
+  mkdir -p "$HWE_DOWNLOAD_DIR"/akmods-zfs-rpms "$HWE_DOWNLOAD_DIR"/zfs-temp
   skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods-zfs:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:"$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs
   ZFS_TARGZ=$(jq -r '.layers[].digest' <"$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs/manifest.json | cut -d : -f 2)
-  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs/"$ZFS_TARGZ" -C "$HWE_DOWNLOAD_DIR"/akmods-zfs-rpms
+  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-zfs/"$ZFS_TARGZ" -C "$HWE_DOWNLOAD_DIR"/zfs-temp
+  [[ -d "$HWE_DOWNLOAD_DIR"/zfs-temp/rpms ]] && mv "$HWE_DOWNLOAD_DIR"/zfs-temp/rpms/* "$HWE_DOWNLOAD_DIR"/akmods-zfs-rpms/
+  rm -rf "$HWE_DOWNLOAD_DIR"/zfs-temp
   
   # Fetch Nvidia Open akmods for HWE (Fedora packages)
   echo "Downloading akmods-nvidia-open:${AKMODS_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION}..."
-  mkdir -p "$HWE_DOWNLOAD_DIR"/akmods-nvidia-open-rpms
+  mkdir -p "$HWE_DOWNLOAD_DIR"/akmods-nvidia-open-rpms "$HWE_DOWNLOAD_DIR"/nvidia-temp
   skopeo copy --retry-times 3 docker://ghcr.io/ublue-os/akmods-nvidia-open:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" dir:"$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia
   NVIDIA_TARGZ=$(jq -r '.layers[].digest' <"$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/manifest.json | cut -d : -f 2)
-  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/"$NVIDIA_TARGZ" -C "$HWE_DOWNLOAD_DIR"/akmods-nvidia-open-rpms
+  tar -xvzf "$HWE_DOWNLOAD_DIR"/hwe-akmods-nvidia/"$NVIDIA_TARGZ" -C "$HWE_DOWNLOAD_DIR"/nvidia-temp
+  [[ -d "$HWE_DOWNLOAD_DIR"/nvidia-temp/rpms ]] && mv "$HWE_DOWNLOAD_DIR"/nvidia-temp/rpms/* "$HWE_DOWNLOAD_DIR"/akmods-nvidia-open-rpms/
+  rm -rf "$HWE_DOWNLOAD_DIR"/nvidia-temp
   
   # kernel-rpms directory should be extracted to HWE_DOWNLOAD_DIR
   # Install the downloaded Fedora kernel packages (all required packages)

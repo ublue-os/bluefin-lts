@@ -10,6 +10,7 @@ KERNEL_SUFFIX=""
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 
 # Determine akmods path based on HWE mode
+# Works for all architectures since KERNEL_VRA includes arch
 if [[ "${ENABLE_HWE:-0}" -eq "1" ]]; then
   AKMODS_NVIDIA_PATH="/run/hwe-download/akmods-nvidia-open-rpms"
 else
