@@ -9,29 +9,21 @@ KERNEL_NAME="kernel"
 KERNEL_VRA="$(rpm -q "$KERNEL_NAME" --queryformat '%{EVR}.%{ARCH}')"
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 
-# Determine akmods path based on HWE mode
-# Works for all architectures since KERNEL_VRA includes arch
-if [[ "${ENABLE_HWE:-0}" -eq "1" ]]; then
-  AKMODS_ZFS_PATH="/run/hwe-download/akmods-zfs-rpms"
-else
-  AKMODS_ZFS_PATH="/tmp/akmods-zfs-rpms"
-fi
-
 # /*
 ### install base server ZFS packages and sanoid dependencies
 # */
 dnf -y install \
-    "$AKMODS_ZFS_PATH"/kmods/zfs/kmod-zfs-"${KERNEL_VRA}"-*.rpm \
-    "$AKMODS_ZFS_PATH"/kmods/zfs/libnvpair3-*.rpm \
-    "$AKMODS_ZFS_PATH"/kmods/zfs/libuutil3-*.rpm \
-    "$AKMODS_ZFS_PATH"/kmods/zfs/libzfs6-*.rpm \
-    "$AKMODS_ZFS_PATH"/kmods/zfs/libzpool6-*.rpm \
-    "$AKMODS_ZFS_PATH"/kmods/zfs/zfs-*.rpm \
-    pv
+    /tmp/akmods-zfs-rpms/kmods/zfs/kmod-zfs-"${KERNEL_VRA}"-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/libnvpair3-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/libuutil3-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/libzfs6-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/libzpool6-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/zfs-*.rpm \
+    
 
-# python3-pyzfs requires python3.13dist(cffi) which is not available in CentOS Stream 10
-# Install it separately if the package exists and dependencies can be resolved
-dnf -y install --skip-broken "$AKMODS_ZFS_PATH"/kmods/zfs/python3-pyzfs-*.rpm || true
+  # python3-pyzfs requires python3.13dist(cffi) which is not available in CentOS Stream 10
+  # Install it separately if the package exists and dependencies can be resolved
+  dnf -y install --skip-broken /tmp/akmods-zfs-rpms/kmods/zfs/python3-pyzfs-*.rpm || true
 
 # /*
 # depmod ran automatically with zfs 2.1 but not with 2.2

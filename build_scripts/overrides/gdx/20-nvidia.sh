@@ -9,14 +9,6 @@ KERNEL_VRA="$(rpm -q "$KERNEL_NAME" --queryformat '%{EVR}.%{ARCH}')"
 KERNEL_SUFFIX=""
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 
-# Determine akmods path based on HWE mode
-# Works for all architectures since KERNEL_VRA includes arch
-if [[ "${ENABLE_HWE:-0}" -eq "1" ]]; then
-  AKMODS_NVIDIA_PATH="/run/hwe-download/akmods-nvidia-open-rpms"
-else
-  AKMODS_NVIDIA_PATH="/tmp/akmods-nvidia-open-rpms"
-fi
-
 #dnf config-manager --add-repo="https://developer.download.nvidia.com/compute/cuda/repos/rhel10/x86_64/cuda-rhel10.repo"
 dnf config-manager --add-repo="https://negativo17.org/repos/epel-nvidia.repo"
 dnf config-manager --set-disabled "epel-nvidia"
@@ -24,8 +16,8 @@ dnf config-manager --set-disabled "epel-nvidia"
 ### install Nvidia driver packages and dependencies
 # */
 dnf -y install --enablerepo="epel-nvidia"\
-    "$AKMODS_NVIDIA_PATH"/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
-    "$AKMODS_NVIDIA_PATH"/ublue-os/*.rpm
+    /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
+    /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
 
 # enable repos provided by ublue-os-nvidia-addons
 dnf config-manager --set-enabled "nvidia-container-toolkit"
