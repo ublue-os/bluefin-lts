@@ -178,8 +178,8 @@ Never attempt to fix builds by canceling and restarting - let them complete or f
 
 - Ensure that [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#specification) are used and enforced for every commit and pull request title.
 - Always be surgical with the least amount of code, the project strives to be easy to maintain.
-- Documentation for this project exists in ublue-os/bluefin-docs
-- Bluefin and Bluefin GTS exist in ublue-os/bluefin
+- Documentation for this project exists in @projectbluefin/documentation
+- Bluefin and Bluefin GTS exist in @ublue-os/bluefin
 
 ## Attribution Requirements
 
