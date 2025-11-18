@@ -1,6 +1,6 @@
 on:
   schedule:
-    - cron: '0 12 * * 2'  # Every Tuesday at 12:00 UTC
+    - cron: '0 2 * * 2'  # Every Tuesday at 02:00 UTC
   workflow_call:
     inputs:
       stream_name:
