@@ -1,10 +1,6 @@
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - 'lts-*'
-      - 'lts.*'
+  schedule:
+    - cron: '0 12 * * 2'  # Every Tuesday at 12:00 UTC
   workflow_call:
     inputs:
       stream_name:
