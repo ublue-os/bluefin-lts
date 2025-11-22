@@ -1,10 +1,10 @@
 ARG MAJOR_VERSION="${MAJOR_VERSION:-c10s}"
 ARG BASE_IMAGE_SHA="${BASE_IMAGE_SHA:-sha256-feea845d2e245b5e125181764cfbc26b6dacfb3124f9c8d6a2aaa4a3f91082ed}"
 ARG ENABLE_HWE="${ENABLE_HWE:-0}"
-ARG KMODSIG
-# TODO: make the centos version dynamic for the akmod-zfs, needs to be just a number
-FROM ghcr.io/ublue-os/akmods-zfs:centos-${KMODSIG:+kmodsig-}10 AS akmods_zfs
-FROM ghcr.io/ublue-os/akmods-nvidia-open:centos-${KMODSIG:+kmodsig-}10 AS akmods_nvidia_open
+ARG AKMODS_VERSION="${AKMODS_VERSION:-centos-10}"
+# Upstream mounts akmods-zfs and akmods-nvidia-open; select their tag via AKMODS_VERSION
+FROM ghcr.io/ublue-os/akmods-zfs:${AKMODS_VERSION} AS akmods_zfs
+FROM ghcr.io/ublue-os/akmods-nvidia-open:${AKMODS_VERSION} AS akmods_nvidia_open
 FROM scratch AS context
 
 COPY system_files /files

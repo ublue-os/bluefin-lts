@@ -11,6 +11,14 @@ dnf config-manager --set-disabled baseos-compose,appstream-compose
 
 dnf clean all
 
+# Fix SELinux contexts for tuned https://github.com/ublue-os/bluefin-lts/issues/841
+restorecon -rv \
+/etc/tuned \
+/usr/lib/tuned \
+/var/log/tuned \
+/var/lib/tuned
+
+
 rm -rf /.gitkeep
 find /var -mindepth 1 -delete
 find /boot -mindepth 1 -delete
