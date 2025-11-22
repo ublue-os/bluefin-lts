@@ -45,9 +45,6 @@ if [ "$KMOD_VERSION" != "$DRIVER_VERSION" ]; then
     exit 1
 fi
 
-sed -i -e 's/kernel$/kernel-open/g' /etc/nvidia/kernel.conf
-cat /etc/nvidia/kernel.conf
-
 cat >/usr/lib/modprobe.d/00-nouveau-blacklist.conf <<EOF
 blacklist nouveau
 options nouveau modeset=0
