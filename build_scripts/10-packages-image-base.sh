@@ -2,23 +2,22 @@
 
 set -xeuo pipefail
 
+ARCH=$(uname -m)
+
 # This is the base for a minimal GNOME system on CentOS Stream.
 
 # This thing slows down downloads A LOT for no reason
 dnf remove -y subscription-manager
 dnf -y install 'dnf-command(versionlock)'
 
-
-if [ "${ENABLE_HWE}" == "1" ] ; then
-	dnf -y install centos-release-kmods-kernel
-	# Install and pin the kernel to the last minor version
-	./run/context/build_scripts/scripts/pin-kernel.sh
-	dnf config-manager --set-disabled "centos-kmods-kernel"
-fi
+/run/context/build_scripts/scripts/kernel-swap.sh
 
 # GNOME 48 backport COPR
 dnf copr enable -y "jreilly1821/c10s-gnome"
 dnf -y install glib2
+dnf -y upgrade glib2
+# Please, dont remove this as it will break everything GNOME related
+dnf versionlock add glib2
 
 # This fixes a lot of skew issues on GDX because kernel-devel wont update then
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt

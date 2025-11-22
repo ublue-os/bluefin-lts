@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly DNF countme statistics reporting
+Documentation=https://docs.fedoraproject.org/en-US/quick-docs/dnf/#countme
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+RandomizedDelaySec=12h
+
+[Install]
+WantedBy=timers.target

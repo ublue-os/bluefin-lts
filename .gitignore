@@ -14,3 +14,9 @@ __pycache__/
 changelog.md
 output.env
 github_output.txt
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.zed/

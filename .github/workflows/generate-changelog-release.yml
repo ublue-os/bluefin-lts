@@ -41,7 +41,7 @@ jobs:
         version: ["lts"]
     steps:
       - name: Checkout repository with full history
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0  # Fetch all history for proper tag detection
 
@@ -75,7 +75,7 @@ jobs:
 
       - name: Create Release
         if: steps.changelog.outputs.SKIP_CHANGELOG != 'true'
-        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2
         with:
           name: ${{ steps.changelog.outputs.CHANGELOG_TITLE }}
           tag_name: ${{ steps.changelog.outputs.CHANGELOG_TAG }}
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload changelog artifacts
         if: steps.changelog.outputs.SKIP_CHANGELOG != 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: changelog-${{ matrix.version }}
           path: |

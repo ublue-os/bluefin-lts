@@ -13,11 +13,11 @@ systemctl enable brew-setup.service
 systemctl enable gdm.service
 systemctl enable firewalld.service
 systemctl enable fwupd.service
-systemctl enable rpm-ostree-countme.service
 systemctl --global enable podman-auto-update.timer
-systemctl enable rpm-ostree-countme.service
+systemctl enable ublue-countme.timer
 systemctl disable rpm-ostree.service
 systemctl enable dconf-update.service
+systemctl --global enable bazaar.service
 systemctl disable mcelog.service
 systemctl enable tailscaled.service
 systemctl enable uupd.timer

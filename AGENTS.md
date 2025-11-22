@@ -173,3 +173,24 @@ git status                    # Check repository state
 4. Retry with full timeout: `just build bluefin lts` (120+ minutes)
 
 Never attempt to fix builds by canceling and restarting - let them complete or fail naturally.
+
+## Other Rules that are Important to the Maintainers
+
+- Ensure that [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#specification) are used and enforced for every commit and pull request title.
+- Always be surgical with the least amount of code, the project strives to be easy to maintain.
+- Documentation for this project exists in @projectbluefin/documentation
+- Bluefin and Bluefin GTS exist in @ublue-os/bluefin
+
+## Attribution Requirements
+
+AI agents must disclose what tool and model they are using in the "Assisted-by" commit footer:
+
+```text
+Assisted-by: [Model Name] via [Tool Name]
+```
+
+Example:
+
+```text
+Assisted-by: Claude 3.5 Sonnet via GitHub Copilot
+```

@@ -112,7 +112,7 @@ jobs:
             podman
 
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Maximize build space
         if: ${{ matrix.platform != 'arm64' && inputs.cleanup_runner }}
@@ -158,7 +158,7 @@ jobs:
       - name: Setup Syft
         id: setup-syft
         if: ${{ inputs.sbom && inputs.publish }}
-        uses: anchore/sbom-action/download-syft@da167eac915b4e86f08b264dbdbc867b61be6f0c # v0
+        uses: anchore/sbom-action/download-syft@fbfd9c6c189226748411491745178e0c2017392d # v0
 
       - name: Generate SBOM
         id: generate-sbom
@@ -177,7 +177,7 @@ jobs:
       - name: Run Rechunker
         if: ${{ inputs.rechunk && inputs.publish }}
         id: rechunk
-        uses: hhd-dev/rechunk@ded27feba22df48134eece2c66ba0fca1289ff40 # v1.2.3
+        uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
         with:
           rechunk: ghcr.io/hhd-dev/rechunk:v1.2.1
           ref: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
@@ -234,7 +234,7 @@ jobs:
           echo "remote_image_digest=${REMOTE_IMAGE_DIGEST}" >> $GITHUB_OUTPUT
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
         if: ${{ inputs.publish }}
 
       - name: Sign Image
@@ -291,7 +291,7 @@ jobs:
 
       - name: Upload Output Artifacts
         if: ${{ inputs.publish }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
           retention-days: 1
@@ -357,7 +357,7 @@ jobs:
           echo "CENTOS_VERSION_NUMBER=${numbers_only}" >> "${GITHUB_ENV}"
 
       - name: Image Metadata
-        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
+        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5
         id: metadata
         with:
           tags: |
@@ -371,6 +371,7 @@ jobs:
           flavor: |
             ${{ inputs.hwe && 'suffix=-hwe' || '' }}
           labels: |
+            bluefin.commit=${{ github.sha }}
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
@@ -390,7 +391,7 @@ jobs:
 
       - name: Fetch Build Outputs
         if: ${{ inputs.publish }}
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           pattern: ${{ env.IMAGE_NAME }}-*
           merge-multiple: true
@@ -488,7 +489,7 @@ jobs:
           cat ${XDG_RUNTIME_DIR}/containers/auth.json > ~/.docker/config.json
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
 
       - name: Sign Manifest
         env:
