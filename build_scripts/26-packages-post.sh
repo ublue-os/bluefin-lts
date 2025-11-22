@@ -15,9 +15,11 @@ sed -i "/picture-uri/ s/${HARDCODED_RPM_MONTH}/$(date +%m)/" "/usr/share/glib-2.
 glib-compile-schemas /usr/share/glib-2.0/schemas
 
 # Required for bluefin faces to work without conflicting with a ton of packages
+mv /usr/share/pixmaps/faces/user-generic.png /tmp/user-generic.png
 rm -f /usr/share/pixmaps/faces/* || echo "Expected directory deletion to fail"
 mv /usr/share/pixmaps/faces/bluefin/* /usr/share/pixmaps/faces
 rm -rf /usr/share/pixmaps/faces/bluefin
+mv /tmp/user-generic.png /usr/share/pixmaps/faces/user-generic.png
 
 # This should only be enabled on `-dx`
 sed -i "/^show-boxbuddy=.*/d" /etc/dconf/db/distro.d/04-bluefin-logomenu-extension
