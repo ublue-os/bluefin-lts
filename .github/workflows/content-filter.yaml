@@ -11,5 +11,10 @@ jobs:
   comment-filter:
     runs-on: ubuntu-latest
     steps:
-    - name: Comment filter
-      uses: DecimalTurn/Comment-Filter@9c95bdb06ae1dd6b8185d58f52a07a2a71e19d94 # v0.2.2
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
+      - name: Comment filter
+        uses: DecimalTurn/Comment-Filter@9c95bdb06ae1dd6b8185d58f52a07a2a71e19d94 # v0.2.2

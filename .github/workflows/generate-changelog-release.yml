@@ -36,6 +36,11 @@ jobs:
       matrix:
         version: ["lts"]
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
       - name: Checkout repository with full history
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
         with:
@@ -93,4 +98,3 @@ jobs:
             ./output.env
             ./changelog.md
           retention-days: 30
-
