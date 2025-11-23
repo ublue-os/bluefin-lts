@@ -43,6 +43,8 @@ mkdir -p "/usr/share/ublue-os"
 echo "Cloning the repository with depth 1..."
 git clone --depth 1 "https://github.com/ublue-os/bluefin.git" "/tmp/bluefin_repo"
 cp -avf "/tmp/bluefin_repo/system_files/shared/etc/bazaar" "/etc"
+# copy the brewfiles over
+cp -avf "/tmp/bluefin_repo/brew" "/usr/share/ublue-os/homebrew"
 
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage
 # Add resume module so that hibernation works
