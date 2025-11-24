@@ -20,7 +20,11 @@ systemctl enable dconf-update.service
 systemctl --global enable bazaar.service
 systemctl disable mcelog.service
 systemctl enable tailscaled.service
+systemctl enable uupd.timer
+systemctl enable ublue-system-setup.service
+systemctl --global enable ublue-user-setup.service
 systemctl mask bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service
+systemctl enable check-sb-key.service
 systemctl disable sshd.service
 
 # Disable lastlog display on previous failed login in GDM (This makes logins slow)
