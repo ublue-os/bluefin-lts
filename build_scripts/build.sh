@@ -41,9 +41,7 @@ copy_systemfiles_for() {
 	printf "::endgroup::\n"
 }
 
-
 CUSTOM_NAME="base"
-copy_common_files
 copy_systemfiles_for ../files
 run_buildscripts_for ..
 CUSTOM_NAME=""
