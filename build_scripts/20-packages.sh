@@ -52,10 +52,13 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
 	-x bluefin-readymade-config \
+	ublue-os-luks \
+	ublue-os-signing \
+	ublue-os-udev-rules \
+	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew} \
+	uupd \
 	ublue-os-update-services \
 	bluefin-*
-
-
 
 dnf -y copr enable ublue-os/staging
 dnf -y copr disable ublue-os/staging
