@@ -52,19 +52,10 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
 	-x bluefin-readymade-config \
-	ublue-os-just \
-	ublue-os-luks \
-	ublue-os-signing \
-	ublue-os-udev-rules \
 	ublue-os-update-services \
-	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew} \
-	uupd \
 	bluefin-*
 
-# Upstream ublue-os-signing bug, we are using /usr/etc for the container signing and bootc gets mad at this
-# FIXME: remove this once https://github.com/ublue-os/packages/issues/245 is closed
-cp -avf /usr/etc/. /etc
-rm -rvf /usr/etc
+
 
 dnf -y copr enable ublue-os/staging
 dnf -y copr disable ublue-os/staging

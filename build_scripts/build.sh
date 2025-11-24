@@ -41,7 +41,14 @@ copy_systemfiles_for() {
 	printf "::endgroup::\n"
 }
 
+copy_common_files() {
+	printf "::group:: ===common-file-copying===\n"
+	cp -avf "${CONTEXT_PATH}/system_files/shared/." /
+	printf "::endgroup::\n"
+}
+
 CUSTOM_NAME="base"
+copy_common_files
 copy_systemfiles_for ../files
 run_buildscripts_for ..
 CUSTOM_NAME=""
