@@ -9,20 +9,27 @@ KERNEL_VRA="$(rpm -q "$KERNEL_NAME" --queryformat '%{EVR}.%{ARCH}')"
 KERNEL_SUFFIX=""
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 
-#dnf config-manager --add-repo="https://developer.download.nvidia.com/compute/cuda/repos/rhel10/x86_64/cuda-rhel10.repo"
-dnf config-manager --add-repo="https://negativo17.org/repos/epel-nvidia.repo"
-dnf config-manager --set-disabled "epel-nvidia"
+# Detect architecture for NVIDIA repo
+ARCH="$(uname -m)"
+if [ "$ARCH" = "aarch64" ]; then
+    NVIDIA_ARCH="sbsa"
+else
+    NVIDIA_ARCH="$ARCH"
+fi
+
+dnf config-manager --add-repo="https://developer.download.nvidia.com/compute/cuda/repos/rhel10/${NVIDIA_ARCH}/cuda-rhel10.repo"
+dnf config-manager --set-disabled "cuda-rhel10-${NVIDIA_ARCH}"
 
 ### install Nvidia driver packages and dependencies
 # */
-dnf -y install --enablerepo="epel-nvidia"\
+dnf -y install --enablerepo="cuda-rhel10-${NVIDIA_ARCH}"\
     /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
     /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
 
 # enable repos provided by ublue-os-nvidia-addons
 dnf config-manager --set-enabled "nvidia-container-toolkit"
 
-dnf install -y --enablerepo="epel-nvidia" --enablerepo="epel" \
+dnf install -y --enablerepo="cuda-rhel10-${NVIDIA_ARCH}" \
     libnvidia-fbc \
     libnvidia-ml \
     nvidia-driver \
@@ -37,9 +44,6 @@ if [ "$KMOD_VERSION" != "$DRIVER_VERSION" ]; then
     echo "Error: kmod-nvidia version ($KMOD_VERSION) does not match nvidia-driver version ($DRIVER_VERSION)"
     exit 1
 fi
-
-sed -i -e 's/kernel$/kernel-open/g' /etc/nvidia/kernel.conf
-cat /etc/nvidia/kernel.conf
 
 cat >/usr/lib/modprobe.d/00-nouveau-blacklist.conf <<EOF
 blacklist nouveau

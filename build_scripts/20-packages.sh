@@ -11,6 +11,7 @@ dnf -y install \
 	buildah \
 	distrobox \
 	fastfetch \
+	firewalld \
 	fpaste \
 	fzf \
 	gnome-disk-utility \
@@ -21,7 +22,9 @@ dnf -y install \
 	jetbrains-mono-fonts-all \
 	just \
 	NetworkManager-openconnect-gnome \
+	NetworkManager-openvpn-gnome \
 	nss-mdns \
+	ntfs-3g \
 	powertop \
 	rclone \
 	restic \
@@ -49,7 +52,6 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
 	-x bluefin-readymade-config \
-	ublue-os-just \
 	ublue-os-luks \
 	ublue-os-signing \
 	ublue-os-udev-rules \

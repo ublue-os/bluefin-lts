@@ -11,6 +11,7 @@ sed -i 's/#HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=suspend-
 sed -i 's/#SleepOperation=.*/SleepOperation=suspend-then-hibernate/g' /usr/lib/systemd/logind.conf
 systemctl enable brew-setup.service
 systemctl enable gdm.service
+systemctl enable firewalld.service
 systemctl enable fwupd.service
 systemctl --global enable podman-auto-update.timer
 systemctl enable ublue-countme.timer

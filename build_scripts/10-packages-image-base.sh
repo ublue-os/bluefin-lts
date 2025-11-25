@@ -10,12 +10,7 @@ ARCH=$(uname -m)
 dnf remove -y subscription-manager
 dnf -y install 'dnf-command(versionlock)'
 
-# Kernel Swap on x86-64, for now, skip HWE as we don't have HWE kernels ready.
-if [[ "${ARCH}" == "x86_64" ]]; then
-  ./run/context/build_scripts/scripts/kernel-swap.sh
-else
-	echo "Skipping kernel swap for non-x86_64 architecture: ${ARCH}"
-fi
+/run/context/build_scripts/scripts/kernel-swap.sh
 
 # GNOME 48 backport COPR
 dnf copr enable -y "jreilly1821/c10s-gnome"
