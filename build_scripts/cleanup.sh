@@ -11,12 +11,31 @@ dnf config-manager --set-disabled baseos-compose,appstream-compose
 
 dnf clean all
 
-# Fix SELinux contexts for tuned https://github.com/ublue-os/bluefin-lts/issues/841
-restorecon -rv \
-/etc/tuned \
-/usr/lib/tuned \
-/var/log/tuned \
-/var/lib/tuned
+# https://github.com/ublue-os/bluefin-lts/issues/841
+# WORKAROUND PENDING ACTUAL FIX https://issues.redhat.com/browse/RHEL-113906
+# Create and install SELinux policy module for tuned-ppd filesystem access
+cat > /tmp/tuned_ppd_hotfix.te << 'EOF'
+module tuned_ppd_hotfix 1.0;
+
+require {
+    type tuned_ppd_t;
+    type fs_t;
+    type xfs_t;
+    type ext4_t;
+    class filesystem getattr;
+}
+
+# Allow tuned-ppd to get filesystem attributes on xattr filesystems
+allow tuned_ppd_t { fs_t xfs_t ext4_t }:filesystem getattr;
+EOF
+
+# Compile and install the module
+checkmodule -M -m -o /tmp/tuned_ppd_hotfix.mod /tmp/tuned_ppd_hotfix.te
+semodule_package -o /tmp/tuned_ppd_hotfix.pp -m /tmp/tuned_ppd_hotfix.mod
+semodule -i /tmp/tuned_ppd_hotfix.pp
+
+# Clean up temporary files
+rm -f /tmp/tuned_ppd_hotfix.te /tmp/tuned_ppd_hotfix.mod /tmp/tuned_ppd_hotfix.pp
 
 
 rm -rf /.gitkeep
