@@ -6,9 +6,9 @@ permissions:
   id-token: write
 
 on:
-  pull_request:
-    branches:
-      - main
+  # pull_request:
+  #   branches:
+  #     - main
   schedule:
     - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
   merge_group:
@@ -35,6 +35,7 @@ jobs:
       hwe: true
   tag:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
     needs: build
     permissions: 
       contents: read
