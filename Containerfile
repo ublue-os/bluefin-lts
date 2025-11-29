@@ -8,7 +8,7 @@ FROM ghcr.io/ublue-os/akmods-nvidia-open:${AKMODS_VERSION} AS akmods_nvidia_open
 FROM scratch AS context
 
 COPY system_files /files
-COPY --from=ghcr.io/projectbluefin/common:latest@sha256:e10f4af0f9d508d4661f4426c1c835ce02a770787e8d1561758ee953dfde06a7 /system_files /files
+COPY --from=ghcr.io/projectbluefin/common:latest@sha256:786eddf7b5219ef4ddc67672bc2f362d9015b35b2fdfcecd4edd78b8228c848c /system_files /files
 COPY system_files_overrides /overrides
 COPY build_scripts /build_scripts
 
