@@ -7,14 +7,19 @@ dnf -y remove \
 
 dnf -y install \
 	-x gnome-extensions-app \
+	adcli \
+	bash-color-prompt \
+	borgbackup \
 	btrfs-progs \
 	buildah \
+	davfs2 \
 	ddcutil \
 	distrobox \
 	fastfetch \
 	firewalld \
 	fpaste \
 	fzf \
+	git-credential-libsecret \
 	gnome-disk-utility \
 	gnome-shell-extension-{dash-to-dock,caffeine} \
 	glow \
@@ -22,18 +27,44 @@ dnf -y install \
 	hplip \
 	jetbrains-mono-fonts-all \
 	just \
+	libimobiledevice \
+	libsss_autofs \
+	libxcrypt-compat \
+	lm_sensors \
+	mesa-libGLU \
 	NetworkManager-openconnect-gnome \
 	NetworkManager-openvpn-gnome \
 	nss-mdns \
 	ntfs-3g \
+	oddjob-mkhomedir \
+	openssh-askpass \
 	powertop \
+	printer-driver-brlaser \
+	pulseaudio-utils \
+	python3-pip \
+	python3-pygit2 \
 	rclone \
 	restic \
+	samba \
+	samba-dcerpc \
+	samba-ldb-ldap-modules \
+	samba-winbind-clients \
+	samba-winbind-modules \
+	setools-console \
+	sssd-ad \
+	sssd-krb5 \
+	sssd-nfs-idmap \
+	switcheroo-control \
 	system-reinstall-bootc \
+	tmux \
 	tuned-ppd \
+	usbmuxd \
+	waypipe \
 	wireguard-tools \
 	wl-clipboard \
-	xhost
+	xhost \
+	zenity \
+	zsh
 
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.

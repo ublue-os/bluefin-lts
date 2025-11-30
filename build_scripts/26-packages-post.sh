@@ -9,9 +9,26 @@ sed -i "s/󰣛//g" /usr/share/ublue-os/fastfetch.jsonc
 # FIXME: check if this issue is fixed upstream at some point. (28-02-2025) https://github.com/ostreedev/ostree/issues/1469
 sed -i -e "s@ls -alct /@&var/log@g" /usr/share/ublue-os/fastfetch.jsonc
 
+
+# Mutter experimental features
+echo "Configuring Mutter experimental features..."
+MUTTER_EXP_FEATS="'scale-monitor-framebuffer', 'xwayland-native-scaling'"
+# Check if image name contains gdx (simple check)
+if [[ "${IMAGE_NAME:-}" =~ gdx ]]; then
+    MUTTER_EXP_FEATS="'kms-modifiers', ${MUTTER_EXP_FEATS}"
+fi
+
+cat <<EOF > /usr/share/glib-2.0/schemas/zz1-bluefin-modifications-mutter-exp-feats.gschema.override
+[org.gnome.mutter]
+experimental-features=[${MUTTER_EXP_FEATS}]
+EOF
+
 # Automatic wallpaper changing by month
 HARDCODED_RPM_MONTH="12"
 sed -i "/picture-uri/ s/${HARDCODED_RPM_MONTH}/$(date +%m)/" "/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override"
+# Schema compilation
+echo "Compiling schemas..."
+rm -f /usr/share/glib-2.0/schemas/gschemas.compiled
 glib-compile-schemas /usr/share/glib-2.0/schemas
 
 # Required for bluefin faces to work without conflicting with a ton of packages
