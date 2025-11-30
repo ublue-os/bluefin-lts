@@ -22,3 +22,4 @@ github_output.txt
 .vscode/
 .zed/
 .build/*
+.build/bluefin-main
