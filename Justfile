@@ -1,4 +1,5 @@
 # Environment Variables
+
 export repo_organization := env("GITHUB_REPOSITORY_OWNER", "ublue-os")
 export image_name := env("IMAGE_NAME", "bluefin")
 export centos_version := env("CENTOS_VERSION", "stream10")
@@ -66,49 +67,50 @@ sudoif command *args:
     sudoif {{ command }} {{ args }}
 
 # === Container Image Build ===
-
 # Build container image
 # Arguments: target_image, tag, dx (Developer Experience), gdx (GPU DX), hwe (Hardware Enablement)
+
 # Example: just build bluefin lts 1 0 1
 [group('Build')]
 build target_image=image_name tag=default_tag dx="0" gdx="0" hwe="0":
     #!/usr/bin/env bash
     set -euo pipefail
-    
-    ver="${tag}-${centos_version}.$(date +%Y%m%d)"
-    
+
+    ver="{{ tag }}-{{ centos_version }}.$(date +%Y%m%d)"
+
     BUILD_ARGS=(
-        "--build-arg" "MAJOR_VERSION=${centos_version}"
-        "--build-arg" "IMAGE_NAME=${image_name}"
-        "--build-arg" "IMAGE_VENDOR=${repo_organization}"
-        "--build-arg" "ENABLE_DX=${dx}"
-        "--build-arg" "ENABLE_GDX=${gdx}"
-        "--build-arg" "ENABLE_HWE=${hwe}"
+        "--build-arg" "MAJOR_VERSION={{ centos_version }}"
+        "--build-arg" "IMAGE_NAME={{ image_name }}"
+        "--build-arg" "IMAGE_VENDOR={{ repo_organization }}"
+        "--build-arg" "ENABLE_DX={{ dx }}"
+        "--build-arg" "ENABLE_GDX={{ gdx }}"
+        "--build-arg" "ENABLE_HWE={{ hwe }}"
     )
-    
+
     # Select akmods version based on HWE flag
-    if [[ "${hwe}" -eq "1" ]]; then
-        BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=coreos-stable-${coreos_stable_version}")
+    if [[ "{{ hwe }}" -eq "1" ]]; then
+        BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=coreos-stable-{{ coreos_stable_version }}")
     else
         BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=centos-10")
     fi
-    
+
     # Add git SHA if working directory is clean
     if [[ -z "$(git status -s)" ]]; then
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
     fi
-    
-    echo "Building ${target_image}:${tag}"
-    just sudoif podman build "${BUILD_ARGS[@]}" --pull=newer --tag "${target_image}:${tag}" .
+
+    echo "Building {{ target_image }}:{{ tag }}"
+    just sudoif podman build "${BUILD_ARGS[@]}" --pull=newer --tag "{{ target_image }}:{{ tag }}" .
 
 # Build ISO using Titanoboa
 # Usage: just build-iso <variant> <flavor>
+
 # Example: just build-iso bluefin main
 [group('Build')]
 iso variant="bluefin" flavor="main" hooks="" flatpaks="":
     #!/usr/bin/env bash
     set -euo pipefail
-    
+
     if [[ "{{ hooks }}" == "" ]]; then
         HOOK_URL="https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/iso_files/configure_lts_iso_anaconda.sh"
         echo "Downloading hook script..."
@@ -117,7 +119,7 @@ iso variant="bluefin" flavor="main" hooks="" flatpaks="":
     else
         HOOK_PATH="{{ hooks }}"
     fi
-    
+
     if [[ "{{ flatpaks }}" == "" ]]; then
         FLATPAKS_URL="https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/flatpaks/system-flatpaks.list"
         echo "Downloading flatpak list..."
@@ -129,7 +131,7 @@ iso variant="bluefin" flavor="main" hooks="" flatpaks="":
 
     TMP_DIR=$(mktemp -d)
     trap 'rm -rf "$TMP_DIR"' EXIT
-    
+
     # Run the build script
     # We use TAG=lts because this is the bluefin-lts repo
     export TAG="lts"
@@ -141,10 +143,10 @@ iso variant="bluefin" flavor="main" hooks="" flatpaks="":
 rootful_load_image target_image=image_name tag=default_tag:
     #!/usr/bin/env bash
     set -euo pipefail
-    
+
     # Skip if already root
     [[ -n "${SUDO_USER:-}" || "${UID}" -eq "0" ]] && exit 0
-    
+
     # Check if image exists locally
     if podman inspect -t image "${target_image}:${tag}" &>/dev/null; then
         ID=$(just sudoif podman images --filter reference="${target_image}:${tag}" --format "'{{ '{{.ID}}' }}'")
@@ -163,19 +165,19 @@ rootful_load_image target_image=image_name tag=default_tag:
 _build-bib target_image tag image_type="qcow2" config="image.toml":
     #!/usr/bin/env bash
     set -euo pipefail
-    
+
     mkdir -p output
-    
+
     # Clean previous build
     if [[ "{{ image_type }}" == "iso" ]]; then
         sudo rm -rf output/bootiso || true
     else
         sudo rm -rf "output/{{ image_type }}" || true
     fi
-    
+
     args="--type {{ image_type }} --use-librepo=True"
     [[ "{{ target_image }}" == localhost/* ]] && args+=" --local"
-    
+
     just sudoif podman run \
         --rm -it --privileged --pull=newer --net=host \
         --security-opt label=type:unconfined_t \
@@ -183,7 +185,7 @@ _build-bib target_image tag image_type="qcow2" config="image.toml":
         -v "$(pwd)/output:/output" \
         -v /var/lib/containers/storage:/var/lib/containers/storage \
         "{{ bib_image }}" ${args} "{{ target_image }}:{{ tag }}"
-    
+
     sudo chown -R $USER:$USER output
 
 [private]
@@ -216,27 +218,33 @@ rebuild-vm target_image=("localhost/" + image_name) tag=default_tag image_type="
 run-vm target_image=("localhost/" + image_name) tag=default_tag image_type="qcow2":
     #!/usr/bin/env bash
     set -euo pipefail
-    
+
     # Determine image file path and config
     if [[ "{{ image_type }}" == "iso" ]]; then
-        image_file="output/bootiso/install.iso"
+        # Check for Titanoboa ISO (assuming main flavor)
+        iso_name="{{ image_name }}-main-{{ tag }}.iso"
+        if [[ -f "output/$iso_name" ]]; then
+            image_file="output/$iso_name"
+        else
+            image_file="output/bootiso/install.iso"
+        fi
         config="iso.toml"
     else
         image_file="output/{{ image_type }}/disk.{{ image_type }}"
         config="image.toml"
     fi
-    
+
     # Build if doesn't exist
     [[ ! -f "${image_file}" ]] && just build-vm "{{ target_image }}" "{{ tag }}" "{{ image_type }}"
-    
+
     # Find available port
     port=8006
     while ss -tunalp 2>/dev/null | grep -q ":${port}"; do
         ((port++))
     done
-    
+
     echo "Starting VM on http://localhost:${port}"
-    
+
     # Run VM with QEMU
     just sudoif podman run --rm --privileged --pull=newer \
         -p "127.0.0.1:${port}:8006" \
@@ -245,7 +253,7 @@ run-vm target_image=("localhost/" + image_name) tag=default_tag image_type="qcow
         --device=/dev/kvm \
         -v "${PWD}/${image_file}:/boot.{{ image_type }}" \
         docker.io/qemux/qemu &
-    
+
     sleep 2
     xdg-open "http://localhost:${port}"
     fg || true
@@ -267,6 +275,41 @@ format:
 # Test locally built image: build container -> build qcow2 -> run VM
 [group('Test')]
 test-local variant="lts":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    dx="0"
+    gdx="0"
+    hwe="0"
+    tag="lts"
+
+    case "{{ variant }}" in
+        hwe)
+            hwe="1"
+            tag="lts-hwe"
+            ;;
+        gdx)
+            gdx="1"
+            tag="lts-gdx"
+            ;;
+        lts)
+            tag="lts"
+            ;;
+        *)
+            echo "Unknown variant: {{ variant }}"
+            echo "Valid options: lts, hwe, gdx"
+            exit 1
+            ;;
+    esac
+
+    echo "Testing local build: variant={{ variant }}, tag=${tag}"
+    just build "localhost/${image_name}" "${tag}" "${dx}" "${gdx}" "${hwe}"
+    just build-vm "localhost/${image_name}" "${tag}" "qcow2"
+    just run-vm "localhost/${image_name}" "${tag}" "qcow2"
+
+# Test locally built ISO: build container -> build iso -> run VM
+[group('Test')]
+test-iso-local variant="lts":
     #!/usr/bin/env bash
     set -euo pipefail
     
@@ -294,14 +337,30 @@ test-local variant="lts":
             ;;
     esac
     
-    echo "Testing local build: variant={{ variant }}, tag=${tag}"
+    echo "Testing local ISO build: variant={{ variant }}, tag=${tag}"
     just build "localhost/${image_name}" "${tag}" "${dx}" "${gdx}" "${hwe}"
-    just build-vm "localhost/${image_name}" "${tag}" "qcow2"
-    just run-vm "localhost/${image_name}" "${tag}" "qcow2"
+    
+    # Download config files
+    HOOK_URL="https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/iso_files/configure_lts_iso_anaconda.sh"
+    FLATPAKS_URL="https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/flatpaks/system-flatpaks.list"
+    
+    TMP_DIR=$(mktemp -d)
+    trap 'rm -rf "$TMP_DIR"' EXIT
+    
+    echo "Downloading configuration files..."
+    curl -sL "$HOOK_URL" -o "$TMP_DIR/hook.sh"
+    curl -sL "$FLATPAKS_URL" -o "$TMP_DIR/flatpaks.list"
+    chmod +x "$TMP_DIR/hook.sh"
+    
+    # Build ISO using Titanoboa script
+    export TAG="${tag}"
+    ./build-iso.sh "bluefin" "main" "local" "$TMP_DIR/hook.sh" "$TMP_DIR/flatpaks.list"
+    
+    just run-vm "localhost/${image_name}" "${tag}" "iso"
 
-# Test GHCR image: pull from registry -> build qcow2 -> run VM
+# Test GHCR ISO: pull image -> build iso -> run VM
 [group('Test')]
-test variant="lts":
+test-iso-ghcr variant="lts":
     #!/usr/bin/env bash
     set -euo pipefail
     
@@ -326,6 +385,55 @@ test variant="lts":
     
     image="ghcr.io/${repo_organization}/${image_name}"
     
+    echo "Testing GHCR ISO build: variant={{ variant }}, tag=${tag}"
+    echo "Pulling ${image}:${tag}"
+    just sudoif podman pull "${image}:${tag}"
+    
+    # Download config files
+    HOOK_URL="https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/iso_files/configure_lts_iso_anaconda.sh"
+    FLATPAKS_URL="https://raw.githubusercontent.com/ublue-os/bluefin/refs/heads/main/flatpaks/system-flatpaks.list"
+    
+    TMP_DIR=$(mktemp -d)
+    trap 'rm -rf "$TMP_DIR"' EXIT
+    
+    echo "Downloading configuration files..."
+    curl -sL "$HOOK_URL" -o "$TMP_DIR/hook.sh"
+    curl -sL "$FLATPAKS_URL" -o "$TMP_DIR/flatpaks.list"
+    chmod +x "$TMP_DIR/hook.sh"
+    
+    # Build ISO using Titanoboa script
+    export TAG="${tag}"
+    ./build-iso.sh "bluefin" "main" "ghcr" "$TMP_DIR/hook.sh" "$TMP_DIR/flatpaks.list"
+    
+    just run-vm "${image}" "${tag}" "iso"
+
+# Test GHCR image: pull from registry -> build qcow2 -> run VM
+[group('Test')]
+test-ghcr variant="lts":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    tag="lts"
+
+    case "{{ variant }}" in
+        hwe)
+            tag="lts-hwe"
+            ;;
+        gdx)
+            tag="lts-gdx"
+            ;;
+        lts)
+            tag="lts"
+            ;;
+        *)
+            echo "Unknown variant: {{ variant }}"
+            echo "Valid options: lts, hwe, gdx"
+            exit 1
+            ;;
+    esac
+
+    image="ghcr.io/${repo_organization}/${image_name}"
+
     echo "Testing GHCR image: variant={{ variant }}, tag=${tag}"
     echo "Pulling ${image}:${tag}"
     just sudoif podman pull "${image}:${tag}"
