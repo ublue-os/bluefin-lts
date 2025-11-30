@@ -94,6 +94,9 @@ echo "Cloning Titanoboa builder..."
 mkdir -p "$(dirname "$BUILD_DIR")"
 git clone https://github.com/ublue-os/titanoboa "$BUILD_DIR"
 
+# Patch Titanoboa Justfile to fix mv error
+sed -i '/mv .\/output.iso/d' "$BUILD_DIR/Justfile"
+
 # Prepare arguments for just build
 JUST_ARGS=("$IMAGE_NAME")
 
