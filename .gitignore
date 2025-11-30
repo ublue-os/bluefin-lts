@@ -21,3 +21,4 @@ github_output.txt
 *.iml
 .vscode/
 .zed/
+.build/*
