@@ -26,6 +26,7 @@ dnf -y install \
 	NetworkManager-openvpn-gnome \
 	nss-mdns \
 	ntfs-3g \
+	papers-thumbnailer \
 	powertop \
 	rclone \
 	restic \
