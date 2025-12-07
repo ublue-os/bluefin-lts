@@ -2,6 +2,7 @@ cosign.key
 output/
 *.raw
 *.qcow2
+.build/
 __pycache__/
 *.pyc
 
@@ -20,3 +21,5 @@ github_output.txt
 *.iml
 .vscode/
 .zed/
+.build/*
+.build/bluefin-main
