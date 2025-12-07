@@ -2,13 +2,16 @@ ARG MAJOR_VERSION="${MAJOR_VERSION:-c10s}"
 ARG BASE_IMAGE_SHA="${BASE_IMAGE_SHA:-sha256-feea845d2e245b5e125181764cfbc26b6dacfb3124f9c8d6a2aaa4a3f91082ed}"
 ARG ENABLE_HWE="${ENABLE_HWE:-0}"
 ARG AKMODS_VERSION="${AKMODS_VERSION:-centos-10}"
+ARG COMMON_IMAGE_REF
 # Upstream mounts akmods-zfs and akmods-nvidia-open; select their tag via AKMODS_VERSION
 FROM ghcr.io/ublue-os/akmods-zfs:${AKMODS_VERSION} AS akmods_zfs
 FROM ghcr.io/ublue-os/akmods-nvidia-open:${AKMODS_VERSION} AS akmods_nvidia_open
+FROM ${COMMON_IMAGE_REF} AS common
 FROM scratch AS context
 
 COPY system_files /files
-COPY --from=ghcr.io/projectbluefin/common:latest@sha256:010a877426875af903b5135d53605337c0bac6c893e2ad3e203473824ae3675c /system_files /files
+COPY --from=common /system_files/shared /files
+COPY --from=common /system_files/bluefin /files
 COPY system_files_overrides /overrides
 COPY build_scripts /build_scripts
 

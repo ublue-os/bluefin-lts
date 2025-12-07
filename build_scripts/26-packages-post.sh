@@ -32,9 +32,6 @@ install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
 mkdir -p /etc/flatpak/remotes.d
 curl --retry 3 -o /etc/flatpak/remotes.d/flathub.flatpakrepo "https://dl.flathub.org/repo/flathub.flatpakrepo"
 
-# move the custom just
-mv /usr/share/ublue-os/just/61-lts-custom.just /usr/share/ublue-os/just/60-custom.just 
-
 /usr/sbin/depmod -a `ls -1 /lib/modules/ | tail -1`
 
 
