@@ -7,21 +7,26 @@ Always reference these instructions first and fallback to search or bash command
 ## Working Effectively
 
 ### Prerequisites and Setup
-- **CRITICAL**: Install just command runner first:
+- **CRITICAL**: Ensure `just` command runner is installed.
+  Check with `which just`. If missing, install to `~/.local/bin`:
   ```bash
-  wget -qO- "https://github.com/casey/just/releases/download/1.34.0/just-1.34.0-x86_64-unknown-linux-musl.tar.gz" | tar --no-same-owner -C /usr/local/bin -xz just
+  mkdir -p ~/.local/bin
+  wget -qO- "https://github.com/casey/just/releases/download/1.34.0/just-1.34.0-x86_64-unknown-linux-musl.tar.gz" | tar --no-same-owner -C ~/.local/bin -xz just
+  export PATH="$HOME/.local/bin:$PATH"
   ```
 - Ensure podman is available: `which podman` (should be present)
 - Verify git is available: `which git`
 
 ### Build Commands - NEVER CANCEL BUILDS
 - **Build container image**: `just build [IMAGE_NAME] [TAG] [DX] [GDX] [HWE]`
+  - Defaults: `just build` is equivalent to `just build bluefin lts 0 0 0`
   - Takes 45-90 minutes. NEVER CANCEL. Set timeout to 120+ minutes.
   - Example: `just build bluefin lts 0 0 0` (basic build)
   - Example: `just build bluefin lts 1 0 0` (with DX - developer tools)
   - Example: `just build bluefin lts 0 1 0` (with GDX - GPU/AI tools)
 - **Build VM images**: 
-  - `just build-qcow2` - QCOW2 virtual machine image (45-90 minutes)
+  - `just build-qcow2` - Converts *existing* container image to QCOW2 (45-90 minutes)
+  - `just rebuild-qcow2` - Builds container image THEN converts to QCOW2 (90-180 minutes)
   - `just build-iso` - ISO installer image (45-90 minutes) 
   - `just build-raw` - RAW disk image (45-90 minutes)
   - NEVER CANCEL any build command. Set timeout to 120+ minutes.
@@ -91,12 +96,15 @@ Always reference these instructions first and fallback to search or bash command
 ### Adding New Packages
 - Edit `build_scripts/20-packages.sh` for base packages
 - Use variant-specific overrides in `build_scripts/overrides/[variant]/`
+- Use architecture-specific overrides in `build_scripts/overrides/[arch]/`
+- Use combined overrides in `build_scripts/overrides/[arch]/[variant]/`
 - Package installation uses dnf/rpm package manager
 
 ### Modifying System Configuration  
 - Base configs: `system_files/`
 - Variant configs: `system_files_overrides/[variant]/`
 - Architecture-specific: `system_files_overrides/[arch]/`
+- Combined: `system_files_overrides/[arch]-[variant]/`
 
 ## GitHub Actions Integration
 
