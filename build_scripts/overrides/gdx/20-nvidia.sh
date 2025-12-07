@@ -31,13 +31,15 @@ dnf config-manager --set-enabled "nvidia-container-toolkit"
 
 # Get the kmod-nvidia version to ensure driver packages match
 KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
+# Determine the expected package version format (epoch:version-release)
+NVIDIA_PKG_VERSION="3:${KMOD_VERSION}-1.el10"
 
 dnf install -y --enablerepo="cuda-rhel10-${NVIDIA_ARCH}" \
-    "libnvidia-fbc-3:${KMOD_VERSION}-1.el10" \
-    "libnvidia-ml-3:${KMOD_VERSION}-1.el10" \
-    "nvidia-driver-3:${KMOD_VERSION}-1.el10" \
-    "nvidia-driver-cuda-3:${KMOD_VERSION}-1.el10" \
-    "nvidia-settings-3:${KMOD_VERSION}-1.el10" \
+    "libnvidia-fbc-${NVIDIA_PKG_VERSION}" \
+    "libnvidia-ml-${NVIDIA_PKG_VERSION}" \
+    "nvidia-driver-${NVIDIA_PKG_VERSION}" \
+    "nvidia-driver-cuda-${NVIDIA_PKG_VERSION}" \
+    "nvidia-settings-${NVIDIA_PKG_VERSION}" \
     nvidia-container-toolkit
 
 # Ensure the version of the Nvidia module matches the driver
