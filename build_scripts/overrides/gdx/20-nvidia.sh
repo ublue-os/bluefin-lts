@@ -29,16 +29,18 @@ dnf -y install --enablerepo="cuda-rhel10-${NVIDIA_ARCH}"\
 # enable repos provided by ublue-os-nvidia-addons
 dnf config-manager --set-enabled "nvidia-container-toolkit"
 
+# Get the kmod-nvidia version to ensure driver packages match
+KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
+
 dnf install -y --enablerepo="cuda-rhel10-${NVIDIA_ARCH}" \
-    libnvidia-fbc \
-    libnvidia-ml \
-    nvidia-driver \
-    nvidia-driver-cuda \
-    nvidia-settings \
+    "libnvidia-fbc-3:${KMOD_VERSION}-1.el10" \
+    "libnvidia-ml-3:${KMOD_VERSION}-1.el10" \
+    "nvidia-driver-3:${KMOD_VERSION}-1.el10" \
+    "nvidia-driver-cuda-3:${KMOD_VERSION}-1.el10" \
+    "nvidia-settings-3:${KMOD_VERSION}-1.el10" \
     nvidia-container-toolkit
 
 # Ensure the version of the Nvidia module matches the driver
-KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
 DRIVER_VERSION="$(rpm -q --queryformat '%{VERSION}' nvidia-driver)"
 if [ "$KMOD_VERSION" != "$DRIVER_VERSION" ]; then
     echo "Error: kmod-nvidia version ($KMOD_VERSION) does not match nvidia-driver version ($DRIVER_VERSION)"
