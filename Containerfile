@@ -18,6 +18,9 @@ COPY build_scripts /build_scripts
 ARG MAJOR_VERSION="${MAJOR_VERSION:-c10s}"
 FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 
+# Copy Homebrew files from the brew image
+COPY --from=ghcr.io/projectbluefin/brew:latest /system_files /
+
 ARG ENABLE_DX="${ENABLE_DX:-0}"
 ARG ENABLE_GDX="${ENABLE_GDX:-0}"
 ARG ENABLE_HWE="${ENABLE_HWE:-0}"
