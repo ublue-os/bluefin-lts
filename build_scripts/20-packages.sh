@@ -61,7 +61,6 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew} \
 	uupd \
 	bluefin-schemas \
-	bluefin-backgrounds \
 	bluefin-cli-logos \
 	bluefin-plymouth
 
