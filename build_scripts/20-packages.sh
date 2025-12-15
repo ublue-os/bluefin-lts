@@ -48,8 +48,6 @@ dnf -y --enablerepo "tailscale-stable" install \
 
 dnf -y copr enable ublue-os/packages
 dnf -y copr disable ublue-os/packages
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
-	centos-logos bluefin-logos
 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
