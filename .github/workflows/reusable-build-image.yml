@@ -177,9 +177,9 @@ jobs:
       - name: Run Rechunker
         if: ${{ inputs.rechunk && inputs.publish }}
         id: rechunk
-        uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
+        uses: ublue-os/legacy-rechunk:v1.0.0-x86_64@sha256:1ee0b4ad0eee9b300cca1afd8cf78b78ce77bcc0d5aa16b07a195c6c22f1c9b4
         with:
-          rechunk: ghcr.io/hhd-dev/rechunk:v1.2.1
+          rechunk: ghcr.io/ublue-os/legacy-rechunk:v1.0.0-x86_64
           ref: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           prev-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           skip_compression: true
