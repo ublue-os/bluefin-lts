@@ -9,6 +9,7 @@ dnf -y install \
 	-x gnome-extensions-app \
 	btrfs-progs \
 	buildah \
+	containerd \
 	ddcutil \
 	distrobox \
 	fastfetch \
