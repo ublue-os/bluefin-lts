@@ -22,6 +22,7 @@ dnf -y install \
 	hplip \
 	jetbrains-mono-fonts-all \
 	just \
+	libgda-sqlite \
 	NetworkManager-openconnect-gnome \
 	NetworkManager-openvpn-gnome \
 	nss-mdns \
