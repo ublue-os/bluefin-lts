@@ -30,6 +30,3 @@ ln -s /var/usrlocal /usr/local
 # We need this else anything accessing image-info fails
 # FIXME: Figure out why this doesnt have the right permissions by default
 chmod 644 /usr/share/ublue-os/image-info.json
-
-# FIXME: use --fix option once https://github.com/containers/bootc/pull/1152 is merged
-bootc container lint --fatal-warnings || true
