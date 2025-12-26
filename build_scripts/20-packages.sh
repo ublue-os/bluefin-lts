@@ -50,8 +50,6 @@ dnf -y --enablerepo "tailscale-stable" install \
 
 dnf -y copr enable ublue-os/packages
 dnf -y copr disable ublue-os/packages
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
-	centos-logos bluefin-logos
 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
@@ -63,9 +61,7 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	ublue-{motd,fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew} \
 	uupd \
 	bluefin-schemas \
-	bluefin-backgrounds \
-	bluefin-cli-logos \
-	bluefin-plymouth
+	bluefin-backgrounds
 
 # Upstream ublue-os-signing bug, we are using /usr/etc for the container signing and bootc gets mad at this
 # FIXME: remove this once https://github.com/ublue-os/packages/issues/245 is closed
