@@ -9,6 +9,7 @@ dnf -y install \
 	-x gnome-extensions-app \
 	btrfs-progs \
 	buildah \
+	containerd \
 	ddcutil \
 	distrobox \
 	fastfetch \
@@ -22,6 +23,7 @@ dnf -y install \
 	hplip \
 	jetbrains-mono-fonts-all \
 	just \
+	libgda-sqlite \
 	NetworkManager-openconnect-gnome \
 	NetworkManager-openvpn-gnome \
 	nss-mdns \
