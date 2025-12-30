@@ -109,8 +109,6 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0":
 
     BUILD_ARGS=()
     BUILD_ARGS+=("--build-arg" "COMMON_IMAGE_REF=${common_image_ref}")
-    BUILD_ARGS+=("--build-arg" "COMMON_IMAGE=${common_image}")
-    BUILD_ARGS+=("--build-arg" "COMMON_IMAGE_SHA=${common_image_sha}")
     BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${centos_version}")
     BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
     BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR=${repo_organization}")
