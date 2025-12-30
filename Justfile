@@ -320,8 +320,6 @@ run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-
 [group('Run Virtal Machine')]
 run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "iso.toml")
 
-test-iso:
-
 # Runs shell check on all Bash scripts
 lint:
     /usr/bin/find . -iname "*.sh" -type f -exec shellcheck "{}" ';'
