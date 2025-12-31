@@ -1,11 +1,12 @@
 name: Build Bluefin LTS DX
 
 on:
-  pull_request:
+
+  push:
     branches:
-      - main
+      - testing
   schedule:
-    - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
+    - cron: "0 17 * * TUE" # Every Tuesday at 5pm UTC
   merge_group:
   workflow_dispatch:
 
@@ -23,3 +24,4 @@ jobs:
       rechunk: ${{ github.event_name != 'pull_request' }}
       sbom: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' }}
+      tag-suffix: ${{ github.ref_name == 'testing' && '-testing' || '' }}
