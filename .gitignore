@@ -20,3 +20,4 @@ github_output.txt
 *.iml
 .vscode/
 .zed/
+_build_podman_scp.*
