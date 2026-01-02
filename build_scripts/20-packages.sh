@@ -47,24 +47,12 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
-dnf -y copr enable ublue-os/packages
-dnf -y copr disable ublue-os/packages
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
-	centos-logos bluefin-logos
+# Conflicts with a ton of packages, has to be removed before we copy all the files as well
+rpm --erase --nodeps centos-logos
 
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
-	-x bluefin-logos \
-	-x bluefin-readymade-config \
-	uupd \
-	bluefin-schemas \
-	bluefin-backgrounds \
-	bluefin-cli-logos \
-	bluefin-plymouth
-
-# Upstream ublue-os-signing bug, we are using /usr/etc for the container signing and bootc gets mad at this
-# FIXME: remove this once https://github.com/ublue-os/packages/issues/245 is closed
-cp -avf /usr/etc/. /etc
-rm -rvf /usr/etc
+dnf -y copr enable ublue-os/packages 
+dnf -y copr disable ublue-os/packages 
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install uupd
 
 dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
 dnf -y copr disable che/nerd-fonts
