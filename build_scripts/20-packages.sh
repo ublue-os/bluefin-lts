@@ -55,11 +55,6 @@ dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages swap \
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
 	-x bluefin-logos \
 	-x bluefin-readymade-config \
-	ublue-os-luks \
-	ublue-os-signing \
-	ublue-os-udev-rules \
-	ublue-os-update-services \
-	ublue-{fastfetch,bling,rebase-helper,setup-services,polkit-rules,brew} \
 	uupd \
 	bluefin-schemas \
 	bluefin-backgrounds \
