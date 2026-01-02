@@ -7,6 +7,8 @@ dnf -y remove \
 
 dnf -y install \
 	-x gnome-extensions-app \
+	NetworkManager-openconnect-gnome \
+	NetworkManager-openvpn-gnome \
 	btrfs-progs \
 	buildah \
 	containerd \
@@ -14,17 +16,16 @@ dnf -y install \
 	distrobox \
 	fastfetch \
 	firewalld \
+	flatpak \
 	fpaste \
 	fzf \
-	gnome-disk-utility \
 	glow \
+	gnome-disk-utility \
 	gum \
 	hplip \
 	jetbrains-mono-fonts-all \
 	just \
 	libgda-sqlite \
-	NetworkManager-openconnect-gnome \
-	NetworkManager-openvpn-gnome \
 	nss-mdns \
 	ntfs-3g \
 	papers-thumbnailer \
