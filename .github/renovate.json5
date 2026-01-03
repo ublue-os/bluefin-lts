@@ -21,6 +21,14 @@
       ],
       datasourceTemplate: 'docker',
     },
+    {
+      customType: 'regex',
+      managerFilePatterns: ['/^image-versions\\.yaml$/'],
+      matchStrings: [
+        'image:\\s*(?<packageName>[^\\s]+)\\s+tag:\\s*(?<currentValue>[^\\s]+)\\s+digest:\\s*(?<currentDigest>sha256:[a-f0-9]+)',
+      ],
+      datasourceTemplate: 'docker',
+    },
     ],
 
   "packageRules": [
