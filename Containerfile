@@ -43,4 +43,4 @@ RUN --mount=type=tmpfs,dst=/opt \
 # Needs to be here to make the main image build strict (no /opt there)
 RUN rm -rf /opt && ln -s /var/opt /opt 
 
-RUN bootc container lint --no-truncate --fatal-warnings 
+RUN find /var -mindepth 1 -delete && bootc container lint --no-truncate --fatal-warnings 
