@@ -49,9 +49,6 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
-# Conflicts with a ton of packages, has to be removed before we copy all the files as well
-rpm --erase --nodeps centos-logos
-
 dnf -y copr enable ublue-os/packages 
 dnf -y copr disable ublue-os/packages 
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install uupd

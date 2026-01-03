@@ -42,6 +42,7 @@ copy_systemfiles_for() {
 }
 
 CUSTOM_NAME="base"
+rpm --erase --nodeps centos-logos # Remove the centos logos before copying any files ever
 copy_systemfiles_for ../files
 run_buildscripts_for ..
 CUSTOM_NAME=""
