@@ -5,6 +5,7 @@ export default_tag := env("DEFAULT_TAG", "lts")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
 export coreos_stable_version := env("COREOS_STABLE_VERSION", "42")
 export common_image := env("COMMON_IMAGE", "ghcr.io/projectbluefin/common:latest")
+export brew_image := env("BREW_IMAGE", "ghcr.io/ublue-os/brew:latest")
 
 alias build-vm := build-qcow2
 alias rebuild-vm := rebuild-qcow2
@@ -97,8 +98,17 @@ sudoif command *args:
 # This will build an image 'bluefin:lts' with DX and HWE enabled.
 #
 
+[private]
+_ensure-yq:
+    #!/usr/bin/env bash
+    if ! command -v yq &> /dev/null; then
+        echo "Missing requirement: 'yq' is not installed."
+        echo "Please install yq (e.g. 'brew install yq')"
+        exit 1
+    fi
+
 # Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0":
+build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0": _ensure-yq
     #!/usr/bin/env bash
 
     # Get Version
@@ -106,11 +116,12 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0":
 
     common_image_sha=$(yq -r '.images[] | select(.name == "common") | .digest' image-versions.yaml)
     common_image_ref="${common_image}@${common_image_sha}"
+    brew_image_sha=$(yq -r '.images[] | select(.name == "brew") | .digest' image-versions.yaml)
+    brew_image_ref="${brew_image}@${brew_image_sha}"
 
     BUILD_ARGS=()
     BUILD_ARGS+=("--build-arg" "COMMON_IMAGE_REF=${common_image_ref}")
-    BUILD_ARGS+=("--build-arg" "COMMON_IMAGE=${common_image}")
-    BUILD_ARGS+=("--build-arg" "COMMON_IMAGE_SHA=${common_image_sha}")
+    BUILD_ARGS+=("--build-arg" "BREW_IMAGE_REF=${brew_image_ref}")
     BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${centos_version}")
     BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
     BUILD_ARGS+=("--build-arg" "IMAGE_VENDOR=${repo_organization}")
@@ -205,10 +216,6 @@ _build-bib $target_image $tag $type $config:
 
     args="--type ${type} "
     args+="--use-librepo=True"
-
-    if [[ $target_image == localhost/* ]]; then
-      args+=" --local"
-    fi
 
     just sudoif podman run \
       --rm \
@@ -314,79 +321,6 @@ run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-
 # Run a virtual machine from an ISO
 [group('Run Virtal Machine')]
 run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "iso.toml")
-
-# Run a virtual machine using systemd-vmspawn
-[group('Run Virtal Machine')]
-spawn-vm rebuild="0" type="qcow2" ram="6G":
-    #!/usr/bin/env bash
-
-    set -euo pipefail
-
-    [ "{{ rebuild }}" -eq 1 ] && echo "Rebuilding the ISO" && just build-vm {{ rebuild }} {{ type }}
-
-    systemd-vmspawn \
-      -M "achillobator" \
-      --console=gui \
-      --cpus=2 \
-      --ram=$(echo {{ ram }}| /usr/bin/numfmt --from=iec) \
-      --network-user-mode \
-      --vsock=false --pass-ssh-key=false \
-      -i ./output/**/*.{{ type }}
-
-##########################
-#  'customize-iso-build' #
-##########################
-# Description:
-# Enables the manual customization of the osbuild manifest before running the ISO build
-#
-# Mount the configuration file and output directory
-# Clear the entrypoint to run the custom command
-
-# Run osbuild with the specified parameters
-customize-iso-build:
-    sudo podman run \
-    --rm -it \
-    --privileged \
-    --pull=newer \
-    --net=host \
-    --security-opt label=type:unconfined_t \
-    -v $(pwd)/iso.toml \
-    -v $(pwd)/output:/output \
-    -v /var/lib/containers/storage:/var/lib/containers/storage \
-    --entrypoint "" \
-    "${bib_image}" \
-    osbuild --store /store --output-directory /output /output/manifest-iso.json --export bootiso
-
-##########################
-#  'patch-iso-branding'  #
-##########################
-# Description:
-# creates a custom branded ISO image. As per https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/anaconda_customization_guide/sect-iso-images#sect-product-img
-# Parameters:
-#   override: A flag to determine if the final ISO should replace the original ISO (default is 0).
-#   iso_path: The path to the original ISO file.
-# Runs a Podman container with Fedora image. Installs 'lorax' and 'mkksiso' tools inside the container. Creates a compressed 'product.img'
-# from the Brnading images in the 'iso_files' directory. Uses 'mkksiso' to add the 'product.img' to the original ISO and creates 'final.iso'
-# in the output directory. If 'override' is not 0, replaces the original ISO with the newly created 'final.iso'.
-
-# applies custom branding to an ISO image.
-patch-iso-branding override="0" iso_path="output/bootiso/install.iso":
-    #!/usr/bin/env bash
-    podman run \
-        --rm \
-        -it \
-        --pull=newer \
-        --privileged \
-        -v ./output:/output \
-        -v ./iso_files:/iso_files \
-        quay.io/centos/centos:stream10 \
-        bash -c 'dnf install -y lorax && \
-    	mkdir /images && cd /iso_files/product && find . | cpio -c -o | gzip -9cv > /images/product.img && cd / \
-            && mkksiso --add images --volid bluefin-boot /{{ iso_path }} /output/final.iso'
-
-    if [ {{ override }} -ne 0 ] ; then
-        mv output/final.iso {{ iso_path }}
-    fi
 
 # Runs shell check on all Bash scripts
 lint:
