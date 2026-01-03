@@ -34,11 +34,6 @@
       "matchUpdateTypes": ["digest"]
     },
     {
-      "matchUpdateTypes": ["pin", "digest", "pinDigest"],
-      "matchPackageNames": ["ghcr.io/jasonn3/build-container-installer", "ghcr.io/hhd-dev/rechunk"],
-      "automerge": false
-    },
-    {
       "automerge": true,
       "matchUpdateTypes": ["digest"],
       "matchDepNames": [
