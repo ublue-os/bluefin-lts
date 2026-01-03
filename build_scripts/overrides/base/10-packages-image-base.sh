@@ -92,3 +92,6 @@ dnf -y install \
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
 dnf -y remove console-login-helper-messages
+
+# We need to remove centos-logos before applying bluefin's logos and after installing this package. Do not remove this!
+rpm --erase --nodeps centos-logos 

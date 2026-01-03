@@ -3,13 +3,16 @@ ARG BASE_IMAGE_SHA="${BASE_IMAGE_SHA:-sha256-feea845d2e245b5e125181764cfbc26b6da
 ARG ENABLE_HWE="${ENABLE_HWE:-0}"
 ARG AKMODS_VERSION="${AKMODS_VERSION:-centos-10}"
 ARG COMMON_IMAGE_REF
+ARG BREW_IMAGE_REF
 # Upstream mounts akmods-zfs and akmods-nvidia-open; select their tag via AKMODS_VERSION
 FROM ghcr.io/ublue-os/akmods-zfs:${AKMODS_VERSION} AS akmods_zfs
 FROM ghcr.io/ublue-os/akmods-nvidia-open:${AKMODS_VERSION} AS akmods_nvidia_open
 FROM ${COMMON_IMAGE_REF} AS common
+FROM ${BREW_IMAGE_REF} AS brew
 FROM scratch AS context
 
 COPY system_files /files
+COPY --from=brew /system_files /files
 COPY --from=common /system_files/shared /files
 COPY --from=common /system_files/bluefin /files
 COPY system_files_overrides /overrides

@@ -41,7 +41,9 @@ copy_systemfiles_for() {
 	printf "::endgroup::\n"
 }
 
-CUSTOM_NAME="base"
+run_buildscripts_for base
+
+CUSTOM_NAME="bluefin"
 copy_systemfiles_for ../files
 run_buildscripts_for ..
 CUSTOM_NAME=""

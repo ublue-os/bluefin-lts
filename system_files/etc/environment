@@ -1,4 +1,0 @@
-# NOTE: Necessary due to cursor being laggy with VRR on GNOME 47
-MUTTER_DEBUG_FORCE_KMS_MODE=simple
-# NOTE: Makes GNOME slightly faster
-GNOME_SHELL_SLOWDOWN_FACTOR=0.8

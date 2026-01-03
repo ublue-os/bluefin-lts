@@ -4,7 +4,24 @@
     "config:best-practices",
   ],
 
+  "git-submodules": {
+    "enabled": true
+  },
+
+  // Do not rebase when the default branch is updated
   "rebaseWhen": "never",
+  "customManagers": [
+    {
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^Justfile$/',
+      ],
+      matchStrings: [
+        '(?<justName>.+?)\\s:=\\s"(?<packageName>\\S+):(?<currentValue>\\S+)@(?<currentDigest>sha256:[a-f0-9]+?)"',
+      ],
+      datasourceTemplate: 'docker',
+    },
+    ],
 
   "packageRules": [
     {
@@ -12,10 +29,9 @@
       "matchUpdateTypes": ["pin", "pinDigest"]
     },
     {
-      "enabled": false,
-      "matchUpdateTypes": ["digest", "pin", "pinDigest"],
-      "matchDepTypes": ["container"],
-      "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
+      "automerge": true,
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["digest"]
     },
     {
       "automerge": true,
