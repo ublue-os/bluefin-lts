@@ -23,9 +23,9 @@
     },
     {
       customType: 'regex',
-      managerFilePatterns: ['/^image-versions\\.yaml$/'],
+      managerFilePatterns: ['/image-versions(\\.[^.]+)?\\.(yaml|yml)$/'],
       matchStrings: [
-        'image:\\s*(?<packageName>[^\\s]+)\\s+tag:\\s*(?<currentValue>[^\\s]+)\\s+digest:\\s*(?<currentDigest>sha256:[a-f0-9]+)',
+        'image:\\s*(?<packageName>\\S+)\\s*tag:\\s*(?<currentValue>\\S+)\\s*digest:\\s*(?<currentDigest>sha256:[a-f0-9]+)',
       ],
       datasourceTemplate: 'docker',
     },
@@ -43,7 +43,6 @@
     },
     {
       "automerge": true,
-      "matchUpdateTypes": ["digest"],
       "matchDepNames": [
         "quay.io/centos-bootc/centos-bootc",
         "ghcr.io/projectbluefin/common"
