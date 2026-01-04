@@ -12,8 +12,6 @@ dnf -y install 'dnf-command(versionlock)'
 
 /run/context/build_scripts/scripts/kernel-swap.sh
 
-
-
 # This fixes a lot of skew issues on GDX because kernel-devel wont update then
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
