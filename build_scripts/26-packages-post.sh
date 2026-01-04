@@ -5,10 +5,6 @@ set -xeuo pipefail
 # Fancy CentOS icon on the fastfetch
 sed -i "s/󰣛//g" /usr/share/ublue-os/fastfetch.jsonc
 
-# Fix 1969 date getting returned on Fastfetch (upstream issue)
-# FIXME: check if this issue is fixed upstream at some point. (28-02-2025) https://github.com/ostreedev/ostree/issues/1469
-sed -i -e "s@ls -alct /@&var/log@g" /usr/share/ublue-os/fastfetch.jsonc
-
 # Automatic wallpaper changing by month
 HARDCODED_RPM_MONTH="12"
 sed -i "/picture-uri/ s/${HARDCODED_RPM_MONTH}/$(date +%m)/" "/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override"
