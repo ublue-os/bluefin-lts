@@ -1,0 +1,14 @@
+version: "1"
+rules:
+  - base: lts
+    upstream: testing
+    mergeMethod: merge
+    mergeUnstable: false
+    reviewers:
+      - castrojo
+      - tulilirockz
+    conflictReviewers:
+      - castrojo
+      - tulilirockz
+label: "promotion"
+conflictLabel: "promotion-conflict"

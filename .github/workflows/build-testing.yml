@@ -1,0 +1,47 @@
+name: Build LTS Testing
+on:
+  merge_group:
+  pull_request:
+    branches:
+      - testing
+    paths-ignore:
+      - "**.md"
+      - ".github/workflows/*iso*.yml"
+      - ".github/workflows/*validate*.yml"
+      - "iso_files/**"
+  schedule:
+    - cron: "0 1 * * TUE"
+  workflow_dispatch:
+
+jobs:
+  build-images:
+    name: Build Images
+    uses: ./.github/workflows/reusable-build-image.yml
+    secrets: inherit
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image-name: bluefin
+            flavor: ""
+            hwe: false
+          - image-name: bluefin-dx
+            flavor: dx
+            hwe: false
+          - image-name: bluefin-gdx
+            flavor: gdx
+            hwe: false
+          - image-name: bluefin
+            flavor: ""
+            hwe: true
+          - image-name: bluefin-dx
+            flavor: dx
+            hwe: true
+    with:
+      image-name: ${{ matrix.image-name }}
+      flavor: ${{ matrix.flavor }}
+      hwe: ${{ matrix.hwe }}
+      stream_name: lts-testing
+      rechunk: ${{ github.event_name != 'pull_request' }}
+      sbom: ${{ github.event_name != 'pull_request' }}
+      publish: ${{ github.event_name != 'pull_request' }}
