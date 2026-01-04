@@ -1,0 +1,24 @@
+name: Build Bluefin LTS
+
+on:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-build-image.yml
+    secrets: inherit
+    with:
+      image-name: bluefin
+      rechunk: ${{ github.event_name != 'pull_request' }}
+      sbom: ${{ github.event_name != 'pull_request' }}
+      publish: ${{ github.event_name != 'pull_request' }}

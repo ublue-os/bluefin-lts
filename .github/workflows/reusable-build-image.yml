@@ -58,11 +58,6 @@ on:
         required: false
         type: string
         default: ""
-      stream-name:
-        description: "The stream name (tag) to build"
-        required: false
-        type: string
-        default: "lts"
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -72,7 +67,8 @@ env:
   IMAGE_NAME: ${{ inputs.image-name }}
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  DEFAULT_TAG: ${{ inputs.stream-name }}
+  DEFAULT_TAG: "lts" # DO NOT CHANGE! (this will break everything)
+  PRODUCTION_BRANCH: main # This is the branch that everthing gets merged to
   CENTOS_VERSION: ${{ inputs.centos-version }}
   PLATFORMS: ${{ inputs.platforms }}
 
@@ -145,7 +141,7 @@ jobs:
         env:
           FLAVOR: ${{ inputs.flavor }}
           HWE: ${{ inputs.hwe }}
-          TAG_SUFFIX: ${{ inputs.tag-suffix }}
+          TAG_SUFFIX: ${{ github.event_name == 'pull_request' && '' || github.ref_name }} # () on main, testing on testing
         run: |
           set -x
           just=$(which just)
@@ -158,7 +154,7 @@ jobs:
             ENABLE_HWE=1
           fi
           
-          if [[ -n "${TAG_SUFFIX}" ]]; then
+          if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
             export DEFAULT_TAG="${DEFAULT_TAG}${TAG_SUFFIX}"
           fi
           
