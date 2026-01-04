@@ -1,7 +1,7 @@
 version: "1"
 rules:
   - base: lts
-    upstream: testing
+    upstream: main
     mergeMethod: merge
     mergeUnstable: false
     reviewers:
