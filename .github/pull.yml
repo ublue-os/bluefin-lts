@@ -2,7 +2,7 @@ version: "1"
 rules:
   - base: lts
     upstream: main
-    mergeMethod: hardreset
+    mergeMethod: rebase
     mergeUnstable: false
     reviewers:
       - castrojo
