@@ -58,7 +58,7 @@ on:
         required: false
         type: string
         default: ""
-      stream_name:
+      stream-name:
         description: "The stream name (tag) to build"
         required: false
         type: string
@@ -72,7 +72,7 @@ env:
   IMAGE_NAME: ${{ inputs.image-name }}
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  DEFAULT_TAG: ${{ inputs.stream_name }}
+  DEFAULT_TAG: ${{ inputs.stream-name }}
   CENTOS_VERSION: ${{ inputs.centos-version }}
   PLATFORMS: ${{ inputs.platforms }}
 
