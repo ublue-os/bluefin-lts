@@ -14,7 +14,6 @@ systemctl enable gdm.service
 systemctl enable firewalld.service
 systemctl enable fwupd.service
 systemctl --global enable podman-auto-update.timer
-systemctl enable ublue-countme.timer
 systemctl disable rpm-ostree.service
 systemctl enable dconf-update.service
 systemctl --global enable bazaar.service
