@@ -41,7 +41,7 @@ jobs:
       image-name: ${{ matrix.image-name }}
       flavor: ${{ matrix.flavor }}
       hwe: ${{ matrix.hwe }}
-      stream_name: lts
+      stream-name: lts
       rechunk: ${{ github.event_name != 'pull_request' }}
       sbom: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' }}
@@ -52,4 +52,4 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/generate-release.yml
     with:
-      stream_name: '["lts"]'
+      stream-name: '["lts"]'

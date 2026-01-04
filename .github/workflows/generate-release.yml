@@ -1,7 +1,7 @@
 on:
   workflow_call:
     inputs:
-      stream_name:
+      stream-name:
         description: "Release Tag (e.g. lts)"
         type: string
         required: true
@@ -9,7 +9,7 @@ on:
     inputs:
       handwritten:
         description: "Small Changelog about changes in this build"
-      stream_name:
+      stream-name:
         description: "Release Tag (e.g. lts)"
         required: true
         type: choice
@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ${{ fromJson( inputs.stream_name ) }}
+        version: ${{ fromJson( inputs.stream-name ) }}
 
     steps:
       - name: Checkout last 500 commits (for <commits> to work)
