@@ -19,11 +19,6 @@ rm -f /usr/share/pixmaps/faces/* || echo "Expected directory deletion to fail"
 mv /usr/share/pixmaps/faces/bluefin/* /usr/share/pixmaps/faces
 rm -rf /usr/share/pixmaps/faces/bluefin
 
-# This should only be enabled on `-dx`
-sed -i "/^show-boxbuddy=.*/d" /etc/dconf/db/distro.d/04-bluefin-logomenu-extension
-sed -i "/^show-boxbuddy=.*/d" /usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override
-sed -i "/.*io.github.dvlv.boxbuddyrs.*/d" /etc/ublue-os/system-flatpaks.list
-
 # Offline Bluefin documentation
 curl --retry 3 -Lo /tmp/bluefin.pdf https://github.com/ublue-os/bluefin-docs/releases/download/0.1/bluefin.pdf
 install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
@@ -32,7 +27,10 @@ install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
 mkdir -p /etc/flatpak/remotes.d
 curl --retry 3 -o /etc/flatpak/remotes.d/flathub.flatpakrepo "https://dl.flathub.org/repo/flathub.flatpakrepo"
 
-/usr/sbin/depmod -a `ls -1 /lib/modules/ | tail -1`
+curl -fsSLo /usr/lib/systemd/zram-generator.conf "https://src.fedoraproject.org/rpms/rust-zram-generator/raw/rawhide/f/zram-generator.conf"
+grep -F -e "zram-size =" /usr/lib/systemd/zram-generator.conf
+
+depmod -a "$(ls -1 /lib/modules/ | tail -1)"
 
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage
 # Add resume module so that hibernation works
