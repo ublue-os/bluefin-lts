@@ -22,8 +22,19 @@ install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
 mkdir -p /etc/flatpak/remotes.d
 curl --retry 3 -o /etc/flatpak/remotes.d/flathub.flatpakrepo "https://dl.flathub.org/repo/flathub.flatpakrepo"
 
+# There is no `-defaults` subpackage on c10s
 curl -fsSLo /usr/lib/systemd/zram-generator.conf "https://src.fedoraproject.org/rpms/rust-zram-generator/raw/rawhide/f/zram-generator.conf"
 grep -F -e "zram-size =" /usr/lib/systemd/zram-generator.conf
+
+# https://src.fedoraproject.org/rpms/firewalld/blob/rawhide/f/firewalld.spec
+curl -fsSLo /usr/lib/firewalld/zones/FedoraWorkstation.xml "https://src.fedoraproject.org/rpms/firewalld/raw/rawhide/f/FedoraWorkstation.xml"
+grep -F -e '<port protocol="udp" port="1025-65535"/>' /usr/lib/firewalld/zones/FedoraWorkstation.xml
+
+# https://src.fedoraproject.org/rpms/firewalld/blob/rawhide/f/firewalld.spec#_178
+sed -i 's|^DefaultZone=.*|DefaultZone=FedoraWorkstation|g' /etc/firewalld/firewalld.conf
+sed -i 's|^IPv6_rpfilter=.*|IPv6_rpfilter=loose|g' /etc/firewalld/firewalld.conf
+grep -F -e "DefaultZone=FedoraWorkstation" /etc/firewalld/firewalld.conf
+grep -F -e "IPv6_rpfilter=loose" /etc/firewalld/firewalld.conf
 
 depmod -a "$(ls -1 /lib/modules/ | tail -1)"
 
