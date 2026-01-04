@@ -49,12 +49,12 @@ if [ "$KMOD_VERSION" != "$DRIVER_VERSION" ]; then
     exit 1
 fi
 
-cat >/usr/lib/modprobe.d/00-nouveau-blacklist.conf <<EOF
+tee /usr/lib/modprobe.d/00-nouveau-blacklist.conf <<'EOF'
 blacklist nouveau
 options nouveau modeset=0
 EOF
 
-cat >/usr/lib/bootc/kargs.d/00-nvidia.toml <<EOF
+tee /usr/lib/bootc/kargs.d/00-nvidia.toml <<'EOF'
 kargs = ["rd.driver.blacklist=nouveau", "modprobe.blacklist=nouveau", "nvidia-drm.modeset=1"]
 EOF
 
