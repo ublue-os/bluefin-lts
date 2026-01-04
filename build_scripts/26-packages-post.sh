@@ -14,11 +14,6 @@ HARDCODED_RPM_MONTH="12"
 sed -i "/picture-uri/ s/${HARDCODED_RPM_MONTH}/$(date +%m)/" "/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override"
 glib-compile-schemas /usr/share/glib-2.0/schemas
 
-# Required for bluefin faces to work without conflicting with a ton of packages
-rm -f /usr/share/pixmaps/faces/* || echo "Expected directory deletion to fail"
-mv /usr/share/pixmaps/faces/bluefin/* /usr/share/pixmaps/faces
-rm -rf /usr/share/pixmaps/faces/bluefin
-
 # Offline Bluefin documentation
 curl --retry 3 -Lo /tmp/bluefin.pdf https://github.com/ublue-os/bluefin-docs/releases/download/0.1/bluefin.pdf
 install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
