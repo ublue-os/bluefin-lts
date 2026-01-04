@@ -1,9 +1,15 @@
 name: Build Bluefin LTS GDX
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 on:
   pull_request:
     branches:
       - main
+      - lts
   schedule:
     - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
   merge_group:

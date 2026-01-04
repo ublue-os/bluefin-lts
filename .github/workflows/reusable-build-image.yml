@@ -357,6 +357,20 @@ jobs:
             fi
           done
 
+      - name: Add suffixes to other variations as well
+        env:
+          TAG_SUFFIX: ${{ github.event_name != 'pull_request' && github.ref_name || '' }} # () on main, testing on testing
+        run: |
+          if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
+            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
+              export TAG_SUFFIX="testing"
+            fi 
+            export TAG_SUFFIX="-${TAG_SUFFIX}"
+            export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
+          fi
+          
+          echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
+
       - name: Get current date
         id: date
         run: |
@@ -381,10 +395,10 @@ jobs:
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION }}
-            type=raw,value=${{ env.CENTOS_VERSION }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
             type=ref,event=pr
           flavor: |
             ${{ inputs.hwe && 'suffix=-hwe' || '' }}
