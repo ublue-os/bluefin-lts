@@ -68,7 +68,8 @@ env:
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "lts" # DO NOT CHANGE! (this will break everything)
-  PRODUCTION_BRANCH: lts # This is the branch that everthing gets merged to
+  PRODUCTION_BRANCH: lts # This is the branch that everthing gets merged to at the end
+  TESTING_BRANCH: main # This is there the PRs go to :)
   CENTOS_VERSION: ${{ inputs.centos-version }}
   PLATFORMS: ${{ inputs.platforms }}
 
@@ -155,6 +156,9 @@ jobs:
           fi
           
           if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
+            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
+              export TAG_SUFFIX="testing"
+            fi 
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
           
