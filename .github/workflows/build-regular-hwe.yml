@@ -6,11 +6,12 @@ permissions:
   id-token: write
 
 on:
-  pull_request:
+
+  push:
     branches:
-      - main
+      - testing
   schedule:
-    - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
+    - cron: "0 17 * * TUE" # Every Tuesday at 5pm UTC
   merge_group:
   workflow_dispatch:
 
@@ -32,37 +33,4 @@ jobs:
       sbom: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' }}
       hwe: true
-  tag:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions: 
-      contents: read
-      packages: write
-      id-token: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull image from registry
-        run: |
-          echo "Pulling hwe image from registry"
-          docker pull ghcr.io/${{ github.repository_owner }}/bluefin:lts-hwe
-
-      - name: Tag image
-        id: tag
-        run: |
-          echo "Tagging hwe image with testing suffix"
-          docker tag ghcr.io/${{ github.repository_owner }}/bluefin:lts-hwe ghcr.io/${{ github.repository_owner }}/bluefin:lts-testing
-
-      - name: Push tagged image
-        if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          echo "Pushing tagged image"
-          docker push ghcr.io/${{ github.repository_owner }}/bluefin:lts-testing
+      tag-suffix: ${{ github.ref_name == 'testing' && '-testing' || '' }}
