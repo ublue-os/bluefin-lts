@@ -6,32 +6,9 @@ version-script framework-lts system 1 || exit 0
 
 set -x
 
-# GLOBAL
-KARGS=$(rpm-ostree kargs)
-NEEDED_KARGS=()
-echo "Current kargs: $KARGS"
-
-if [[ $KARGS =~ "nomodeset" ]]; then
-	echo "Removing nomodeset"
-	NEEDED_KARGS+=("--delete-if-present=nomodeset")
-fi
-
-if [[ ":Framework:" =~ :$VEN_ID: ]]; then
-	if [[ "GenuineIntel" == "$CPU_VENDOR" ]]; then
-		if [[ ! $KARGS =~ "hid_sensor_hub" ]]; then
-			echo "Intel Framework Laptop detected, applying needed keyboard fix"
-			NEEDED_KARGS+=("--append-if-missing=module_blacklist=hid_sensor_hub")
-		fi
-	fi
-fi
-
-#shellcheck disable=SC2128
-if [[ -n "$NEEDED_KARGS" ]]; then
-	echo "Found needed karg changes, applying the following: ${NEEDED_KARGS[*]}"
-	plymouth display-message --text="Updating kargs - Please wait, this may take a while" || true
-	rpm-ostree kargs "${NEEDED_KARGS[*]}" --reboot || exit 1
-else
-	echo "No karg changes needed"
+if [[ ":Framework:" =~ :$VEN_ID: ]] && [[ "GenuineIntel" == "$CPU_VENDOR" ]]; then
+	echo "Intel Framework Laptop detected, applying needed keyboard fix"
+	echo "blacklist hid_sensor_hub" | tee /etc/modprobe.d/blacklist-framework.conf
 fi
 
 SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
