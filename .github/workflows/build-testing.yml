@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - testing
+      - main
     paths-ignore:
       - "**.md"
       - ".github/workflows/*iso*.yml"
