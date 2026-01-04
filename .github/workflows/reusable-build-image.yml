@@ -68,7 +68,7 @@ env:
   IMAGE_DESC: ${{ inputs.image-desc }}
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "lts" # DO NOT CHANGE! (this will break everything)
-  PRODUCTION_BRANCH: main # This is the branch that everthing gets merged to
+  PRODUCTION_BRANCH: lts # This is the branch that everthing gets merged to
   CENTOS_VERSION: ${{ inputs.centos-version }}
   PLATFORMS: ${{ inputs.platforms }}
 
@@ -145,7 +145,6 @@ jobs:
         run: |
           set -x
           just=$(which just)
-          echo "${{ github.event_name }}"
 
           ENABLE_HWE=0
           ENABLE_GDX=0
