@@ -141,10 +141,11 @@ jobs:
         env:
           FLAVOR: ${{ inputs.flavor }}
           HWE: ${{ inputs.hwe }}
-          TAG_SUFFIX: ${{ github.event_name == 'pull_request' && '' || github.ref_name }} # () on main, testing on testing
+          TAG_SUFFIX: ${{ github.event_name != 'pull_request' && github.ref_name || '' }} # () on main, testing on testing
         run: |
           set -x
           just=$(which just)
+          echo "${{ github.event_name }}"
 
           ENABLE_HWE=0
           ENABLE_GDX=0
@@ -155,7 +156,7 @@ jobs:
           fi
           
           if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
-            export DEFAULT_TAG="${DEFAULT_TAG}${TAG_SUFFIX}"
+            export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
           
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
