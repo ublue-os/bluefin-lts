@@ -2,13 +2,15 @@ version: "1"
 rules:
   - base: lts
     upstream: main
-    mergeMethod: rebase
+    mergeMethod: merge
     mergeUnstable: false
     reviewers:
       - castrojo
       - tulilirockz
+      - hanthor
     conflictReviewers:
       - castrojo
       - tulilirockz
+      - hanthor
 label: "promotion"
 conflictLabel: "promotion-conflict"
