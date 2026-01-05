@@ -10,6 +10,9 @@ on:
     branches:
       - main
       - lts
+  push:
+    branches:
+      - main
   schedule:
     - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
   merge_group:
