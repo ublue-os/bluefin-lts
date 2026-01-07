@@ -17,12 +17,12 @@ else
     NVIDIA_ARCH="$ARCH"
 fi
 
-dnf config-manager --add-repo="https://developer.download.nvidia.com/compute/cuda/repos/rhel10/${NVIDIA_ARCH}/cuda-rhel10.repo"
-dnf config-manager --set-disabled "cuda-rhel10-${NVIDIA_ARCH}"
+dnf config-manager --add-repo="https://negativo17.org/repos/fedora-nvidia.repo"
+dnf config-manager --set-disabled "fedora-nvidia"
 
 ### install Nvidia driver packages and dependencies
 # */
-dnf -y install --enablerepo="cuda-rhel10-${NVIDIA_ARCH}"\
+dnf -y install --enablerepo="fedora-nvidia"\
     /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
     /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
 
@@ -34,7 +34,7 @@ KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
 # Determine the expected package version format (epoch:version-release)
 NVIDIA_PKG_VERSION="3:${KMOD_VERSION}-1.el10"
 
-dnf install -y --enablerepo="cuda-rhel10-${NVIDIA_ARCH}" \
+dnf install -y --enablerepo="fedora-nvidia" \
     "libnvidia-fbc-${NVIDIA_PKG_VERSION}" \
     "libnvidia-ml-${NVIDIA_PKG_VERSION}" \
     "nvidia-driver-${NVIDIA_PKG_VERSION}" \
