@@ -17,8 +17,43 @@ else
     NVIDIA_ARCH="$ARCH"
 fi
 
-dnf config-manager --add-repo="https://negativo17.org/repos/fedora-nvidia.repo"
-dnf config-manager --set-disabled "fedora-nvidia"
+tee /etc/yum.repos.d/fedora-nvidia.repo <<'EOF'
+[fedora-nvidia]
+name=negativo17 - Nvidia
+baseurl=https://negativo17.org/repos/nvidia/fedora/43/$basearch/
+enabled=1
+skip_if_unavailable=1
+gpgcheck=1
+gpgkey=https://negativo17.org/repos/RPM-GPG-KEY-slaanesh
+enabled_metadata=1
+metadata_expire=6h
+type=rpm-md
+repo_gpgcheck=0
+
+[fedora-nvidia-source]
+name=negativo17 - Nvidia - Source
+baseurl=https://negativo17.org/repos/nvidia/fedora/43/SRPMS
+enabled=0
+skip_if_unavailable=1
+gpgcheck=1
+gpgkey=https://negativo17.org/repos/RPM-GPG-KEY-slaanesh
+enabled_metadata=1
+metadata_expire=6h
+type=rpm-md
+repo_gpgcheck=0
+
+[fedora-nvidia-debug]
+name=negativo17 - Nvidia - Debug
+baseurl=https://negativo17.org/repos/nvidia/fedora/43/$basearch.debug/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=1
+gpgkey=https://negativo17.org/repos/RPM-GPG-KEY-slaanesh
+enabled_metadata=1
+metadata_expire=6h
+type=rpm-md
+repo_gpgcheck=0
+EOF
 
 ### install Nvidia driver packages and dependencies
 # */
@@ -32,7 +67,7 @@ dnf config-manager --set-enabled "nvidia-container-toolkit"
 # Get the kmod-nvidia version to ensure driver packages match
 KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
 # Determine the expected package version format (epoch:version-release)
-NVIDIA_PKG_VERSION="3:${KMOD_VERSION}-1.el10"
+NVIDIA_PKG_VERSION="3:${KMOD_VERSION}-1.fc43"
 
 dnf install -y --enablerepo="fedora-nvidia" \
     "libnvidia-fbc-${NVIDIA_PKG_VERSION}" \
