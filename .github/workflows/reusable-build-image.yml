@@ -365,7 +365,7 @@ jobs:
             if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
               export TAG_SUFFIX="testing"
             fi 
-            export TAG_SUFFIX="-${TAG_SUFFIX}"
+            export TAG_SUFFIX="${TAG_SUFFIX}"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
           
