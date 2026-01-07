@@ -20,7 +20,7 @@ fi
 tee /etc/yum.repos.d/fedora-nvidia.repo <<'EOF'
 [fedora-nvidia]
 name=negativo17 - Nvidia
-baseurl=https://negativo17.org/repos/nvidia/fedora/43/$basearch/
+baseurl=https://negativo17.org/repos/nvidia/fedora-43/$basearch/
 enabled=1
 skip_if_unavailable=1
 gpgcheck=1
@@ -32,7 +32,7 @@ repo_gpgcheck=0
 
 [fedora-nvidia-source]
 name=negativo17 - Nvidia - Source
-baseurl=https://negativo17.org/repos/nvidia/fedora/43/SRPMS
+baseurl=https://negativo17.org/repos/nvidia/fedora-43/SRPMS
 enabled=0
 skip_if_unavailable=1
 gpgcheck=1
@@ -44,7 +44,7 @@ repo_gpgcheck=0
 
 [fedora-nvidia-debug]
 name=negativo17 - Nvidia - Debug
-baseurl=https://negativo17.org/repos/nvidia/fedora/43/$basearch.debug/
+baseurl=https://negativo17.org/repos/nvidia/fedora-43/$basearch.debug/
 enabled=0
 skip_if_unavailable=1
 gpgcheck=1
