@@ -27,7 +27,7 @@ dnf config-manager --set-disabled "fedora-nvidia"
 dnf -y install --enablerepo="fedora-nvidia"\
 /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
 /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
-
+dnf config-manager --set-enabled "nvidia-container-toolkit"
 @@ -32,9 +32,9 @@ dnf config-manager --set-enabled "nvidia-container-toolkit"
 # Get the kmod-nvidia version to ensure driver packages match
 KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
