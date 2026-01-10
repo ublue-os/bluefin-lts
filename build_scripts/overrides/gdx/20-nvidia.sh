@@ -17,22 +17,22 @@ else
     NVIDIA_ARCH="$ARCH"
 fi
 
-curl -fsSLo - "https://negativo17.org/repos/fedora-nvidia.repo" | sed "s/\$releasever/43/g" | tee "/etc/yum.repos.d/fedora-nvidia.repo"
+FEDORA_VERSION=43 # FIXME: Figure out a way of fetching this information with coreos akmods as well.
+
+curl -fsSLo - "https://negativo17.org/repos/fedora-nvidia.repo" | sed "s/\$releasever/${FEDORA_VERSION}/g" | tee "/etc/yum.repos.d/fedora-nvidia.repo"
 dnf config-manager --set-disabled "fedora-nvidia"
 
 ### install Nvidia driver packages and dependencies
 # */
 dnf -y install --enablerepo="fedora-nvidia"\
-    /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
-    /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
+/tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
+/tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
 
-# enable repos provided by ublue-os-nvidia-addons
-dnf config-manager --set-enabled "nvidia-container-toolkit"
-
+@@ -32,9 +32,9 @@ dnf config-manager --set-enabled "nvidia-container-toolkit"
 # Get the kmod-nvidia version to ensure driver packages match
 KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
 # Determine the expected package version format (epoch:version-release)
-NVIDIA_PKG_VERSION="3:${KMOD_VERSION}-1.fc43"
+NVIDIA_PKG_VERSION="3:${KMOD_VERSION}-1.fc${FEDORA_VERSION}"
 
 dnf install -y --enablerepo="fedora-nvidia" \
     "libnvidia-fbc-${NVIDIA_PKG_VERSION}" \
