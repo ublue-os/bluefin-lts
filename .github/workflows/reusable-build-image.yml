@@ -154,14 +154,18 @@ jobs:
             export DEFAULT_TAG="${DEFAULT_TAG}-hwe"
             ENABLE_HWE=1
           fi
-          
+
           if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
             if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
               export TAG_SUFFIX="testing"
             fi 
-            export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              export DEFAULT_TAG="pr-${{ github.event.pull_request.number }}"
+            else
+              export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
+            fi
           fi
-          
+
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
