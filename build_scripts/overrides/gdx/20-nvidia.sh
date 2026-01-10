@@ -17,43 +17,8 @@ else
     NVIDIA_ARCH="$ARCH"
 fi
 
-tee /etc/yum.repos.d/fedora-nvidia.repo <<'EOF'
-[fedora-nvidia]
-name=negativo17 - Nvidia
-baseurl=https://negativo17.org/repos/nvidia/fedora-43/$basearch/
-enabled=1
-skip_if_unavailable=1
-gpgcheck=1
-gpgkey=https://negativo17.org/repos/RPM-GPG-KEY-slaanesh
-enabled_metadata=1
-metadata_expire=6h
-type=rpm-md
-repo_gpgcheck=0
-
-[fedora-nvidia-source]
-name=negativo17 - Nvidia - Source
-baseurl=https://negativo17.org/repos/nvidia/fedora-43/SRPMS
-enabled=0
-skip_if_unavailable=1
-gpgcheck=1
-gpgkey=https://negativo17.org/repos/RPM-GPG-KEY-slaanesh
-enabled_metadata=1
-metadata_expire=6h
-type=rpm-md
-repo_gpgcheck=0
-
-[fedora-nvidia-debug]
-name=negativo17 - Nvidia - Debug
-baseurl=https://negativo17.org/repos/nvidia/fedora-43/$basearch.debug/
-enabled=0
-skip_if_unavailable=1
-gpgcheck=1
-gpgkey=https://negativo17.org/repos/RPM-GPG-KEY-slaanesh
-enabled_metadata=1
-metadata_expire=6h
-type=rpm-md
-repo_gpgcheck=0
-EOF
+curl -fsSLo - "https://negativo17.org/repos/fedora-nvidia.repo" | sed "s/\$releasever/43/g" | tee "/etc/yum.repos.d/fedora-nvidia.repo"
+dnf config-manager --set-disabled "fedora-nvidia"
 
 ### install Nvidia driver packages and dependencies
 # */
