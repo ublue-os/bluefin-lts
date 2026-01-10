@@ -16,7 +16,8 @@ ANNOYING_JQ_WORKAROUND=$(mktemp)
 jq -f /dev/stdin "${IMAGE_INFO}" >"${ANNOYING_JQ_WORKAROUND}" <<EOF
 ."image-name" = "${IMAGE_NAME}" | \
 ."image-flavor" = "${FLAVOR}" | \
-."image-ref" = "${IMAGE_REF}"
+."image-ref" = "${IMAGE_REF}" | \
+."centos-version" = "${MAJOR_VERSION_NUMBER}"
 EOF
 
 mv "${ANNOYING_JQ_WORKAROUND}" "${IMAGE_INFO}"
