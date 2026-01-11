@@ -143,6 +143,7 @@ jobs:
           FLAVOR: ${{ inputs.flavor }}
           HWE: ${{ inputs.hwe }}
           TAG_SUFFIX: ${{ github.event_name != 'pull_request' && github.ref_name || '' }} # () on main, testing on testing
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -x
           just=$(which just)
@@ -156,11 +157,8 @@ jobs:
           fi
 
           if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
-            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
+            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] || [ "${EVENT_NAME}" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ]; then
               export TAG_SUFFIX="testing"
-            fi 
-            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-              export DEFAULT_TAG="pr-${{ github.event.pull_request.number }}"
             else
               export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
             fi
