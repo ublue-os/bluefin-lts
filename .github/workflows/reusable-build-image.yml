@@ -175,7 +175,7 @@ jobs:
       - name: Setup Syft
         id: setup-syft
         if: ${{ inputs.sbom && inputs.publish }}
-        uses: anchore/sbom-action/download-syft@a930d0ac434e3182448fe678398ba5713717112a # v0
+        uses: anchore/sbom-action/download-syft@0b82b0b1a22399a1c542d4d656f70cd903571b5c # v0
 
       - name: Generate SBOM
         id: generate-sbom
