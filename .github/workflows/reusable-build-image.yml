@@ -142,7 +142,8 @@ jobs:
         env:
           FLAVOR: ${{ inputs.flavor }}
           HWE: ${{ inputs.hwe }}
-          TAG_SUFFIX: ${{ github.event_name != 'pull_request' && github.ref_name || '' }} # () on main, testing on testing
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -x
           just=$(which just)
@@ -154,14 +155,12 @@ jobs:
             export DEFAULT_TAG="${DEFAULT_TAG}-hwe"
             ENABLE_HWE=1
           fi
-          
-          if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
-            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
-              export TAG_SUFFIX="testing"
-            fi 
+
+          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ] && [ "$EVENT_NAME" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ] ; then
+            export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
-          
+
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
@@ -359,16 +358,13 @@ jobs:
 
       - name: Add suffixes to other variations as well
         env:
-          TAG_SUFFIX: ${{ github.event_name != 'pull_request' && github.ref_name || '' }} # () on main, testing on testing
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
-            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
-              export TAG_SUFFIX="testing"
-            fi 
-            export TAG_SUFFIX="${TAG_SUFFIX}"
+          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ] && [ "$EVENT_NAME" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ] ; then
+            export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
-          
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
 
       - name: Get current date
