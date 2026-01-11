@@ -360,7 +360,11 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
+          HWE: ${{ inputs.hwe }}
         run: |
+          if [[ "${HWE}" == "true" ]] ; then
+            export DEFAULT_TAG="${DEFAULT_TAG}-hwe"
+          fi
           if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ] && [ "$EVENT_NAME" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ] ; then
             export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
@@ -395,9 +399,10 @@ jobs:
             type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}
             type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.DEFAULT_TAG }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}-{{date 'YYYYMMDD'}}
             type=ref,event=pr
-          flavor: |
-            ${{ inputs.hwe && 'suffix=-hwe' || '' }}
           labels: |
             bluefin.commit=${{ github.sha }}
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
