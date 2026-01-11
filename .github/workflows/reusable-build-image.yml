@@ -362,14 +362,18 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           HWE: ${{ inputs.hwe }}
         run: |
+          export CENTOS_VERSION_SUFFIX=""
           if [[ "${HWE}" == "true" ]] ; then
             export DEFAULT_TAG="${DEFAULT_TAG}-hwe"
+            export CENTOS_VERSION_SUFFIX="-hwe"
           fi
           if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ] && [ "$EVENT_NAME" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ] ; then
             export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
+            export CENTOS_VERSION_SUFFIX="-${TAG_SUFFIX}"
           fi
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
+          echo "CENTOS_VERSION_SUFFIX=${CENTOS_VERSION_SUFFIX}" >> "${GITHUB_ENV}"
 
       - name: Get current date
         id: date
@@ -395,13 +399,13 @@ jobs:
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}
-            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
             type=raw,value=${{ env.DEFAULT_TAG }}-{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}-{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}-{{date 'YYYYMMDD'}}
             type=ref,event=pr
           labels: |
             bluefin.commit=${{ github.sha }}
