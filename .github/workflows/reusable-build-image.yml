@@ -159,9 +159,8 @@ jobs:
           if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
             if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] || [ "${EVENT_NAME}" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ]; then
               export TAG_SUFFIX="testing"
-            else
-              export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
             fi
+            export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
 
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
@@ -364,13 +363,11 @@ jobs:
           TAG_SUFFIX: ${{ github.event_name != 'pull_request' && github.ref_name || '' }} # () on main, testing on testing
         run: |
           if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
-            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
+            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] || [ "${EVENT_NAME}" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ]; then
               export TAG_SUFFIX="testing"
-            fi 
-            export TAG_SUFFIX="${TAG_SUFFIX}"
+            fi
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
-          
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
 
       - name: Get current date
