@@ -10,7 +10,7 @@ if [ "${ENABLE_HWE}" == "1" ] ; then
 IMAGE_TAG="${IMAGE_TAG}-hwe"
 fi
 
-cat >$IMAGE_INFO <<EOF
+tee "$IMAGE_INFO" <<EOF
 {
   "image-name": "${IMAGE_NAME}",
   "image-ref": "${IMAGE_REF}",
@@ -20,8 +20,8 @@ cat >$IMAGE_INFO <<EOF
   "centos-version": "${MAJOR_VERSION_NUMBER}"
 }
 EOF
+chmod 0644 "${IMAGE_INFO}"
 
-OLD_PRETTY_NAME="$(sh -c '. /usr/lib/os-release ; echo $NAME $VERSION')"
 IMAGE_PRETTY_NAME="Bluefin LTS"
 HOME_URL="https://projectbluefin.io"
 DOCUMENTATION_URL="https://docs.projectbluefin.io"

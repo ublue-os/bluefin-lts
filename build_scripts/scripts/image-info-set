@@ -19,6 +19,6 @@ jq -f /dev/stdin "${IMAGE_INFO}" >"${ANNOYING_JQ_WORKAROUND}" <<EOF
 ."image-ref" = "${IMAGE_REF}"
 EOF
 
-mv "${ANNOYING_JQ_WORKAROUND}" "${IMAGE_INFO}"
+install -Dpm0644 "${ANNOYING_JQ_WORKAROUND}" "${IMAGE_INFO}"
 cat "${IMAGE_INFO}"
 
