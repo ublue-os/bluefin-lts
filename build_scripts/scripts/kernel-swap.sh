@@ -47,7 +47,7 @@ dnf -y install "${RPM_NAMES[@]}"
 
 # HWE-specific: Install common akmods
 # These are not in the base mounts, so we download them via skopeo
-if [[ "${ENABLE_HWE:-0}" -eq "1" ]]; then
+if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
   echo "HWE mode enabled - installing common akmods..."
   
   # Detect kernel version from installed kernel
