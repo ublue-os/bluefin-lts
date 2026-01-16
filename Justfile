@@ -256,7 +256,7 @@ build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build
 build-iso $target_image=("localhost/" + image_name) $tag=default_tag:
     #!/usr/bin/env bash
     set -eoux pipefail
-    
+
     # Determine Repo
     REPO="local"
     if [[ "{{ target_image }}" =~ ghcr.io ]]; then
@@ -287,7 +287,7 @@ build-iso $target_image=("localhost/" + image_name) $tag=default_tag:
     BUILD_ROOT="_iso_build"
     rm -rf "$BUILD_ROOT"
     git clone https://github.com/projectbluefin/iso.git "$BUILD_ROOT"
-    
+
     pushd "$BUILD_ROOT"
     just local-iso "$VARIANT" "$FLAVOR" "$REPO"
     popd
@@ -309,67 +309,26 @@ rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_reb
 rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "iso" "iso.toml")
 
 # Run a virtual machine with the specified image type and configuration
-_run-vm $target_image $tag $type $config:
+_run-vm $target_image $tag $type $config $iso_file="":
     #!/usr/bin/env bash
     set -eoux pipefail
 
     # Determine the image file based on the type
-    image_file="output/${type}/disk.${type}"
-    if [[ $type == iso ]]; then
+    if [[ -n "$iso_file" ]]; then
+        image_file="$iso_file"
+    elif [[ $type == iso ]]; then
         image_file="output/bootiso/install.iso"
+    else
+        image_file="output/${type}/disk.${type}"
     fi
 
-    # Build the image if it does not exist
+    # Build the image if it does not exist (skip if custom iso_file provided)
     if [[ ! -f "${image_file}" ]]; then
+        if [[ -n "$iso_file" ]]; then
+            echo "ISO not found at $iso_file. Please build it first or specify a valid ISO path."
+            exit 1
+        fi
         just "build-${type}" "$target_image" "$tag"
-    fi
-
-    # Determine an available port to use
-    port=8006
-    while grep -q :${port} <<< $(ss -tunalp); do
-        port=$(( port + 1 ))
-    done
-    echo "Using Port: ${port}"
-    echo "Connect to http://localhost:${port}"
-
-    # Set up the arguments for running the VM
-    run_args=()
-    run_args+=(--rm --privileged)
-    run_args+=(--pull=newer)
-    run_args+=(--publish "127.0.0.1:${port}:8006")
-    run_args+=(--env "CPU_CORES=4")
-    run_args+=(--env "RAM_SIZE=4G")
-    run_args+=(--env "DISK_SIZE=64G")
-    run_args+=(--env "TPM=Y")
-    run_args+=(--env "GPU=Y")
-    run_args+=(--device=/dev/kvm)
-    run_args+=(--volume "${PWD}/${image_file}":"/boot.${type}")
-    run_args+=(docker.io/qemux/qemu)
-
-    # Run the VM and open the browser to connect
-    podman run "${run_args[@]}" &
-    xdg-open http://localhost:${port}
-    fg "%podman"
-
-# Run a virtual machine from a QCOW2 image
-[group('Run Virtal Machine')]
-run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "qcow2" "image.toml")
-
-# Run a virtual machine from a RAW image
-[group('Run Virtal Machine')]
-run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "image.toml")
-
-# Run a virtual machine from an ISO
-# Run the locally built Bluefin LTS ISO
-[group('Run Virtal Machine')]
-run-vm-iso:
-    #!/usr/bin/env bash
-    set -eoux pipefail
-    ISO_FILE="hack/iso/bluefin-lts.iso"
-    
-    if [[ ! -f "$ISO_FILE" ]]; then
-        echo "ISO not found at $ISO_FILE. Please build it first."
-        exit 1
     fi
 
     # Determine an available port to use
@@ -380,32 +339,47 @@ run-vm-iso:
     echo "Using Web Port: ${port}"
     echo "Connect via Web: http://localhost:${port}"
 
-    ssh_port=$(( port + 1 ))
-    while grep -q :${ssh_port} <<< $(ss -tunalp); do
-        ssh_port=$(( ssh_port + 1 ))
-    done
-    echo "Using SSH Port: ${ssh_port}"
-    echo "Connect via SSH: ssh user@localhost -p ${ssh_port}"
-
     # Set up the arguments for running the VM
     run_args=()
     run_args+=(--rm --privileged)
     run_args+=(--pull=newer)
     run_args+=(--publish "127.0.0.1:${port}:8006")
-    run_args+=(--publish "127.0.0.1:${ssh_port}:22")
     run_args+=(--env "CPU_CORES=4")
     run_args+=(--env "RAM_SIZE=4G")
     run_args+=(--env "DISK_SIZE=64G")
     run_args+=(--env "TPM=Y")
     run_args+=(--env "GPU=Y")
     run_args+=(--device=/dev/kvm)
-    run_args+=(--volume "${PWD}/${ISO_FILE}":"/boot.iso")
-    run_args+=(docker.io/qemux/qemu)
+
+    # Add SSH port forwarding for all VM types
+    ssh_port=$(( port + 1 ))
+    while grep -q :${ssh_port} <<< $(ss -tunalp); do
+        ssh_port=$(( ssh_port + 1 ))
+    done
+    echo "Using SSH Port: ${ssh_port}"
+    echo "Connect via SSH: ssh user@localhost -p ${ssh_port}"
+    run_args+=(--publish "127.0.0.1:${ssh_port}:22")
+    run_args+=(--env "USER_PORTS=22")
+    run_args+=(--env "NETWORK=user")
+
+    run_args+=(--volume "${PWD}/${image_file}":"/boot.${type}")
+    run_args+=(ghcr.io/qemus/qemu)
 
     # Run the VM and open the browser to connect
-    podman run "${run_args[@]}" &
-    xdg-open http://localhost:${port}
-    fg "%podman"
+    (sleep 5 && xdg-open "http://localhost:${port}") &
+    podman run "${run_args[@]}"
+
+# Run a virtual machine from a QCOW2 image
+[group('Run Virtal Machine')]
+run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "qcow2" "image.toml")
+
+# Run a virtual machine from a RAW image
+[group('Run Virtal Machine')]
+run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "image.toml")
+
+# Run a virtual machine from an ISO
+[group('Run Virtal Machine')]
+run-vm-iso $iso_file="output/bootiso/install.iso": && (_run-vm "" "" "iso" "" iso_file)
 
 # Runs shell check on all Bash scripts
 lint:
