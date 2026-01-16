@@ -251,8 +251,50 @@ build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_bui
 [group('Build Virtal Machine Image')]
 build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "image.toml")
 
+# Build an ISO virtual machine image
 [group('Build Virtal Machine Image')]
-build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "iso.toml")
+build-iso $target_image=("localhost/" + image_name) $tag=default_tag:
+    #!/usr/bin/env bash
+    set -eoux pipefail
+    
+    # Determine Repo
+    REPO="local"
+    if [[ "{{ target_image }}" =~ ghcr.io ]]; then
+        REPO="ghcr"
+    fi
+
+    # Determine Variant
+    VARIANT="bluefin"
+    if [[ "{{ tag }}" =~ lts ]]; then
+        VARIANT="lts"
+    fi
+
+    # Determine Flavor
+    FLAVOR="base"
+    if [[ "{{ target_image }}" =~ -dx ]]; then
+        FLAVOR="dx"
+    fi
+    if [[ "{{ target_image }}" =~ -gdx ]]; then
+        FLAVOR="gdx"
+    fi
+
+    echo "Delegating to projectbluefin/iso..."
+    echo "Variant: $VARIANT"
+    echo "Flavor:  $FLAVOR"
+    echo "Repo:    $REPO"
+
+    # Clone and Build
+    BUILD_ROOT="_iso_build"
+    rm -rf "$BUILD_ROOT"
+    git clone https://github.com/projectbluefin/iso.git "$BUILD_ROOT"
+    
+    pushd "$BUILD_ROOT"
+    just local-iso "$VARIANT" "$FLAVOR" "$REPO"
+    popd
+
+    # Copy Artifacts
+    mv "$BUILD_ROOT"/*.iso .
+    rm -rf "$BUILD_ROOT"
 
 # Rebuild a QCOW2 virtual machine image
 [group('Build Virtal Machine Image')]
