@@ -319,8 +319,44 @@ run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_ru
 run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "image.toml")
 
 # Run a virtual machine from an ISO
+# Run the locally built Bluefin LTS ISO
 [group('Run Virtal Machine')]
-run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "iso.toml")
+run-vm-iso:
+    #!/usr/bin/env bash
+    set -eoux pipefail
+    ISO_FILE="hack/iso/bluefin-lts.iso"
+    
+    if [[ ! -f "$ISO_FILE" ]]; then
+        echo "ISO not found at $ISO_FILE. Please build it first."
+        exit 1
+    fi
+
+    # Determine an available port to use
+    port=8006
+    while grep -q :${port} <<< $(ss -tunalp); do
+        port=$(( port + 1 ))
+    done
+    echo "Using Port: ${port}"
+    echo "Connect to http://localhost:${port}"
+
+    # Set up the arguments for running the VM
+    run_args=()
+    run_args+=(--rm --privileged)
+    run_args+=(--pull=newer)
+    run_args+=(--publish "127.0.0.1:${port}:8006")
+    run_args+=(--env "CPU_CORES=4")
+    run_args+=(--env "RAM_SIZE=4G")
+    run_args+=(--env "DISK_SIZE=64G")
+    run_args+=(--env "TPM=Y")
+    run_args+=(--env "GPU=Y")
+    run_args+=(--device=/dev/kvm)
+    run_args+=(--volume "${PWD}/${ISO_FILE}":"/boot.iso")
+    run_args+=(docker.io/qemux/qemu)
+
+    # Run the VM and open the browser to connect
+    podman run "${run_args[@]}" &
+    xdg-open http://localhost:${port}
+    fg "%podman"
 
 # Runs shell check on all Bash scripts
 lint:
