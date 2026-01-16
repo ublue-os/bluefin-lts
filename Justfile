@@ -251,7 +251,6 @@ build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_bui
 [group('Build Virtal Machine Image')]
 build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "image.toml")
 
-# Build an ISO virtual machine image
 [group('Build Virtal Machine Image')]
 build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "iso.toml")
 
@@ -336,14 +335,22 @@ run-vm-iso:
     while grep -q :${port} <<< $(ss -tunalp); do
         port=$(( port + 1 ))
     done
-    echo "Using Port: ${port}"
-    echo "Connect to http://localhost:${port}"
+    echo "Using Web Port: ${port}"
+    echo "Connect via Web: http://localhost:${port}"
+
+    ssh_port=$(( port + 1 ))
+    while grep -q :${ssh_port} <<< $(ss -tunalp); do
+        ssh_port=$(( ssh_port + 1 ))
+    done
+    echo "Using SSH Port: ${ssh_port}"
+    echo "Connect via SSH: ssh user@localhost -p ${ssh_port}"
 
     # Set up the arguments for running the VM
     run_args=()
     run_args+=(--rm --privileged)
     run_args+=(--pull=newer)
     run_args+=(--publish "127.0.0.1:${port}:8006")
+    run_args+=(--publish "127.0.0.1:${ssh_port}:22")
     run_args+=(--env "CPU_CORES=4")
     run_args+=(--env "RAM_SIZE=4G")
     run_args+=(--env "DISK_SIZE=64G")
