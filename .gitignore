@@ -21,3 +21,4 @@ github_output.txt
 .vscode/
 .zed/
 _build_podman_scp.*
+_iso_build

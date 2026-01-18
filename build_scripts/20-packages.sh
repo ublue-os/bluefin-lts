@@ -29,6 +29,7 @@ dnf -y install \
 	nss-mdns \
 	ntfs-3g \
 	papers-thumbnailer \
+	pcsc-lite \
 	powertop \
 	rclone \
 	restic \
