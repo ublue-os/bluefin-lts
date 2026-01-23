@@ -40,7 +40,7 @@ dnf -y install \
 	xhost
 rm -rf /usr/share/doc/just
 
-if [ "${ENABLE_HWE:-0}" -eq 0 ]; then
+if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
     dnf -y install centos-release-kmods
     dnf -y install kernel-core kernel-uki-virt kmod-btrfs
 fi
