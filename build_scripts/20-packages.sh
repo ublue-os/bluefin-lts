@@ -42,7 +42,7 @@ rm -rf /usr/share/doc/just
 
 if [ "${ENABLE_HWE:-0}" -eq 0 ]; then
     dnf -y install centos-release-kmods
-    dnf -y install kmod-btrfs
+    dnf -y install kernel-core kernel-uki-virt kmod-btrfs
 fi
 
 # Everything that depends on external repositories should be after this.
