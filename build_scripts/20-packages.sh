@@ -40,6 +40,11 @@ dnf -y install \
 	xhost
 rm -rf /usr/share/doc/just
 
+if [ "${ENABLE_HWE:-0}" -eq 0 ]; then
+    dnf -y install centos-release-kmods
+    dnf -y install kmod-btrfs
+fi
+
 # Everything that depends on external repositories should be after this.
 # Make sure to set them as disabled and enable them only when you are going to use their packages.
 # We do, however, leave crb and EPEL enabled by default.
