@@ -70,7 +70,6 @@ dnf -y --setopt=install_weak_deps=False install gcc
 dnf -y copr enable jreilly1821/c10s-gnome-48
 dnf -y copr disable jreilly1821/c10s-gnome-48
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:jreilly1821:c10s-gnome-48 swap gnome-shell gnome-shell-48.3 --allowerasing
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:jreilly1821:c10s-gnome-48 swap gdm gdm-48.0 --allowerasing
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:jreilly1821:c10s-gnome-48 swap gnome-session-wayland-session gnome-session-wayland-session-48.0 --allowerasing
 
 # Versionlock GNOME components to prevent upgrades back to 49
