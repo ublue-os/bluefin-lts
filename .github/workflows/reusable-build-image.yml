@@ -175,7 +175,7 @@ jobs:
       - name: Setup Syft
         id: setup-syft
         if: ${{ inputs.sbom && inputs.publish }}
-        uses: anchore/sbom-action/download-syft@0b82b0b1a22399a1c542d4d656f70cd903571b5c # v0
+        uses: anchore/sbom-action/download-syft@62ad5284b8ced813296287a0b63906cb364b73ee # v0
 
       - name: Generate SBOM
         id: generate-sbom
@@ -324,7 +324,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:e735a9b94027e0d33e0056f94cfdca6d88adfbdf1ffa96bdbed0d43dc72fd179
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:9d9881ff9de0b66fb58bc98f5531c710f1b24d84c18d5751700e11b68c5e2d6c
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
