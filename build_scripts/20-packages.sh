@@ -65,3 +65,12 @@ dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 # the homebrew package getting updated through our builds.
 # We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
 dnf -y --setopt=install_weak_deps=False install gcc
+
+# Downgrade to GNOME 48 from jreilly1821/c10s-gnome-48 COPR
+# This pins us to gnome-shell 48.x instead of the upstream 49.x
+dnf -y copr enable jreilly1821/c10s-gnome-48
+dnf -y copr disable jreilly1821/c10s-gnome-48
+dnf -y --enablerepo copr:copr.fedorainfracloud.org:jreilly1821:c10s-gnome-48 swap gnome-shell gnome-shell-48.3 --allowerasing
+# Versionlock GNOME components to prevent upgrades back to 49
+dnf -y install python3-dnf-plugin-versionlock
+dnf versionlock add gnome-shell gdm gnome-session-wayland-session
