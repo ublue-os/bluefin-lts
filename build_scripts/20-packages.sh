@@ -37,6 +37,7 @@ dnf -y install \
 	tuned-ppd \
 	wireguard-tools \
 	wl-clipboard \
+	xdg-terminal-exec \
 	xhost
 rm -rf /usr/share/doc/just
 
