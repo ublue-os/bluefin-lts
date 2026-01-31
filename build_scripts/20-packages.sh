@@ -23,6 +23,7 @@ dnf -y install \
 	gnome-disk-utility \
 	gum \
 	hplip \
+	ibus-chewing \
 	jetbrains-mono-fonts-all \
 	just \
 	libgda-sqlite \
