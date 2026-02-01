@@ -26,6 +26,7 @@ jobs:
     with:
       image-name: bluefin-gdx
       flavor: gdx
+      platforms: amd64
       rechunk: ${{ github.event_name != 'pull_request' }}
       sbom: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' }}
