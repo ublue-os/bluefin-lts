@@ -26,7 +26,6 @@ dnf -y install \
 	ibus-chewing \
 	jetbrains-mono-fonts-all \
 	just \
-	libgda-sqlite \
 	nss-mdns \
 	ntfs-3g \
 	papers-thumbnailer \
