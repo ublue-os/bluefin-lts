@@ -10,8 +10,10 @@ on:
     branches:
       - main
       - lts
-  schedule:
-    - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
+  push:
+    branches:
+      - main
+      - lts
   merge_group:
   workflow_dispatch:
 
