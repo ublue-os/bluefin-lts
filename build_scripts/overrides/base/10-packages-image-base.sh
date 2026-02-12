@@ -12,13 +12,6 @@ dnf -y install 'dnf-command(versionlock)'
 
 /run/context/build_scripts/scripts/kernel-swap.sh
 
-# GNOME 48 backport COPR
-dnf copr enable -y "jreilly1821/c10s-gnome"
-dnf -y install glib2
-dnf -y upgrade glib2
-# Please, dont remove this as it will break everything GNOME related
-dnf versionlock add glib2
-
 # This fixes a lot of skew issues on GDX because kernel-devel wont update then
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
 
@@ -94,4 +87,8 @@ dnf -y install \
 dnf -y remove console-login-helper-messages
 
 # We need to remove centos-logos before applying bluefin's logos and after installing this package. Do not remove this!
-rpm --erase --nodeps centos-logos 
+rpm --erase --nodeps centos-logos
+# HACK: There currently is no generic-logos equivalent like on Fedora
+# We need this so packages like anaconda don't replace our logos by pulling in centos-logos again
+dnf -y install https://kojipkgs.fedoraproject.org//packages/generic-logos/18.0.0/26.fc43/noarch/generic-logos-18.0.0-26.fc43.noarch.rpm
+rpm --erase --nodeps --nodb generic-logos

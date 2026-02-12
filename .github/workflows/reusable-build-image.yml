@@ -119,15 +119,9 @@ jobs:
             podman
 
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: recursive
-
-      - name: Maximize build space
-        if: ${{ matrix.platform != 'arm64' && inputs.cleanup_runner }}
-        uses: ublue-os/container-storage-action@main
-        with:
-          target-dir: /var/lib/containers
 
       - name: Setup Just
         uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
@@ -142,7 +136,8 @@ jobs:
         env:
           FLAVOR: ${{ inputs.flavor }}
           HWE: ${{ inputs.hwe }}
-          TAG_SUFFIX: ${{ github.event_name != 'pull_request' && github.ref_name || '' }} # () on main, testing on testing
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -x
           just=$(which just)
@@ -154,14 +149,12 @@ jobs:
             export DEFAULT_TAG="${DEFAULT_TAG}-hwe"
             ENABLE_HWE=1
           fi
-          
-          if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
-            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
-              export TAG_SUFFIX="testing"
-            fi 
+
+          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ]; then
+            export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
-          
+
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
@@ -176,7 +169,7 @@ jobs:
       - name: Setup Syft
         id: setup-syft
         if: ${{ inputs.sbom && inputs.publish }}
-        uses: anchore/sbom-action/download-syft@a930d0ac434e3182448fe678398ba5713717112a # v0
+        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0
 
       - name: Generate SBOM
         id: generate-sbom
@@ -325,7 +318,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:0d8efc73b806c780206b69d62e1b8cb10e9e2eefa0e4452db81b9fa00b1a5175
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:1c56f3ceb1c9929611a1cc7ab7a5fde1ec5df87add282029cd1596b8eae5af67
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
@@ -359,17 +352,22 @@ jobs:
 
       - name: Add suffixes to other variations as well
         env:
-          TAG_SUFFIX: ${{ github.event_name != 'pull_request' && github.ref_name || '' }} # () on main, testing on testing
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          HWE: ${{ inputs.hwe }}
         run: |
-          if [[ -n "${TAG_SUFFIX}" && "${TAG_SUFFIX}" != "${PRODUCTION_BRANCH}" ]]; then
-            if [ "${TAG_SUFFIX}" == "${TESTING_BRANCH}" ] ; then
-              export TAG_SUFFIX="testing"
-            fi 
-            export TAG_SUFFIX="-${TAG_SUFFIX}"
-            export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
+          export CENTOS_VERSION_SUFFIX=""
+          if [[ "${HWE}" == "true" ]] ; then
+            export DEFAULT_TAG="${DEFAULT_TAG}-hwe"
+            export CENTOS_VERSION_SUFFIX="-hwe"
           fi
-          
+          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ] && [ "$EVENT_NAME" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ] ; then
+            export TAG_SUFFIX="testing"
+            export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
+            export CENTOS_VERSION_SUFFIX="-${TAG_SUFFIX}"
+          fi
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
+          echo "CENTOS_VERSION_SUFFIX=${CENTOS_VERSION_SUFFIX}" >> "${GITHUB_ENV}"
 
       - name: Get current date
         id: date
@@ -395,13 +393,14 @@ jobs:
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}
-            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}
-            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.DEFAULT_TAG }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.CENTOS_VERSION_NUMBER }}${{ env.CENTOS_VERSION_SUFFIX }}${{ env.TAG_SUFFIX }}-{{date 'YYYYMMDD'}}
             type=ref,event=pr
-          flavor: |
-            ${{ inputs.hwe && 'suffix=-hwe' || '' }}
           labels: |
             bluefin.commit=${{ github.sha }}
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md

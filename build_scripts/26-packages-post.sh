@@ -19,7 +19,7 @@ mkdir -p /etc/flatpak/remotes.d
 curl --retry 3 -o /etc/flatpak/remotes.d/flathub.flatpakrepo "https://dl.flathub.org/repo/flathub.flatpakrepo"
 
 # There is no `-defaults` subpackage on c10s
-curl -fsSLo /usr/lib/systemd/zram-generator.conf "https://src.fedoraproject.org/rpms/rust-zram-generator/raw/rawhide/f/zram-generator.conf"
+curl -fsSLo /usr/lib/systemd/zram-generator.conf "https://src.fedoraproject.org/rpms/zram-generator/blob/rawhide/f/zram-generator.conf"
 grep -F -e "zram-size =" /usr/lib/systemd/zram-generator.conf
 
 # https://src.fedoraproject.org/rpms/firewalld/blob/rawhide/f/firewalld.spec
