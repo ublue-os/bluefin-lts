@@ -150,7 +150,7 @@ jobs:
             ENABLE_HWE=1
           fi
 
-          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ] && [ "$EVENT_NAME" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ] ; then
+          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ]; then
             export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
