@@ -58,6 +58,11 @@ on:
         required: false
         type: string
         default: ""
+      kernel-pin:
+        description: "The kernel version to pin (e.g. 6.17.12-200.fc42)"
+        required: false
+        type: string
+        default: ""
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -118,8 +123,11 @@ jobs:
           sudo apt install -y \
             podman
 
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # v10
+
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: recursive
 
@@ -150,7 +158,7 @@ jobs:
             ENABLE_HWE=1
           fi
 
-          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ] && [ "$EVENT_NAME" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ] ; then
+          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ]; then
             export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
@@ -163,13 +171,13 @@ jobs:
             ENABLE_DX=1
           fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}"
           echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Setup Syft
         id: setup-syft
         if: ${{ inputs.sbom && inputs.publish }}
-        uses: anchore/sbom-action/download-syft@deef08a0db64bfad603422135db61477b16cef56 # v0
+        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0
 
       - name: Generate SBOM
         id: generate-sbom
@@ -318,7 +326,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:17ab0709456ce1a2aedd85e95f72e58d73133bb70c33ae945a4d4b2424e984f1
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:1c56f3ceb1c9929611a1cc7ab7a5fde1ec5df87add282029cd1596b8eae5af67
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read

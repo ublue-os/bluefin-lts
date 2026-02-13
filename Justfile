@@ -108,7 +108,7 @@ _ensure-yq:
     fi
 
 # Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0": _ensure-yq
+build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kernel_pin="": _ensure-yq
     #!/usr/bin/env bash
 
     # Get Version
@@ -129,10 +129,16 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0": _ensu
     BUILD_ARGS+=("--build-arg" "ENABLE_GDX=${gdx}")
     BUILD_ARGS+=("--build-arg" "ENABLE_HWE=${hwe}")
     # Select akmods source tag for mounted ZFS/NVIDIA images
+    ARCH=$(uname -m)
     if [[ "${hwe}" -eq "1" || "${gdx}" -eq "1" ]]; then
-        BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=coreos-stable-${coreos_stable_version}")
+        AKMODS_BASE="coreos-stable-${coreos_stable_version}"
     else
-        BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=centos-10")
+        AKMODS_BASE="centos-10"
+    fi
+    if [[ -n "${kernel_pin}" ]]; then
+        BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=${AKMODS_BASE}-${kernel_pin}.${ARCH}")
+    else
+        BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=${AKMODS_BASE}")
     fi
     if [[ -z "$(git status -s)" ]]; then
         BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
