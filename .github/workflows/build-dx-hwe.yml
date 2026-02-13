@@ -32,7 +32,7 @@ jobs:
     with:
       image-name: bluefin-dx
       flavor: dx
-      platforms: amd64
+      kernel-pin: 6.17.12-200.fc42
       rechunk: ${{ github.event_name != 'pull_request' }}
       sbom: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' }}

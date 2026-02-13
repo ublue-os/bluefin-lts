@@ -38,7 +38,10 @@
       "matchUpdateTypes": ["digest"],
       "matchDepNames": [
         "quay.io/centos-bootc/centos-bootc",
-        "ghcr.io/projectbluefin/common"
+        "quay.io/centos-bootc/bootc-image-builder",
+        "ghcr.io/projectbluefin/common",
+        "ghcr.io/ublue-os/akmods-zfs",
+        "ghcr.io/ublue-os/brew"
       ]
     }
   ]
