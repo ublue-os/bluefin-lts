@@ -31,7 +31,7 @@ dnf config-manager --set-enabled "nvidia-container-toolkit"
 # Get the kmod-nvidia version to ensure driver packages match
 KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
 # Determine the expected package version format (epoch:version-release)
-NVIDIA_PKG_VERSION="3:${KMOD_VERSION}-1.fc${FEDORA_VERSION}"
+NVIDIA_PKG_VERSION="3:${KMOD_VERSION}"
 
 dnf install -y --enablerepo="fedora-nvidia" \
     "libnvidia-fbc-${NVIDIA_PKG_VERSION}" \
