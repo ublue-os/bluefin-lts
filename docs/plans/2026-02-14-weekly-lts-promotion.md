@@ -12,14 +12,27 @@
 - Bash scripting for condition checks
 - Branch protection bypass configuration
 
-**Status:** ✅ Plan reviewed and corrected (2026-02-14)
+**Status:** ✅ Plan reviewed and corrected (2026-02-14, round 2)
 
-**Recent Fixes Applied:**
+**Fixes Applied (Round 1):**
 - Fixed tracking issue week calculation (handles Tuesday edge case correctly)
 - Added error handling for commit timestamp parsing
 - Added force mode audit trail (logs who forced promotion)
 - Fixed all relative URLs to absolute paths (PR/issue comments, workflow links)
 - Enhanced verification command to show both apps and users
+
+**Fixes Applied (Round 2 - Code Review):**
+- **C1:** Removed `--auto` from `gh pr merge` (merge immediately, not deferred)
+- **C2:** Defaulted FORCE_PROMOTE to `'false'` for scheduled runs
+- **C3:** Guarded `statusCheckRollup` against null (PRs with no checks)
+- **I1:** Simplified 13 cron entries to single `0 */6 * * TUE-FRI`
+- **I3:** Removed dead Monday/Sunday branches from week calculation
+- **I5:** Fixed misleading security claim about bypass scope
+- **R3:** Added concurrency group to prevent overlapping runs
+- **R5:** Added fork guard (`if: github.repository == 'ublue-os/bluefin-lts'`)
+- **M1:** Removed unnecessary checkout step (workflow only uses `gh` CLI)
+- **M3:** Removed `promotion-override` label (YAGNI, kept in Future Enhancements)
+- **M4:** Moved PR comment before merge command (PR may close on merge)
 
 ---
 
@@ -47,26 +60,16 @@
 
 ## Solution Design
 
-### Workflow Schedule (Aggressive 6-Hour Polling)
+### Workflow Schedule (6-Hour Polling, Tuesday-Friday)
 
-**Primary Window: Tuesday (4 attempts)**
-- 10:00 UTC (6am ET)
-- 16:00 UTC (12pm ET) 
-- 22:00 UTC (6pm ET)
-- 04:00 UTC Wed (12am ET) - still "Tuesday window"
-
-**Extended Window: Wednesday-Friday (9 attempts)**
-- Wednesday: 10:00, 16:00, 22:00, 04:00 Thu
-- Thursday: 10:00, 16:00, 22:00, 04:00 Fri
-- Friday: 10:00 (final attempt)
-
-**Total:** 13 promotion attempts per week, concentrated Tue-Fri
+**Schedule:** `cron: '0 */6 * * TUE-FRI'` — runs at 00:00, 06:00, 12:00, 18:00 UTC each day, Tuesday through Friday (up to 16 attempts per week).
 
 **Rationale:**
-- Normal case: Promotes Tuesday 10am (first attempt)
-- Monday night merges: Caught by Tuesday 4am check (after 24h)
-- Continuous updates: Eventually oldest commits age to 24h+
+- Normal case: Promotes on first Tuesday attempt
+- Monday night merges: Caught by early Tuesday check (after 24h baking)
+- Continuous updates: Eventually oldest commits age past 24h threshold
 - Maximum delay: 5 days (Friday → next Tuesday)
+- Most weekly runs are no-ops that exit in seconds after detecting a recent promotion
 
 ### Promotion Conditions (All Must Pass)
 
@@ -80,8 +83,8 @@
 ### Behavior
 
 **On Success:**
-- Merges pullapp PR with `--merge` strategy
-- Adds comment explaining automated promotion
+- Adds comment explaining automated promotion (before merge)
+- Merges pullapp PR immediately with `--merge` strategy
 - Closes tracking issue (if exists)
 - Workflow skips remaining attempts until next Tuesday
 
@@ -121,7 +124,7 @@
    - Add actor: `github-actions[bot]` or the GitHub Actions app
    - Save changes
 
-**Security Note:** Only this specific workflow can bypass reviews, only for pullapp PRs matching the pattern.
+**Security Note:** Adding `github-actions[bot]` to the bypass list allows ANY workflow using `GITHUB_TOKEN` to bypass reviews on `lts`. The promote-lts workflow restricts itself via the pullapp author check (software guard), but the platform-level bypass is broader. Consider this acceptable given the `lts` branch only receives merges from the pull app.
 
 **Verification:**
 ```bash
@@ -141,10 +144,6 @@ gh label create "promotion-tracking" \
 gh label create "promotion-hold" \
   --description "Blocks automated LTS promotion" \
   --color "D93F0B"
-
-gh label create "promotion-override" \
-  --description "Override age checks for urgent promotion" \
-  --color "FBCA04"
 ```
 
 ---
@@ -163,26 +162,9 @@ name: Promote LTS Release
 
 on:
   schedule:
-    # Tuesday (4 attempts)
-    - cron: '0 10 * * TUE'   # 10am UTC
-    - cron: '0 16 * * TUE'   # 4pm UTC
-    - cron: '0 22 * * TUE'   # 10pm UTC
-    - cron: '0 4 * * WED'    # 4am UTC (still Tuesday window)
-    
-    # Wednesday (4 attempts)
-    - cron: '0 10 * * WED'
-    - cron: '0 16 * * WED'
-    - cron: '0 22 * * WED'
-    - cron: '0 4 * * THU'
-    
-    # Thursday (4 attempts)
-    - cron: '0 10 * * THU'
-    - cron: '0 16 * * THU'
-    - cron: '0 22 * * THU'
-    - cron: '0 4 * * FRI'
-    
-    # Friday (1 final attempt)
-    - cron: '0 10 * * FRI'
+    # Every 6 hours Tuesday-Friday. Most weeks promote on the first
+    # Tuesday attempt; the remaining runs are no-ops that exit early.
+    - cron: '0 */6 * * TUE-FRI'
     
   workflow_dispatch:
     inputs:
@@ -197,18 +179,21 @@ permissions:
   pull-requests: write
   issues: write
 
+concurrency:
+  group: promote-lts
+  cancel-in-progress: false
+
 jobs:
   promote:
+    # Only run in the upstream repo, not in forks
+    if: github.repository == 'ublue-os/bluefin-lts'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      
       - name: Check Promotion Conditions
         id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FORCE_PROMOTE: ${{ inputs.force }}
+          FORCE_PROMOTE: ${{ inputs.force || 'false' }}
         run: |
           set -euo pipefail
           
@@ -267,7 +252,7 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Check 5: CI status"
-          FAILED_CHECKS=$(gh pr view $PULLAPP_PR --json statusCheckRollup --jq '[.statusCheckRollup[] | select(.conclusion != "SUCCESS" and .conclusion != "SKIPPED" and .conclusion != null)] | length')
+          FAILED_CHECKS=$(gh pr view $PULLAPP_PR --json statusCheckRollup --jq '[(.statusCheckRollup // [])[] | select(.conclusion != "SUCCESS" and .conclusion != "SKIPPED" and .conclusion != null)] | length')
           
           if [ $FAILED_CHECKS -gt 0 ]; then
             echo "result=blocked" >> $GITHUB_OUTPUT
@@ -337,10 +322,8 @@ Age check bypassed via workflow_dispatch force parameter.
 [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           fi
           
-          # Merge the PR
-          gh pr merge $PR_NUMBER --merge --auto
-          
-          # Add explanatory comment
+          # Add explanatory comment before merge (PR may close on merge,
+          # preventing post-merge comments)
           gh pr comment $PR_NUMBER --body "🎉 **Automated LTS Promotion**
 
 Promoted to stable \`lts\` tag after passing all conditions:
@@ -354,6 +337,11 @@ Stable images will publish shortly via push trigger to \`lts\` branch.
 *Automated by [Promote LTS Release workflow](https://github.com/${{ github.repository }}/actions/workflows/promote-lts.yml)*  
 *Run: [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*"
           
+          # Merge immediately (not --auto). All conditions already verified above.
+          # NOTE: Using --merge (merge commit). The pull app uses hardreset to sync
+          # main→lts, so the next sync will force-push regardless of merge strategy.
+          gh pr merge $PR_NUMBER --merge
+          
           echo "✅ Promotion complete"
       
       - name: Create/Update Tracking Issue
@@ -365,16 +353,14 @@ Stable images will publish shortly via push trigger to \`lts\` branch.
         run: |
           set -euo pipefail
           
-          # Calculate current week's Tuesday (not last week's Tuesday)
+          # Calculate current week's Tuesday
+          # Cron only fires Tue-Fri, so DAY_OF_WEEK is always 2-5
           DAY_OF_WEEK=$(date +%u)  # 1=Mon, 2=Tue, ..., 7=Sun
           if [ $DAY_OF_WEEK -eq 2 ]; then
             # Today is Tuesday, use today
             WEEK_START=$(date +%Y-%m-%d)
-          elif [ $DAY_OF_WEEK -lt 2 ]; then
-            # Monday - use yesterday's Tuesday (last week)
-            WEEK_START=$(date -d 'tuesday last week' +%Y-%m-%d)
           else
-            # Wed-Sun - use this week's Tuesday
+            # Wed-Fri - calculate days back to Tuesday
             DAYS_BACK=$(( $DAY_OF_WEEK - 2 ))
             WEEK_START=$(date -d "$DAYS_BACK days ago" +%Y-%m-%d)
           fi
@@ -402,11 +388,8 @@ Stable images will publish shortly via push trigger to \`lts\` branch.
 - **$CURRENT_TIME:** $BLOCK_REASON
 
 ### Retry Schedule
-Automatic checks every 6 hours:
-- **Tuesday:** 10am, 4pm, 10pm, 4am (Wed)
-- **Wednesday:** 10am, 4pm, 10pm, 4am (Thu)
-- **Thursday:** 10am, 4pm, 10pm, 4am (Fri)
-- **Friday:** 10am (final attempt)
+Automatic checks every 6 hours (00:00, 06:00, 12:00, 18:00 UTC):
+- **Tuesday-Friday:** Up to 16 attempts per week
 
 ### Manual Override
 - **Pause promotion:** Add \`promotion-hold\` label to [PR #$PR_NUMBER](https://github.com/${{ github.repository }}/pull/$PR_NUMBER)
@@ -432,12 +415,10 @@ Automatic checks every 6 hours:
         run: |
           set -euo pipefail
           
-          # Find and close tracking issue (use same week calculation logic)
+          # Find and close tracking issue (same week calculation as above)
           DAY_OF_WEEK=$(date +%u)
           if [ $DAY_OF_WEEK -eq 2 ]; then
             WEEK_START=$(date +%Y-%m-%d)
-          elif [ $DAY_OF_WEEK -lt 2 ]; then
-            WEEK_START=$(date -d 'tuesday last week' +%Y-%m-%d)
           else
             DAYS_BACK=$(( $DAY_OF_WEEK - 2 ))
             WEEK_START=$(date -d "$DAYS_BACK days ago" +%Y-%m-%d)
@@ -497,10 +478,11 @@ git add .github/workflows/promote-lts.yml
 git commit -m "feat(ci): add weekly LTS promotion workflow
 
 Automates weekly promotion of main → lts with:
-- 6-hour polling Tuesday-Friday (13 attempts/week)
+- 6-hour polling Tuesday-Friday via single cron entry
 - 24h minimum baking time in lts-testing
 - Smart retry mechanism for timing edge cases
 - Tracking issues for blocked promotions
+- Fork guard and concurrency control
 
 Requires: GitHub Actions bypass on lts branch protection
 
@@ -529,16 +511,7 @@ gh label create "promotion-hold" \
   || echo "Label already exists"
 ```
 
-**Step 3: Create promotion-override label**
-
-```bash
-gh label create "promotion-override" \
-  --description "Override age checks for urgent promotion (use with caution)" \
-  --color "FBCA04" \
-  || echo "Label already exists"
-```
-
-**Step 4: Verify labels created**
+**Step 3: Verify labels created**
 
 ```bash
 gh label list | grep promotion
@@ -547,11 +520,10 @@ gh label list | grep promotion
 Expected output:
 ```
 promotion-hold       Blocks automated LTS promotion
-promotion-override   Override age checks for urgent promotion
 promotion-tracking   Tracks weekly LTS promotion status
 ```
 
-**Step 5: Commit label creation documentation**
+**Step 4: Commit label creation documentation**
 
 Update or create `.github/labels.md`:
 
@@ -562,7 +534,6 @@ Update or create `.github/labels.md`:
 
 - **promotion-tracking**: Automatically applied to weekly promotion tracking issues
 - **promotion-hold**: Apply to pullapp PR to pause automated promotion
-- **promotion-override**: (Future) Override 24h age requirement for urgent fixes
 ```
 
 ```bash
@@ -602,9 +573,10 @@ To enable the automated LTS promotion workflow, we need to configure branch prot
 
 ### Security
 
-- Only the promote-lts workflow can bypass reviews
-- Only applies to pullapp PRs (main → lts by pull[bot])
-- All other PRs still require reviews
+- Adding \`github-actions[bot]\` to bypass allows any workflow using GITHUB_TOKEN to bypass reviews on \`lts\`
+- The promote-lts workflow restricts itself to pullapp PRs via author check (software guard)
+- All other PRs from humans still require reviews
+- Acceptable risk: \`lts\` branch only receives merges from the pull app
 
 ### Verification
 
@@ -772,11 +744,7 @@ Create `docs/runbooks/lts-promotion.md`:
 
 The LTS promotion workflow runs automatically Tuesday-Friday every 6 hours.
 
-**Schedule:**
-- Tuesday: 10am, 4pm, 10pm UTC, 4am Wed UTC
-- Wednesday: 10am, 4pm, 10pm UTC, 4am Thu UTC  
-- Thursday: 10am, 4pm, 10pm UTC, 4am Fri UTC
-- Friday: 10am UTC (final)
+**Schedule:** Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC), Tuesday through Friday.
 
 ## Common Scenarios
 
@@ -898,7 +866,7 @@ git commit -m "docs: add LTS promotion runbook and update contributing guide"
 After full implementation:
 
 - [ ] Workflow file `.github/workflows/promote-lts.yml` exists and is valid
-- [ ] Labels created: `promotion-tracking`, `promotion-hold`, `promotion-override`
+- [ ] Labels created: `promotion-tracking`, `promotion-hold`
 - [ ] Issue created for admin to configure branch protection bypass
 - [ ] Branch protection bypass configured (admin action)
 - [ ] Workflow tested manually with `workflow_dispatch`
@@ -1016,7 +984,7 @@ This plan can be executed in two ways:
 
 **Before Task 3:**
 - Confirm team agrees with 24h baking requirement
-- Review schedule (13 attempts/week appropriate?)
+- Review schedule (every 6 hours Tue-Fri appropriate?)
 - Verify label names match team conventions
 
 **Before First Tuesday:**
