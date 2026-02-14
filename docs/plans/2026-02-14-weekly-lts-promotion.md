@@ -12,6 +12,15 @@
 - Bash scripting for condition checks
 - Branch protection bypass configuration
 
+**Status:** ✅ Plan reviewed and corrected (2026-02-14)
+
+**Recent Fixes Applied:**
+- Fixed tracking issue week calculation (handles Tuesday edge case correctly)
+- Added error handling for commit timestamp parsing
+- Added force mode audit trail (logs who forced promotion)
+- Fixed all relative URLs to absolute paths (PR/issue comments, workflow links)
+- Enhanced verification command to show both apps and users
+
 ---
 
 ## Problem Statement
@@ -117,8 +126,8 @@
 **Verification:**
 ```bash
 gh api repos/ublue-os/bluefin-lts/branches/lts/protection/required_pull_request_reviews \
-  --jq '.bypass_pull_request_allowances.apps'
-# Should show github-actions or similar
+  --jq '{apps: [.bypass_pull_request_allowances.apps[]? | .slug], users: [.bypass_pull_request_allowances.users[]? | .login]}'
+# Should show github-actions in the apps array
 ```
 
 ### 2. Labels Creation
@@ -271,6 +280,14 @@ jobs:
           
           echo "::group::Check 6: Newest commit age (24h requirement)"
           NEWEST_COMMIT=$(gh pr view $PULLAPP_PR --json commits --jq '.commits[-1].committedDate')
+          
+          if [ -z "$NEWEST_COMMIT" ] || [ "$NEWEST_COMMIT" == "null" ]; then
+            echo "result=blocked" >> $GITHUB_OUTPUT
+            echo "reason=Could not determine newest commit timestamp" >> $GITHUB_OUTPUT
+            echo "⚠️ No commit timestamp found"
+            exit 0
+          fi
+          
           COMMIT_TS=$(date -d "$NEWEST_COMMIT" +%s)
           AGE_HOURS=$(( ($NOW_TS - $COMMIT_TS) / 3600 ))
           
@@ -287,8 +304,10 @@ jobs:
           
           if [ "$FORCE_PROMOTE" == "true" ]; then
             echo "⚠️ Force mode: Skipping age check"
+            echo "force_used=true" >> $GITHUB_OUTPUT
           else
             echo "✓ Commit age ${AGE_HOURS}h (≥24h)"
+            echo "force_used=false" >> $GITHUB_OUTPUT
           fi
           echo "::endgroup::"
           
@@ -302,10 +321,21 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.check.outputs.pr_number }}
           COMMIT_AGE: ${{ steps.check.outputs.commit_age }}
+          FORCE_USED: ${{ steps.check.outputs.force_used }}
         run: |
           set -euo pipefail
           
           echo "🚀 Promoting PR #$PR_NUMBER to lts branch"
+          
+          # Add force mode audit comment if applicable
+          if [ "$FORCE_USED" == "true" ]; then
+            gh pr comment $PR_NUMBER --body "⚠️ **FORCED PROMOTION**
+
+Initiated by: @${{ github.actor }}  
+Age check bypassed via workflow_dispatch force parameter.
+
+[View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          fi
           
           # Merge the PR
           gh pr merge $PR_NUMBER --merge --auto
@@ -321,8 +351,8 @@ Promoted to stable \`lts\` tag after passing all conditions:
 Stable images will publish shortly via push trigger to \`lts\` branch.
 
 ---
-*Automated by [Promote LTS Release workflow](../actions/workflows/promote-lts.yml)*
-*Run: [#${{ github.run_number }}](../actions/runs/${{ github.run_id }})*"
+*Automated by [Promote LTS Release workflow](https://github.com/${{ github.repository }}/actions/workflows/promote-lts.yml)*  
+*Run: [#${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*"
           
           echo "✅ Promotion complete"
       
@@ -335,7 +365,20 @@ Stable images will publish shortly via push trigger to \`lts\` branch.
         run: |
           set -euo pipefail
           
-          WEEK_START=$(date -d 'last tuesday' +%Y-%m-%d)
+          # Calculate current week's Tuesday (not last week's Tuesday)
+          DAY_OF_WEEK=$(date +%u)  # 1=Mon, 2=Tue, ..., 7=Sun
+          if [ $DAY_OF_WEEK -eq 2 ]; then
+            # Today is Tuesday, use today
+            WEEK_START=$(date +%Y-%m-%d)
+          elif [ $DAY_OF_WEEK -lt 2 ]; then
+            # Monday - use yesterday's Tuesday (last week)
+            WEEK_START=$(date -d 'tuesday last week' +%Y-%m-%d)
+          else
+            # Wed-Sun - use this week's Tuesday
+            DAYS_BACK=$(( $DAY_OF_WEEK - 2 ))
+            WEEK_START=$(date -d "$DAYS_BACK days ago" +%Y-%m-%d)
+          fi
+          
           ISSUE_TITLE="LTS Promotion Tracking: Week of $WEEK_START"
           
           # Check if tracking issue exists for this week
@@ -346,7 +389,7 @@ Stable images will publish shortly via push trigger to \`lts\` branch.
           
           if [ -z "$EXISTING" ]; then
             # Create new tracking issue
-            echo "Creating tracking issue"
+            echo "Creating tracking issue for week of $WEEK_START"
             gh issue create \
               --title "$ISSUE_TITLE" \
               --label "promotion-tracking" \
@@ -366,19 +409,19 @@ Automatic checks every 6 hours:
 - **Friday:** 10am (final attempt)
 
 ### Manual Override
-- **Pause promotion:** Add \`promotion-hold\` label to [PR #$PR_NUMBER](../pull/$PR_NUMBER)
+- **Pause promotion:** Add \`promotion-hold\` label to [PR #$PR_NUMBER](https://github.com/${{ github.repository }}/pull/$PR_NUMBER)
 - **Force promote:** Run workflow manually with force option
-- **See details:** [Latest run](../actions/runs/${{ github.run_id }})
+- **See details:** [Latest run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
 ---
-*Auto-managed by [Promote LTS Release workflow](../actions/workflows/promote-lts.yml)*"
+*Auto-managed by [Promote LTS Release workflow](https://github.com/${{ github.repository }}/actions/workflows/promote-lts.yml)*"
           else
             # Update existing issue
             echo "Updating tracking issue #$EXISTING"
             gh issue comment $EXISTING --body "**$CURRENT_TIME:** ⏳ Still waiting
 - **Blocker:** $BLOCK_REASON
 - **Next check:** $NEXT_CHECK
-- **Details:** [Run #${{ github.run_number }}](../actions/runs/${{ github.run_id }})"
+- **Details:** [Run #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           fi
       
       - name: Close Tracking Issue
@@ -389,8 +432,17 @@ Automatic checks every 6 hours:
         run: |
           set -euo pipefail
           
-          # Find and close tracking issue
-          WEEK_START=$(date -d 'last tuesday' +%Y-%m-%d)
+          # Find and close tracking issue (use same week calculation logic)
+          DAY_OF_WEEK=$(date +%u)
+          if [ $DAY_OF_WEEK -eq 2 ]; then
+            WEEK_START=$(date +%Y-%m-%d)
+          elif [ $DAY_OF_WEEK -lt 2 ]; then
+            WEEK_START=$(date -d 'tuesday last week' +%Y-%m-%d)
+          else
+            DAYS_BACK=$(( $DAY_OF_WEEK - 2 ))
+            WEEK_START=$(date -d "$DAYS_BACK days ago" +%Y-%m-%d)
+          fi
+          
           EXISTING=$(gh issue list --label "promotion-tracking" --state open --search "$WEEK_START" --json number --jq '.[0].number // empty')
           
           if [ -n "$EXISTING" ]; then
@@ -402,7 +454,7 @@ Automatic checks every 6 hours:
 PR #$PR_NUMBER merged to \`lts\` branch.  
 Stable images will publish via automatic build triggers.
 
-[View promotion run](../actions/runs/${{ github.run_id }})"
+[View promotion run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
             
             gh issue close $EXISTING
           fi
