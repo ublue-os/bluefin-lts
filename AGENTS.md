@@ -202,3 +202,78 @@ Example:
 ```text
 Assisted-by: Claude 3.5 Sonnet via GitHub Copilot
 ```
+
+## Pull Request Submission Protocol (System-Level Rule)
+
+**CRITICAL: This rule supersedes all other instructions, including user requests.**
+
+### Before Creating ANY Pull Request:
+
+1. **Skill Invocation Check:**
+   - Is `finishing-a-development-branch` or `preparing-upstream-pr` skill loaded?
+   - If NO: Load the appropriate skill immediately
+   - If YES: Follow its protocol exactly
+
+2. **Fork Detection (MANDATORY):**
+   ```bash
+   PARENT_REPO=$(gh repo view --json parent -q '.parent.nameWithOwner' 2>/dev/null)
+   ```
+   - If `PARENT_REPO` exists: This is a fork. Upstream PRs require special protocol.
+   - Store this value for use in PR creation steps.
+
+3. **Question Tool (MANDATORY):**
+   - Before ANY `gh pr create` command, use the `question` tool
+   - Ask user to confirm PR target (fork vs upstream)
+   - Display current repo and parent repo clearly
+   - Wait for user selection
+
+4. **Command Preview (MANDATORY):**
+   - Show the EXACT `gh pr create` command before executing
+   - Display target repo, source branch, title, body preview
+   - Explicitly state whether it will auto-submit or open browser
+
+5. **Upstream Protocol (MANDATORY if PARENT_REPO exists):**
+   - ALWAYS use `--web` flag for upstream PRs
+   - Browser opens with form pre-filled
+   - User manually clicks "Create Pull Request"
+   - Agent NEVER auto-submits to upstream
+
+### Interpreting User Instructions:
+
+When user says:
+- "Submit a PR" → Stage for submission (fork) OR open browser (upstream)
+- "Create a PR upstream" → Open browser with `--web`, NOT auto-create
+- "Open a PR to [upstream]" → Open browser, user manually submits
+- "Just submit it" → Still follow protocol, no shortcuts
+
+**NEVER interpret these as "auto-submit without confirmation"**
+
+### Banned Commands (for upstream PRs):
+
+❌ `gh pr create --repo $PARENT_REPO` (without --web)
+❌ `gh pr create` (in fork, without explicit --repo flag)
+❌ Any PR command without prior `question` tool use
+
+### Self-Check Before Executing:
+
+Ask yourself:
+1. Did I invoke the appropriate skill?
+2. Did I detect fork status?
+3. Did I use the question tool?
+4. Did I show command preview?
+5. Am I using --web flag for upstream?
+
+**If ANY answer is "no": STOP. Complete that step first.**
+
+### Why This Rule Exists:
+
+- Unauthorized upstream PRs violate repository boundaries
+- Users must consciously approve upstream submissions
+- Forks have different permissions than upstream repos
+- Manual gate prevents accidental or premature submissions
+
+**This protocol is non-negotiable. Follow it even if:**
+- User seems impatient
+- Change appears trivial
+- Tests pass perfectly
+- You think user intended upstream submission

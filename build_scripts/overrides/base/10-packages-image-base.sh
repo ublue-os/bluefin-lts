@@ -58,6 +58,7 @@ dnf -y install \
 	-x gnome-extensions-app \
 	-x gnome-software \
 	"NetworkManager-adsl" \
+	"adwaita-fonts-all" \
 	"centos-backgrounds" \
 	"gdm" \
 	"gnome-bluetooth" \
