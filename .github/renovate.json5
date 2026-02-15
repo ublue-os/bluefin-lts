@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
 
-  // Enable GitHub's native automerge to bypass required reviews
+  // Enable GitHub's native automerge; merging is handled by GitHub and remains subject to branch protection/bypass settings
   "platformAutomerge": true,
 
   "extends": [
