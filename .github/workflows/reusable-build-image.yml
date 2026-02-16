@@ -58,6 +58,11 @@ on:
         required: false
         type: string
         default: ""
+      kernel-pin:
+        description: "The kernel version to pin (e.g. 6.17.12-200.fc42)"
+        required: false
+        type: string
+        default: ""
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -118,6 +123,9 @@ jobs:
           sudo apt install -y \
             podman
 
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # v10
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -150,7 +158,7 @@ jobs:
             ENABLE_HWE=1
           fi
 
-          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ] && [ "$EVENT_NAME" == "pull_request" ] || [ "${EVENT_NAME}" == "merge_group" ] ; then
+          if [ "${REF_NAME}" != "${PRODUCTION_BRANCH}" ]; then
             export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
@@ -163,7 +171,7 @@ jobs:
             ENABLE_DX=1
           fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}"
           echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Setup Syft
@@ -318,7 +326,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:417d791afa234c538bca977fe0f44011d2381e60a9fde44c938bd17b9cc38f66
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:b5f4a33fa2fee95dd79535e069bafd60f52085c5786677da5724414374c5194c
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
