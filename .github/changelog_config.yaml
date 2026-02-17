@@ -44,6 +44,16 @@ templates:
   commit_format: "\n| **[{short}](https://github.com/ublue-os/bluefin-lts/commit/{githash})** | {subject} |"
   changelog_title: "{os} {tag}: {pretty}"
   handwritten_placeholder: "This is an automatically generated changelog for release `{curr}`."
+  hwe_kernel_table: |
+    ### Hardware Enablement (HWE) Kernel Comparison
+    The HWE variant provides newer kernel versions for improved hardware support.
+    
+    | Image Variant | Kernel Version |
+    | --- | --- |
+    | **Standard** (bluefin:lts) | {pkgrel:kernel} |
+    | **HWE** (bluefin:lts-hwe) | {pkgrel:kernel-hwe} |
+    
+    > **Note:** HWE images are recommended for newer hardware that requires recent kernel features.
   changelog_format: |
     {handwritten}
 
@@ -53,7 +63,6 @@ templates:
     | Name | Version |
     | --- | --- |
     | **Kernel** | {pkgrel:kernel} |
-    | **HWE Kernel** | {pkgrel:kernel-hwe} |
     | **GNOME** | {pkgrel:gnome-control-center-filesystem} |
     | **Mesa** | {pkgrel:mesa-filesystem} |
     | **Podman** | {pkgrel:podman} |
@@ -72,6 +81,8 @@ templates:
     | **CUDA** | {pkgrel:nvidia-driver-cuda} |
 
     {changes}
+
+    {hwe_kernel_table}
 
     ### How to rebase
     For current users, type the following to rebase to this version:
