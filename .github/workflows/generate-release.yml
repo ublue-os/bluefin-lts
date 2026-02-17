@@ -1,0 +1,106 @@
+name: Generate Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_run:
+    workflows: ["Build Bluefin LTS GDX"]
+    types:
+      - completed
+    branches:
+      - lts
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target to generate changelog for'
+        required: true
+        default: 'lts'
+        type: choice
+        options:
+          - lts
+          - dx
+          - gdx
+
+jobs:
+  generate-release:
+    runs-on: ubuntu-latest
+    # Only run if the workflow was successful and on lts branch
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && 
+       github.event.workflow_run.head_branch == 'lts')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: lts
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo jq
+
+      - name: Determine target
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "target=${{ inputs.target }}" >> $GITHUB_OUTPUT
+          else
+            echo "target=lts" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog
+        run: |
+          python3 .github/changelogs.py ${{ steps.target.outputs.target }} --ci
+
+      - name: Read changelog outputs
+        id: changelog
+        run: |
+          # Source the output.env file to get TAG and TITLE
+          if [ -f output.env ]; then
+            cat output.env >> $GITHUB_OUTPUT
+          else
+            echo "output.env not found; assuming changelog generation was skipped"
+            echo "skip_release=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        if: steps.changelog.outputs.skip_release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.changelog.outputs.TAG }}"
+          TITLE="${{ steps.changelog.outputs.TITLE }}"
+          
+          # Check if release already exists
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists, skipping creation"
+            exit 0
+          fi
+          
+          # Create the release
+          gh release create "$TAG" \
+            --title "$TITLE" \
+            --notes-file changelog.md \
+            --target lts
+
+      - name: Upload changelog artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: |
+            changelog.md
+            output.env
