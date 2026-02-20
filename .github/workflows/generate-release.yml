@@ -63,8 +63,11 @@ jobs:
           fi
 
       - name: Generate changelog
-        run: |
-          python3 .github/changelogs.py ${{ steps.target.outputs.target }} --ci
+        uses: hanthor/changelog-action@master
+        with:
+          stream: ${{ steps.target.outputs.target }}
+          family: bluefin-lts
+          output-env: ./output.env
 
       - name: Read changelog outputs
         id: changelog
