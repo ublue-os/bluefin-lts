@@ -56,7 +56,8 @@ if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
   
   # Use the same akmods flavor and Fedora version as coreos-stable-42
   AKMODS_FLAVOR="coreos-stable"
-  FEDORA_VERSION="42"
+  # Grab the currently building Fedora version from the ublue-os/akmods repo
+  FEDORA_VERSION=$(/run/context/build_scripts/scripts/ghcurl https://raw.githubusercontent.com/ublue-os/akmods/refs/heads/main/images.yaml | yq '.defaults.version' | grep -Eo '[0-9]{2}')
   
   # Create writable directory for common akmods downloads (tmpfs /tmp is mounted)
   COMMON_AKMODS_DIR="/run/common-akmods"
