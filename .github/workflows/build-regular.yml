@@ -28,5 +28,5 @@ jobs:
     with:
       image-name: bluefin
       rechunk: ${{ github.event_name != 'pull_request' }}
-      sbom: ${{ github.event_name != 'pull_request' }}
+      sbom: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/lts' }}
       publish: ${{ github.event_name != 'pull_request' }}
