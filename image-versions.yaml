@@ -2,7 +2,7 @@ images:
   - name: centos-bootc
     image: quay.io/centos-bootc/centos-bootc
     tag: c10s
-    digest: sha256:d4ef6074b7036a705e5c0e20f7c20f4fb02a181268db1e53612b6fb75259045f
+    digest: sha256:7dca4245bb45147d34625493c4bb847762ae98ebc4a1ef950fb72ca1f097940e
   - name: common
     image: ghcr.io/projectbluefin/common
     tag: latest
