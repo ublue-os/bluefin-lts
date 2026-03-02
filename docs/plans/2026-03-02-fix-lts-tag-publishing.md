@@ -11,7 +11,7 @@
 - GitHub CLI (`gh`) for workflow dispatch
 - Branch protection rules
 
-**Status:** ⏳ Ready for implementation
+**Status:** ✅ Design improved and ready for implementation (v2 - added lts validation builds)
 
 ---
 
@@ -54,7 +54,7 @@ GitHub Actions `schedule:` triggers ALWAYS run on the default branch (`main`), n
 | PR opened | `main` | ✅ Yes | ❌ No | none (validation only) |
 | PR merged | `main` | ✅ Yes (push) | ✅ Yes | `:lts-testing` |
 | Pull bot PR | `lts` | ❌ **NO** | ❌ No | none |
-| Pull bot merge | `lts` | ❌ **NO** | ❌ No | none |
+| Pull bot merge | `lts` | ✅ **YES** (validation) | ❌ **NO** | none (build only) |
 | Cron (Sun 2am) | `main` | ✅ Yes (dispatcher) | ❌ No | none (dispatcher only) |
 | Dispatcher trigger | `lts` | ✅ Yes (workflow_dispatch) | ✅ Yes | `:lts` (production) |
 | Manual dispatch | `lts` | ✅ Yes | ✅ Yes | `:lts` (production) |
@@ -125,86 +125,48 @@ jobs:
           echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
 ```
 
-**Step 2: Validate syntax**
+**Step 2: Update publish condition**
 
-Run: `just check`
-Expected: No errors
-
-**Step 3: Commit the dispatcher**
-
-```bash
-git add .github/workflows/scheduled-lts-release.yml
-git commit -m "feat(ci): add scheduled dispatcher for lts production releases
-
-Creates dispatcher workflow that runs on main (via schedule) but
-triggers production builds on lts branch via workflow_dispatch.
-
-Solves the issue where GitHub Actions schedule triggers always
-run on the default branch (main), not on lts."
-```
-
----
-
-### Task 2: Fix build-regular.yml Triggers
-
-**File:**
-- Modify: `.github/workflows/build-regular.yml`
-
-**Step 1: Remove lts from pull_request and remove schedule**
-
-**Current (lines 8-19):**
+**Current (line 33):**
 ```yaml
-on:
-  pull_request:
-    branches:
-      - main
-      - lts
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
-  merge_group:
-  workflow_dispatch:
+publish: ${{ github.event_name != 'pull_request' }}
 ```
 
 **Fixed:**
 ```yaml
-on:
-  pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - main
-  merge_group:
-  workflow_dispatch:
+publish: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
 ```
 
-**Changes:**
-- Line 12: Remove `- lts` from `pull_request: branches:`
-- Lines 16-17: Remove `schedule:` section entirely (moved to dispatcher)
-- Keep `workflow_dispatch:` for manual + dispatcher triggers
+**Why:**
+- Publish on `workflow_dispatch` (cron dispatcher + manual on lts)
+- Publish on `push` to `main` (testing tags)
+- Do NOT publish on `push` to `lts` (pull bot validation builds)
 
-**Step 2: Validate syntax**
+**Step 3: Validate syntax**
 
 Run: `just check`
 Expected: No errors
 
-**Step 3: Commit the fix**
+**Step 4: Commit the fix**
 
 ```bash
 git add .github/workflows/build-regular.yml
-git commit -m "fix(ci): remove lts from build-regular.yml pull_request trigger
+git commit -m "fix(ci): update build-regular.yml triggers and publish condition
 
-Prevents workflows from triggering on pull bot PRs to lts branch.
-This stops accidental production tag publishes.
+Changes:
+- Remove lts from pull_request trigger (no PR builds)
+- Add lts to push trigger (validation builds on merge)
+- Update publish condition (only workflow_dispatch or push to main)
+- Remove schedule (moved to dispatcher)
 
-Production builds now only via:
+This prevents accidental production tag publishes from pull bot PRs
+while maintaining validation builds on pull bot merges.
+
+Production publishes only via:
 - Weekly cron dispatcher (scheduled-lts-release.yml)
 - Manual workflow_dispatch on lts branch
 
-Testing builds continue from main branch pushes."
+Assisted-by: Claude 3.5 Sonnet via GitHub Copilot"
 ```
 
 ---
@@ -214,9 +176,15 @@ Testing builds continue from main branch pushes."
 **File:**
 - Modify: `.github/workflows/build-dx.yml`
 
-**Step 1: Apply same fix as build-regular.yml**
+**Step 1: Apply same trigger and publish fixes as build-regular.yml**
 
-Remove line 12 (`- lts`) and lines 16-17 (`schedule:` section).
+Remove `- lts` from `pull_request: branches:` (line 12)
+Add `- lts` to `push: branches:` (after line 15)
+Remove `schedule:` section (lines 16-17)
+Update `publish:` condition (line 34) to:
+```yaml
+publish: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+```
 
 **Step 2: Validate syntax**
 
@@ -227,10 +195,12 @@ Expected: No errors
 
 ```bash
 git add .github/workflows/build-dx.yml
-git commit -m "fix(ci): remove lts from build-dx.yml pull_request trigger
+git commit -m "fix(ci): update build-dx.yml triggers and publish condition
 
 Same fix as build-regular.yml - prevents accidental production
-tag publishes from pull bot PRs to lts branch."
+tag publishes from pull bot PRs while maintaining validation builds.
+
+Assisted-by: Claude 3.5 Sonnet via GitHub Copilot"
 ```
 
 ---
@@ -240,9 +210,15 @@ tag publishes from pull bot PRs to lts branch."
 **File:**
 - Modify: `.github/workflows/build-gdx.yml`
 
-**Step 1: Apply same fix**
+**Step 1: Apply same trigger and publish fixes**
 
-Remove line 12 (`- lts`) and lines 16-17 (`schedule:` section).
+Remove `- lts` from `pull_request: branches:`
+Add `- lts` to `push: branches:`
+Remove `schedule:` section
+Update `publish:` condition (line 35) to:
+```yaml
+publish: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+```
 
 **Step 2: Validate syntax**
 
@@ -253,9 +229,11 @@ Expected: No errors
 
 ```bash
 git add .github/workflows/build-gdx.yml
-git commit -m "fix(ci): remove lts from build-gdx.yml pull_request trigger
+git commit -m "fix(ci): update build-gdx.yml triggers and publish condition
 
-Same fix as other build workflows."
+Same fix as other build workflows.
+
+Assisted-by: Claude 3.5 Sonnet via GitHub Copilot"
 ```
 
 ---
@@ -265,9 +243,15 @@ Same fix as other build workflows."
 **File:**
 - Modify: `.github/workflows/build-regular-hwe.yml`
 
-**Step 1: Apply same fix**
+**Step 1: Apply same trigger and publish fixes**
 
-Remove line 12 (`- lts`) and lines 16-17 (`schedule:` section).
+Remove `- lts` from `pull_request: branches:`
+Add `- lts` to `push: branches:`
+Remove `schedule:` section
+Update `publish:` condition (line 39) to:
+```yaml
+publish: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+```
 
 **Step 2: Validate syntax**
 
@@ -278,9 +262,11 @@ Expected: No errors
 
 ```bash
 git add .github/workflows/build-regular-hwe.yml
-git commit -m "fix(ci): remove lts from build-regular-hwe.yml pull_request trigger
+git commit -m "fix(ci): update build-regular-hwe.yml triggers and publish condition
 
-Same fix as other build workflows."
+Same fix as other build workflows.
+
+Assisted-by: Claude 3.5 Sonnet via GitHub Copilot"
 ```
 
 ---
@@ -290,9 +276,15 @@ Same fix as other build workflows."
 **File:**
 - Modify: `.github/workflows/build-dx-hwe.yml`
 
-**Step 1: Apply same fix**
+**Step 1: Apply same trigger and publish fixes**
 
-Remove line 12 (`- lts`) and lines 16-17 (`schedule:` section).
+Remove `- lts` from `pull_request: branches:`
+Add `- lts` to `push: branches:`
+Remove `schedule:` section
+Update `publish:` condition (line 39) to:
+```yaml
+publish: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+```
 
 **Step 2: Validate syntax**
 
@@ -303,60 +295,58 @@ Expected: No errors
 
 ```bash
 git add .github/workflows/build-dx-hwe.yml
-git commit -m "fix(ci): remove lts from build-dx-hwe.yml pull_request trigger
+git commit -m "fix(ci): update build-dx-hwe.yml triggers and publish condition
 
 Completes the fix across all 5 build workflows.
 
 All workflows now:
 - Trigger on PRs to main (validation)
 - Trigger on pushes to main (publish :lts-testing)
+- Trigger on pushes to lts (validation, no publish)
 - Trigger on workflow_dispatch (manual or from dispatcher)
-- Do NOT trigger on pull bot PRs to lts"
+- Do NOT trigger on pull bot PRs to lts
+
+Assisted-by: Claude 3.5 Sonnet via GitHub Copilot"
 ```
 
 ---
 
-### Task 7: Verify Publish Conditions (Read-Only Check)
+### Task 7: Verify Publish Conditions (UPDATED in Tasks 2-6)
 
-**Files to verify:**
-- `.github/workflows/build-regular.yml:31-33`
-- `.github/workflows/build-dx.yml:32-34`
-- `.github/workflows/build-gdx.yml:33-35`
-- `.github/workflows/build-regular-hwe.yml:37-39`
-- `.github/workflows/build-dx-hwe.yml:37-39`
+**Note:** This task was previously a read-only check. The publish conditions are now UPDATED in Tasks 2-6.
 
-**Step 1: Verify current publish conditions**
+**Files modified:**
+- `.github/workflows/build-regular.yml:33`
+- `.github/workflows/build-dx.yml:34`
+- `.github/workflows/build-gdx.yml:35`
+- `.github/workflows/build-regular-hwe.yml:39`
+- `.github/workflows/build-dx-hwe.yml:39`
 
-All workflows should have:
+**New publish condition (applied in all workflows):**
 ```yaml
-rechunk: ${{ github.event_name != 'pull_request' }}
-sbom: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/lts' }}
-publish: ${{ github.event_name != 'pull_request' }}
+publish: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
 ```
 
-**Step 2: Analyze if changes needed**
+**Why this is needed:**
+- Old condition: `publish: ${{ github.event_name != 'pull_request' }}`
+  - ❌ Would publish on push to lts (pull bot merges)
+- New condition: Only publish on:
+  - ✅ `workflow_dispatch` (cron dispatcher + manual)
+  - ✅ `push` to `main` (testing tags)
+  - ❌ NOT on `push` to `lts` (validation only)
+
+**Verification:**
 
 Run:
 ```bash
-grep -A2 "publish:" .github/workflows/build-*.yml
+grep "publish:" .github/workflows/build-*.yml
 ```
 
-Expected: All show `publish: ${{ github.event_name != 'pull_request' }}`
-
-**Analysis:**
-- `publish: ${{ github.event_name != 'pull_request' }}` is CORRECT
-  - Prevents publish on PRs (validation only)
-  - Allows publish on push to main (`:lts-testing` tags)
-  - Allows publish on workflow_dispatch (any branch)
-- Tag naming (`:lts` vs `:lts-testing`) is handled in `reusable-build-image.yml:161-164`
-- No changes needed to publish conditions
-
-**Step 3: Document verification**
+Expected: All show the new condition with `workflow_dispatch` and `main` checks
 
 ```bash
-# No commit needed - verification only
-echo "✅ Publish conditions verified - no changes needed"
-echo "Tag naming logic already correct in reusable-build-image.yml"
+echo "✅ Publish conditions updated in Tasks 2-6"
+echo "Tag naming logic unchanged in reusable-build-image.yml"
 ```
 
 ---
@@ -713,7 +703,7 @@ gh api repos/ublue-os/bluefin-lts/branches/lts/protection --silent && echo "✅ 
 | PR to main | `main` | ✅ | ❌ | none |
 | Merge to main | `main` | ✅ | ✅ | `:lts-testing` |
 | PR to lts | `lts` | ❌ | ❌ | none |
-| Merge to lts | `lts` | ❌ | ❌ | none |
+| Merge to lts | `lts` | ✅ | ❌ | none (validation build) |
 | Cron Sun 2am | `main` | ✅ | ❌ | none (dispatcher) |
 | Dispatcher | `lts` | ✅ | ✅ | `:lts` (production) |
 | Manual dispatch | `lts` | ✅ | ✅ | `:lts` |
@@ -726,11 +716,15 @@ All items should be verified:
 ```bash
 echo "Validation Checklist:"
 echo "- [x] Dispatcher workflow created"
-echo "- [x] All 5 build workflows updated (lts removed from triggers)"
+echo "- [x] All 5 build workflows updated (triggers + publish conditions)"
+echo "- [x] lts added to push triggers (validation builds)"
+echo "- [x] lts removed from pull_request triggers (no PR builds)"
+echo "- [x] Publish conditions updated (workflow_dispatch or main push only)"
 echo "- [x] Branch protection configured for lts"
 echo "- [x] Documentation updated"
 echo "- [x] Manual dispatcher test passed"
 echo "- [x] Pull bot PR test passed (no triggers)"
+echo "- [x] Pull bot merge test passed (builds but no publish)"
 echo "- [x] Main branch publish test passed (testing tags)"
 echo "- [x] Syntax validation passed"
 echo "- [x] No accidental production tag publishes"
