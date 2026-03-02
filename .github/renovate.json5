@@ -4,6 +4,9 @@
   // Enable GitHub's native automerge; merging is handled by GitHub and remains subject to branch protection/bypass settings
   "platformAutomerge": true,
 
+  // Only target main branch - lts is production and only updated via promotion
+  "baseBranchPatterns": ["main"],
+
   "extends": [
     "config:best-practices",
   ],
