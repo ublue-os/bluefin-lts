@@ -28,5 +28,5 @@ jobs:
       image-name: bluefin-dx
       flavor: dx
       rechunk: ${{ github.event_name != 'pull_request' }}
-      sbom: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/lts' }}
-      publish: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+      sbom: ${{ (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/lts' || github.ref == 'refs/heads/main')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+      publish: ${{ (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/lts' || github.ref == 'refs/heads/main')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
