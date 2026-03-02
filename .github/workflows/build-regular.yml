@@ -13,7 +13,8 @@ on:
   push:
     branches:
       - main
-      - lts
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
   merge_group:
   workflow_dispatch:
 
@@ -27,6 +28,6 @@ jobs:
     secrets: inherit
     with:
       image-name: bluefin
-      rechunk: ${{ github.event_name != 'pull_request' }}
-      sbom: ${{ github.event_name != 'pull_request' }}
-      publish: ${{ github.event_name != 'pull_request' }}
+      rechunk: ${{ github.event_name != 'pull_request' && (github.ref != 'refs/heads/lts' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+      sbom: ${{ github.event_name != 'pull_request' && (github.ref != 'refs/heads/lts' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+      publish: ${{ github.event_name != 'pull_request' && (github.ref != 'refs/heads/lts' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
