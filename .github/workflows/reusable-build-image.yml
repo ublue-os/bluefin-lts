@@ -32,11 +32,6 @@ on:
         required: false
         type: boolean
         default: true
-      sbom:
-        description: "Generate/publish SBOMs for the artifacts"
-        required: false
-        type: boolean
-        default: true
       cleanup_runner:
         description: "Use the ublue cleanup action to clean up the runner before running the build"
         required: false
@@ -52,7 +47,7 @@ on:
         required: false
         type: boolean
         # default: ${{ github.event_name != 'pull_request' }}
-        default: true
+        default: false
       tag-suffix:
         description: "The suffix to append to the image tag"
         required: false
@@ -176,12 +171,14 @@ jobs:
 
       - name: Setup Syft
         id: setup-syft
-        if: ${{ inputs.sbom && inputs.publish }}
+        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+        continue-on-error: true
         uses: anchore/sbom-action/download-syft@17ae1740179002c89186b61233e0f892c3118b11 # v0
 
       - name: Generate SBOM
         id: generate-sbom
-        if: ${{ inputs.sbom && inputs.publish }}
+        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+        continue-on-error: true
         env:
           IMAGE: ${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
@@ -267,7 +264,8 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       - name: Add SBOM Attestation
-        if: ${{ inputs.sbom }}
+        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+        continue-on-error: true
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
@@ -531,6 +529,7 @@ jobs:
         uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
 
       - name: Sign Manifest
+        if: ${{ inputs.publish }}
         env:
           DIGEST: ${{ needs.manifest.outputs.digest }}
           IMAGE: ${{ needs.manifest.outputs.image }}
