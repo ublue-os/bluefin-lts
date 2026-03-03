@@ -25,11 +25,15 @@ on:
 jobs:
   generate-release:
     runs-on: ubuntu-latest
-    # Only run if the workflow was successful and on lts branch
+    # Only run if the workflow was successful, on lts branch, and triggered by
+    # workflow_dispatch (meaning scheduled-lts-release.yml fired it — images were published).
+    # Push-to-lts validation builds complete successfully too but publish nothing,
+    # so we must not create a release for those.
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && 
-       github.event.workflow_run.head_branch == 'lts')
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'lts' &&
+       github.event.workflow_run.event == 'workflow_dispatch')
     
     steps:
       - name: Checkout repository
@@ -63,7 +67,7 @@ jobs:
           fi
 
       - name: Generate changelog
-        uses: hanthor/changelog-action@master
+        uses: hanthor/changelog-action@2d212cd35f65cfe33954dd79013887e7bee76580 # master
         with:
           stream: ${{ steps.target.outputs.target }}
           family: bluefin-lts

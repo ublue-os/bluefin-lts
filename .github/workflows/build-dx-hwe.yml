@@ -13,8 +13,6 @@ on:
     branches:
       - main
       - lts
-  schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
   merge_group:
   workflow_dispatch:
 
@@ -35,6 +33,5 @@ jobs:
       flavor: dx
       kernel-pin: 6.17.12-200.fc42
       rechunk: ${{ github.event_name != 'pull_request' }}
-      sbom: ${{ (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/lts' || github.ref == 'refs/heads/main')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
       publish: ${{ (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/lts' || github.ref == 'refs/heads/main')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
       hwe: true
