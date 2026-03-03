@@ -17,46 +17,21 @@ on:
           **IMPORTANT**: This PR should ONLY contain commits from `main` → `lts`. Never merge in the opposite direction.
 
 permissions:
-  contents: write
   pull-requests: write
+  issues: write
 
 jobs:
   create-promotion-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: lts
-          fetch-depth: 0
-      
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-      
-      - name: Create promotion branch
-        id: create-branch
-        run: |
-          BRANCH_NAME="promote-main-to-lts-$(date +%Y%m%d-%H%M%S)"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          git checkout -b "$BRANCH_NAME"
-      
-      - name: Merge main into promotion branch
-        run: |
-          git merge origin/main --no-edit -m "Merge main into lts"
-      
-      - name: Push promotion branch
-        run: |
-          git push origin ${{ steps.create-branch.outputs.branch_name }}
-      
       - name: Create Pull Request
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr create \
+            --repo ${{ github.repository }} \
             --base lts \
-            --head ${{ steps.create-branch.outputs.branch_name }} \
+            --head main \
             --title "${{ inputs.pr_title }}" \
             --body "${{ inputs.pr_body }}" \
             --label "promotion"
