@@ -492,7 +492,7 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
 
       - name: Push Manifest
-        if: github.event_name != 'pull_request'
+        if: ${{ inputs.publish }}
         id: push_manifest
         env:
           MANIFEST: ${{ steps.create-manifest.outputs.MANIFEST }}
@@ -512,7 +512,7 @@ jobs:
   # so we move this to another step in order to run on Ubuntu
   sign:
     needs: manifest
-    if: github.event_name != 'pull_request'
+    if: ${{ inputs.publish }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
