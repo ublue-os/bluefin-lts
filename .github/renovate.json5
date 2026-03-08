@@ -32,24 +32,15 @@
 
   "packageRules": [
     {
+      // Auto-merge all digest/pin updates across all managers (dockerfile, github-actions, regex/Justfile)
       "automerge": true,
-      "matchUpdateTypes": ["pin", "pinDigest"]
+      "matchUpdateTypes": ["digest", "pin", "pinDigest"]
     },
     {
+      // Auto-merge minor/patch version bumps for GitHub Actions (e.g. cosign-installer v3.8 → v3.9)
       "automerge": true,
-      "matchManagers": ["dockerfile"],
-      "matchUpdateTypes": ["digest"]
-    },
-    {
-      "automerge": true,
-      "matchUpdateTypes": ["digest"],
-      "matchDepNames": [
-        "quay.io/centos-bootc/centos-bootc",
-        "quay.io/centos-bootc/bootc-image-builder",
-        "ghcr.io/projectbluefin/common",
-        "ghcr.io/ublue-os/akmods-zfs",
-        "ghcr.io/ublue-os/brew"
-      ]
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"]
     }
   ]
 }

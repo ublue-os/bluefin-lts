@@ -2,7 +2,7 @@ name: Scheduled LTS Release
 
 on:
   schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
+    - cron: '0 6 * * 2'  # Weekly on Tuesday at 6 AM UTC (1 AM EST / 2 AM EDT)
   workflow_dispatch:  # Allow manual triggering
 
 permissions:

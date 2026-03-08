@@ -16,7 +16,7 @@ systemctl enable fwupd.service
 systemctl --global enable podman-auto-update.timer
 systemctl disable rpm-ostree.service
 systemctl enable dconf-update.service
-systemctl --global enable bazaar.service
+# systemctl --global enable bazaar.service
 systemctl disable mcelog.service
 systemctl enable tailscaled.service
 systemctl enable uupd.timer
