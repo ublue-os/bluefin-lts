@@ -3,35 +3,59 @@ name: Promote Main to LTS
 on:
   workflow_dispatch:
     inputs:
-      pr_title:
-        description: 'Pull request title'
+      commit_title:
+        description: 'Commit title for the squash promotion commit'
         required: false
-        default: 'Promote main to lts'
-      pr_body:
-        description: 'Pull request body'
+        default: 'promote: main to lts'
+      commit_body:
+        description: 'Commit body (optional)'
         required: false
         default: |
-          ## Summary
-          Promotion of tested changes from `main` to `lts` production branch.
-          
-          **IMPORTANT**: This PR should ONLY contain commits from `main` → `lts`. Never merge in the opposite direction.
+          Squash promotion of tested changes from `main` to `lts`.
 
 permissions:
-  pull-requests: write
-  issues: write
+  contents: write
 
 jobs:
-  create-promotion-pr:
+  promote:
     runs-on: ubuntu-latest
     steps:
-      - name: Create Pull Request
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Checkout lts
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: lts
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Fetch main
+        run: git fetch origin main
+
+      - name: Pre-flight check
         run: |
-          gh pr create \
-            --repo ${{ github.repository }} \
-            --base lts \
-            --head main \
-            --title "${{ inputs.pr_title }}" \
-            --body "${{ inputs.pr_body }}" \
-            --label "promotion"
+          UNIQUE=$(git rev-list origin/lts ^origin/main --count)
+          if [ "$UNIQUE" -gt 0 ]; then
+            echo "ERROR: lts has $UNIQUE commit(s) that are not in main:"
+            git log --oneline origin/lts ^origin/main
+            echo ""
+            echo "All changes must land in main before promoting to lts."
+            echo "Land the above commits in main first, then re-run this workflow."
+            exit 1
+          fi
+          echo "Pre-flight passed: lts has no commits outside of main."
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Squash merge main into lts
+        run: git merge --squash origin/main
+
+      - name: Commit promotion
+        run: |
+          git commit \
+            -m "${{ inputs.commit_title }}" \
+            -m "${{ inputs.commit_body }}"
+
+      - name: Push to lts
+        run: git push origin lts

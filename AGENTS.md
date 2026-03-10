@@ -139,9 +139,9 @@ Promotion and production release are **intentionally decoupled**. There are two 
 
 **Phase 1 — Promotion (manual, no publishing):**
 1. A maintainer triggers `promote-to-lts.yml` via `workflow_dispatch`
-2. The workflow opens a PR from `main` targeting `lts` directly (no intermediate branch)
-3. A maintainer reviews and merges the PR
-4. The merge triggers a `push` event on `lts` — all 5 build workflows run as **validation builds** (`publish=false`). No images are published. This is intentional: it confirms that the merged code builds cleanly on `lts` before the next production release.
+2. The workflow runs a **pre-flight check**: fails immediately if `lts` has any commits not reachable from `main`, printing those commits with instructions to land them in `main` first.
+3. The workflow performs a **squash merge** (`git merge --squash origin/main`) and pushes one clean commit to `lts`. There is no PR. Triggering `workflow_dispatch` is the human approval step.
+4. The push triggers a `push` event on `lts` — all 5 build workflows run as **validation builds** (`publish=false`). No images are published. This confirms the promoted code builds cleanly on `lts` before the next production release.
 
 **Phase 2 — Production release (automated or manual publishing):**
 1. `scheduled-lts-release.yml` fires at `0 2 * * 0` (Sunday 2am UTC), OR a maintainer manually triggers it
@@ -152,6 +152,8 @@ Promotion and production release are **intentionally decoupled**. There are two 
 **Why `promote-to-lts.yml` exists:** Automated tools (the old Pull app, AI agents) cannot distinguish merge direction — when they see `lts` is behind `main`, they attempt to "sync" and sometimes merge `lts` → `main`, polluting `main` with old production commits. The workflow enforces the correct direction by always targeting `lts` as the base.
 
 **NEVER merge `lts` into `main`.** The flow is always one-way: `main` → `lts`.
+
+**NEVER commit directly to `lts`.** All changes — including CI hotfixes — must land in `main` first. Direct commits to `lts` create divergence that causes the pre-flight check to fail and blocks future promotions.
 
 ### `publish` Input — How It Is Evaluated
 
@@ -263,7 +265,7 @@ If you see `schedule:` in any of the 5 build callers, remove it entirely. Do not
 - `build-regular-hwe.yml` — HWE kernel variant of `bluefin`
 - `build-dx-hwe.yml` — HWE kernel variant of `bluefin-dx`
 - `scheduled-lts-release.yml` — Weekly production release dispatcher (sole owner of Sunday builds)
-- `promote-to-lts.yml` — Opens a one-way `main` → `lts` promotion PR
+- `promote-to-lts.yml` — Squash-pushes `main` into `lts` (with pre-flight divergence check)
 - `generate-release.yml` — Creates GitHub Release after successful GDX build on `lts`
 
 ## Validation Scenarios
