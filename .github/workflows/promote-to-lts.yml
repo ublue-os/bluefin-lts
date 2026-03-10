@@ -49,13 +49,23 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Squash merge main into lts
-        run: git merge --squash origin/main
+        id: squash
+        run: |
+          git merge --squash origin/main
+          if git diff --cached --quiet; then
+            echo "No changes to promote: origin/main is already fully merged into lts."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Commit promotion
+        if: steps.squash.outputs.has_changes == 'true'
         run: |
           git commit \
             -m "${{ inputs.commit_title }}" \
             -m "${{ inputs.commit_body }}"
 
       - name: Push to lts
+        if: steps.squash.outputs.has_changes == 'true'
         run: git push origin lts

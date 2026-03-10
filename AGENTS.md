@@ -121,7 +121,7 @@ This section is the authoritative reference for all CI/CD behavior. Read it comp
 | `build-dx-hwe.yml` | Caller — builds `bluefin-dx` with HWE kernel |
 | `reusable-build-image.yml` | Reusable workflow — all 5 callers invoke this |
 | `scheduled-lts-release.yml` | Dispatcher — owns the weekly Sunday production release |
-| `promote-to-lts.yml` | Creates a PR to merge `main` → `lts` (see below) |
+| `promote-to-lts.yml` | Squash-pushes `main` → `lts` with pre-flight divergence check (see below) |
 | `generate-release.yml` | Creates a GitHub Release when `build-gdx.yml` completes on `lts` |
 
 ### Two Branches, Two Tag Namespaces
