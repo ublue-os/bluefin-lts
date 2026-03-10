@@ -2,7 +2,7 @@ name: Scheduled LTS Release
 
 on:
   schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
+    - cron: '0 1 * * TUE'  # Weekly on Tuesday at 1 AM UTC (matches ublue-os/bluefin)
   workflow_dispatch:  # Allow manual triggering
 
 permissions:
