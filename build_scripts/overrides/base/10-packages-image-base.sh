@@ -13,9 +13,9 @@ dnf -y install 'dnf-command(versionlock)'
 /run/context/build_scripts/scripts/kernel-swap.sh
 
 # GNOME 48 backport COPR
-dnf copr enable -y "jreilly1821/c10s-gnome"
+dnf copr enable -y "jreilly1821/c10s-gnome-50-fresh" 
 dnf -y install glib2
-dnf -y upgrade glib2
+dnf -y upgrade glib2 selinux-policy
 # Please, dont remove this as it will break everything GNOME related
 dnf versionlock add glib2
 
