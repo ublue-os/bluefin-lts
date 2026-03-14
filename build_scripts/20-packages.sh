@@ -76,3 +76,4 @@ else
     # Versionlock GNOME 49 components to prevent upgrades to a mismatched version
     dnf versionlock add gnome-shell gdm gnome-session-wayland-session gobject-introspection gjs pango
 fi
+
