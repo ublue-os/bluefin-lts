@@ -32,6 +32,9 @@ jobs:
           if git diff --quiet origin/lts origin/main; then
             echo "No content difference between lts and main. Nothing to promote."
             echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$(git log origin/lts..origin/main --oneline)" ]; then
+            echo "lts is ahead of or diverged from main with no commits to promote. Nothing to promote."
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_diff=true" >> "$GITHUB_OUTPUT"
           fi
@@ -40,7 +43,20 @@ jobs:
         if: steps.diff.outputs.has_diff == 'true'
         id: commits
         run: |
-          LIST=$(git log origin/lts..origin/main --oneline)
+          # Find the most-recent commit on main whose tree hash matches the current lts tree.
+          # This is the anchor point from which we show only genuinely new commits, even after
+          # squash-merge promotions (which lose individual commit provenance in lts history).
+          LTS_TREE=$(git rev-parse origin/lts^{tree})
+          ANCHOR=$(git log origin/main --format="%H %T" --max-count=500 \
+            | awk -v t="$LTS_TREE" '$2==t{print $1; exit}')
+
+          if [ -n "$ANCHOR" ]; then
+            LIST=$(git log "${ANCHOR}..origin/main" --oneline)
+          else
+            # Fallback when the tree match isn't in recent history (e.g., first ever promotion).
+            LIST=$(git diff --name-status origin/lts origin/main)
+          fi
+
           {
             echo "list<<EOF"
             echo "$LIST"
@@ -66,7 +82,7 @@ jobs:
 
           if [ -n "$EXISTING" ]; then
             echo "Updating existing promote PR #${EXISTING}"
-            printf '%s\n' "${BODY}" | gh pr edit "$EXISTING" --body-file - || true
+            printf '%s\n' "${BODY}" | gh pr edit "$EXISTING" --body-file -
           else
             echo "Creating new draft promote PR"
             printf '%s\n' "${BODY}" | gh pr create \
