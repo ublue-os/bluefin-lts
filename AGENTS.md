@@ -120,8 +120,8 @@ This section is the authoritative reference for all CI/CD behavior. Read it comp
 | `build-regular-hwe.yml` | Caller — builds `bluefin` with HWE kernel |
 | `build-dx-hwe.yml` | Caller — builds `bluefin-dx` with HWE kernel |
 | `reusable-build-image.yml` | Reusable workflow — all 5 callers invoke this |
-| `scheduled-lts-release.yml` | Dispatcher — owns the weekly Sunday production release |
-| `promote-to-lts.yml` | Squash-pushes `main` → `lts` with pre-flight divergence check (see below) |
+| `scheduled-lts-release.yml` | Dispatcher — owns the weekly Tuesday production release |
+| `create-lts-pr.yml` | Opens a draft PR from `main` → `lts` when content differs; maintainer squash-merges as approval gate |
 | `generate-release.yml` | Creates a GitHub Release when `build-gdx.yml` completes on `lts` |
 
 ### Two Branches, Two Tag Namespaces
@@ -137,23 +137,24 @@ This section is the authoritative reference for all CI/CD behavior. Read it comp
 
 Promotion and production release are **intentionally decoupled**. There are two separate phases:
 
-**Phase 1 — Promotion (manual, no publishing):**
-1. A maintainer triggers `promote-to-lts.yml` via `workflow_dispatch`
-2. The workflow runs a **pre-flight check**: fails immediately if `lts` has any commits not reachable from `main`, printing those commits with instructions to land them in `main` first.
-3. The workflow performs a **squash merge** (`git merge --squash origin/main`) and pushes one clean commit to `lts`. There is no PR. Triggering `workflow_dispatch` is the human approval step.
-4. The push triggers a `push` event on `lts` — all 5 build workflows run as **validation builds** (`publish=false`). No images are published. This confirms the promoted code builds cleanly on `lts` before the next production release.
+**Phase 1 — Promotion (human-gated via PR):**
+1. Every push to `main` triggers `create-lts-pr.yml`
+2. The workflow checks `git diff --quiet origin/lts origin/main` (content diff, not commit graph — survives squash-merges)
+3. If content differs: a draft PR from `main` → `lts` is created (or the existing one is updated). The PR body lists only the commits since the last promotion by anchoring to the `main` commit whose tree hash matches the current `lts` tree — this survives squash-merge history and prevents the list from bloating.
+4. A maintainer reviews and **squash-merges** the PR — this is the human approval gate
+5. The squash-merge triggers a `push` event on `lts` — all 5 build workflows run as **validation builds** (`publish=false`). No images are published.
 
 **Phase 2 — Production release (automated or manual publishing):**
-1. `scheduled-lts-release.yml` fires at `0 2 * * 0` (Sunday 2am UTC), OR a maintainer manually triggers it
+1. `scheduled-lts-release.yml` fires at `0 6 * * 2` (Tuesday 6am UTC), OR a maintainer manually triggers it
 2. It dispatches all 5 build workflows via `gh workflow run --ref lts`
 3. Those are `workflow_dispatch` events on `lts` → `publish=true` → production tags pushed
 4. After `build-gdx.yml` completes on `lts`, `generate-release.yml` creates a GitHub Release
 
-**Why `promote-to-lts.yml` exists:** Automated tools (the old Pull app, AI agents) cannot distinguish merge direction — when they see `lts` is behind `main`, they attempt to "sync" and sometimes merge `lts` → `main`, polluting `main` with old production commits. The workflow enforces the correct direction by always targeting `lts` as the base.
+**Why `create-lts-pr.yml` exists:** Automated tools (the old Pull app, AI agents) cannot distinguish merge direction — when they see `lts` is behind `main`, they attempt to "sync" and sometimes merge `lts` → `main`, polluting `main` with old production commits. The PR-gate workflow enforces the correct direction: `main` → `lts` only, with a human squash-merge as the approval step.
 
 **NEVER merge `lts` into `main`.** The flow is always one-way: `main` → `lts`.
 
-**NEVER commit directly to `lts`.** All changes — including CI hotfixes — must land in `main` first. Direct commits to `lts` create divergence that causes the pre-flight check to fail and blocks future promotions.
+**NEVER commit directly to `lts`.** All changes — including CI hotfixes — must land in `main` first. Direct commits to `lts` will appear as phantom content in the PR diff and confuse reviewers.
 
 ### `publish` Input — How It Is Evaluated
 
@@ -252,7 +253,7 @@ When touching any condition in `reusable-build-image.yml`, use this reference:
 
 ### `schedule:` Triggers — Ownership Rule
 
-**`scheduled-lts-release.yml` is the sole owner of Sunday 2am UTC production builds.**
+**`scheduled-lts-release.yml` is the sole owner of Tuesday 6am UTC production builds.**
 
 The 5 build caller workflows (`build-regular.yml`, `build-dx.yml`, `build-gdx.yml`, `build-regular-hwe.yml`, `build-dx-hwe.yml`) must NOT have `schedule:` triggers. Any `schedule:` event on those workflows fires on `main` (the default branch), evaluates `publish=false`, publishes nothing, and wastes runner time.
 
@@ -264,8 +265,8 @@ If you see `schedule:` in any of the 5 build callers, remove it entirely. Do not
 - `build-gdx.yml` — GPU/AI Developer Experience (`bluefin-gdx` image)
 - `build-regular-hwe.yml` — HWE kernel variant of `bluefin`
 - `build-dx-hwe.yml` — HWE kernel variant of `bluefin-dx`
-- `scheduled-lts-release.yml` — Weekly production release dispatcher (sole owner of Sunday builds)
-- `promote-to-lts.yml` — Squash-pushes `main` into `lts` (with pre-flight divergence check)
+- `scheduled-lts-release.yml` — Weekly production release dispatcher (sole owner of Tuesday builds)
+- `create-lts-pr.yml` — Opens a draft PR from `main` → `lts` when content differs; maintainer squash-merges as approval gate
 - `generate-release.yml` — Creates GitHub Release after successful GDX build on `lts`
 
 ## Validation Scenarios

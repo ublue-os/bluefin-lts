@@ -1,0 +1,94 @@
+name: Create LTS Promotion PR
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: create-lts-pr
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch lts
+        run: git fetch origin lts
+
+      - name: Check content diff
+        id: diff
+        run: |
+          if git diff --quiet origin/lts origin/main; then
+            echo "No content difference between lts and main. Nothing to promote."
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$(git log origin/lts..origin/main --oneline)" ]; then
+            echo "lts is ahead of or diverged from main with no commits to promote. Nothing to promote."
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build commit list
+        if: steps.diff.outputs.has_diff == 'true'
+        id: commits
+        run: |
+          # Find the most-recent commit on main whose tree hash matches the current lts tree.
+          # This is the anchor point from which we show only genuinely new commits, even after
+          # squash-merge promotions (which lose individual commit provenance in lts history).
+          LTS_TREE=$(git rev-parse origin/lts^{tree})
+          ANCHOR=$(git log origin/main --format="%H %T" --max-count=500 \
+            | awk -v t="$LTS_TREE" '$2==t{print $1; exit}')
+
+          if [ -n "$ANCHOR" ]; then
+            LIST=$(git log "${ANCHOR}..origin/main" --oneline)
+          else
+            # Fallback when the tree match isn't in recent history (e.g., first ever promotion).
+            LIST=$(git diff --name-status origin/lts origin/main)
+          fi
+
+          {
+            echo "list<<EOF"
+            echo "$LIST"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create or update promote PR
+        if: steps.diff.outputs.has_diff == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_LIST: ${{ steps.commits.outputs.list }}
+        run: |
+          # Build body with printf so commit messages containing quotes are safe
+          BODY=$(printf '## Commits pending promotion to `lts`\n\n%s\n\n---\n_Squash-merge this PR to promote. The PR body updates automatically as `main` advances._\n' "${COMMIT_LIST}")
+
+          EXISTING=$(gh pr list \
+            --base lts \
+            --head main \
+            --state open \
+            --json number \
+            --jq '.[0].number' \
+            2>/dev/null || echo "")
+
+          if [ -n "$EXISTING" ]; then
+            echo "Updating existing promote PR #${EXISTING}"
+            printf '%s\n' "${BODY}" | gh pr edit "$EXISTING" --body-file -
+          else
+            echo "Creating new draft promote PR"
+            printf '%s\n' "${BODY}" | gh pr create \
+              --draft \
+              --base lts \
+              --head main \
+              --title "promote: main → lts" \
+              --body-file -
+          fi
