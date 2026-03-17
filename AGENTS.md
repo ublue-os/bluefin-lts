@@ -140,7 +140,7 @@ Promotion and production release are **intentionally decoupled**. There are two 
 **Phase 1 — Promotion (human-gated via PR):**
 1. Every push to `main` triggers `create-lts-pr.yml`
 2. The workflow checks `git diff --quiet origin/lts origin/main` (content diff, not commit graph — survives squash-merges)
-3. If content differs: a draft PR from `main` → `lts` is created (or the existing one is updated with the latest commit list)
+3. If content differs: a draft PR from `main` → `lts` is created (or the existing one is updated). The PR body lists only the commits since the last promotion by anchoring to the `main` commit whose tree hash matches the current `lts` tree — this survives squash-merge history and prevents the list from bloating.
 4. A maintainer reviews and **squash-merges** the PR — this is the human approval gate
 5. The squash-merge triggers a `push` event on `lts` — all 5 build workflows run as **validation builds** (`publish=false`). No images are published.
 
