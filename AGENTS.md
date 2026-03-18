@@ -121,7 +121,7 @@ This section is the authoritative reference for all CI/CD behavior. Read it comp
 | `build-dx-hwe.yml` | Caller — builds `bluefin-dx` with HWE kernel |
 | `reusable-build-image.yml` | Reusable workflow — all 5 callers invoke this |
 | `scheduled-lts-release.yml` | Dispatcher — owns the weekly Tuesday production release |
-| `create-lts-pr.yml` | Opens a draft PR from `main` → `lts` when content differs; maintainer squash-merges as approval gate |
+| `create-lts-pr.yml` | Opens a draft PR from `main` → `lts` when content differs; maintainer merges as approval gate |
 | `generate-release.yml` | Creates a GitHub Release when `build-gdx.yml` completes on `lts` |
 
 ### Two Branches, Two Tag Namespaces
@@ -139,10 +139,12 @@ Promotion and production release are **intentionally decoupled**. There are two 
 
 **Phase 1 — Promotion (human-gated via PR):**
 1. Every push to `main` triggers `create-lts-pr.yml`
-2. The workflow checks `git diff --quiet origin/lts origin/main` (content diff, not commit graph — survives squash-merges)
-3. If content differs: a draft PR from `main` → `lts` is created (or the existing one is updated). The PR body lists only the commits since the last promotion by anchoring to the `main` commit whose tree hash matches the current `lts` tree — this survives squash-merge history and prevents the list from bloating.
-4. A maintainer reviews and **squash-merges** the PR — this is the human approval gate
-5. The squash-merge triggers a `push` event on `lts` — all 5 build workflows run as **validation builds** (`publish=false`). No images are published.
+2. The workflow checks `git diff --quiet origin/lts origin/main` (content diff, not commit graph)
+3. If content differs: a draft PR from `main` → `lts` is created (or the existing one is updated)
+4. A maintainer reviews and **merges** the PR ("Create a merge commit") — this is the human approval gate
+5. The merge triggers a `push` event on `lts` — all 5 build workflows run as **validation builds** (`publish=false`). No images are published.
+
+**NEVER squash-merge promotion PRs.** Squash-merge creates orphan commits that permanently break the merge base between `main` and `lts`, causing every future promotion PR to accumulate all historical commits in its diff. Regular merge preserves the merge base and keeps future PRs clean.
 
 **Phase 2 — Production release (automated or manual publishing):**
 1. `scheduled-lts-release.yml` fires at `0 6 * * 2` (Tuesday 6am UTC), OR a maintainer manually triggers it
@@ -150,7 +152,7 @@ Promotion and production release are **intentionally decoupled**. There are two 
 3. Those are `workflow_dispatch` events on `lts` → `publish=true` → production tags pushed
 4. After `build-gdx.yml` completes on `lts`, `generate-release.yml` creates a GitHub Release
 
-**Why `create-lts-pr.yml` exists:** Automated tools (the old Pull app, AI agents) cannot distinguish merge direction — when they see `lts` is behind `main`, they attempt to "sync" and sometimes merge `lts` → `main`, polluting `main` with old production commits. The PR-gate workflow enforces the correct direction: `main` → `lts` only, with a human squash-merge as the approval step.
+**Why `create-lts-pr.yml` exists:** Automated tools (the old Pull app, AI agents) cannot distinguish merge direction — when they see `lts` is behind `main`, they attempt to "sync" and sometimes merge `lts` → `main`, polluting `main` with old production commits. The PR-gate workflow enforces the correct direction: `main` → `lts` only, with a human merge as the approval step.
 
 **NEVER merge `lts` into `main`.** The flow is always one-way: `main` → `lts`.
 
@@ -266,7 +268,7 @@ If you see `schedule:` in any of the 5 build callers, remove it entirely. Do not
 - `build-regular-hwe.yml` — HWE kernel variant of `bluefin`
 - `build-dx-hwe.yml` — HWE kernel variant of `bluefin-dx`
 - `scheduled-lts-release.yml` — Weekly production release dispatcher (sole owner of Tuesday builds)
-- `create-lts-pr.yml` — Opens a draft PR from `main` → `lts` when content differs; maintainer squash-merges as approval gate
+- `create-lts-pr.yml` — Opens a draft PR from `main` → `lts` when content differs; maintainer merges (not squash) as approval gate
 - `generate-release.yml` — Creates GitHub Release after successful GDX build on `lts`
 
 ## Validation Scenarios
