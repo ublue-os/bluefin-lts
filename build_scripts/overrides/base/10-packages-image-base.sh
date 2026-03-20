@@ -12,12 +12,21 @@ dnf -y install 'dnf-command(versionlock)'
 
 /run/context/build_scripts/scripts/kernel-swap.sh
 
-# GNOME 48 backport COPR
-dnf copr enable -y "jreilly1821/c10s-gnome"
-dnf -y install glib2
-dnf -y upgrade glib2
+# GNOME 49 COPR
+dnf copr enable -y "jreilly1821/c10s-gnome-49"
+
+# These upgrades MUST happen before the GNOME group install.
+# - glib2: EL10 ships 2.80.x; gnome-shell 49.x requires 2.82+ API symbols.
+# - fontconfig: COPR pango 1.57 links FcConfigSetDefaultSubstitute (added in
+#   fontconfig 2.17.0); EL10 base ships 2.15.0 — causes a symbol lookup error
+#   at gnome-shell startup.
+# - gobject-introspection / gjs: glib2 2.84+ ships both libgirepository-1.0
+#   and libgirepository-2.0. If only one is upgraded, both get loaded and
+#   double-registering GIRepository crashes gnome-shell at startup.
+dnf -y upgrade glib2 fontconfig gobject-introspection gjs
+
 # Please, dont remove this as it will break everything GNOME related
-dnf versionlock add glib2
+dnf versionlock add glib2 fontconfig
 
 # This fixes a lot of skew issues on GDX because kernel-devel wont update then
 dnf versionlock add kernel kernel-devel kernel-devel-matched kernel-core kernel-modules kernel-modules-core kernel-modules-extra kernel-uki-virt
@@ -60,6 +69,7 @@ dnf -y install \
 	"NetworkManager-adsl" \
 	"adwaita-fonts-all" \
 	"centos-backgrounds" \
+	"dbus-daemon" \
 	"gdm" \
 	"gnome-bluetooth" \
 	"gnome-color-manager" \
@@ -88,6 +98,7 @@ dnf -y install \
 	plymouth \
 	plymouth-system-theme \
 	fwupd \
+	gnome49-el10-compat \
 	systemd-{resolved,container,oomd} \
 	libcamera{,-{v4l2,gstreamer,tools}}
 
