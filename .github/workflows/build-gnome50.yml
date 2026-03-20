@@ -12,7 +12,6 @@ on:
   push:
     branches:
       - main
-      - lts
   merge_group:
   workflow_dispatch:
 
@@ -26,16 +25,16 @@ jobs:
     secrets: inherit
     with:
       image-name: bluefin
-      tag-suffix: testing-50
-      rechunk: ${{ github.event_name != 'pull_request' }}
-      publish: ${{ (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/lts' || github.ref == 'refs/heads/main')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+      tag-suffix: "50"
+      rechunk: false
+      publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
 
   build-hwe:
     uses: ./.github/workflows/reusable-build-image.yml
     secrets: inherit
     with:
       image-name: bluefin
-      tag-suffix: testing-50
+      tag-suffix: "50"
       hwe: true
-      rechunk: ${{ github.event_name != 'pull_request' }}
-      publish: ${{ (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/lts' || github.ref == 'refs/heads/main')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+      rechunk: false
+      publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
