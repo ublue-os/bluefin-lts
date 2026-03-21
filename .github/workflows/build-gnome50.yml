@@ -31,15 +31,23 @@ env:
 
 jobs:
   build:
-    name: Build GNOME 50 (${{ matrix.variant.tag }})
+    name: Build GNOME 50 (${{ matrix.variant.image }}:${{ matrix.variant.tag }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         variant:
-          - tag: lts-testing-50
+          - image: bluefin
+            tag: lts-testing-50
             base: lts-testing
-          - tag: lts-hwe-testing-50
+          - image: bluefin
+            tag: lts-hwe-testing-50
+            base: lts-hwe-testing
+          - image: bluefin-dx
+            tag: lts-testing-50
+            base: lts-testing
+          - image: bluefin-dx
+            tag: lts-hwe-testing-50
             base: lts-hwe-testing
 
     steps:
@@ -57,19 +65,19 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.base-tag }}" ]; then
             BASE_TAG="${{ inputs.base-tag }}"
           fi
-          echo "ref=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${BASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "ref=${{ env.IMAGE_REGISTRY }}/${{ matrix.variant.image }}:${BASE_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build GNOME 50 image
         run: |
           podman build \
             --file Containerfile.gnome50 \
             --build-arg BASE_IMAGE="${{ steps.base.outputs.ref }}" \
-            --tag "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant.tag }}" \
+            --tag "${{ env.IMAGE_REGISTRY }}/${{ matrix.variant.image }}:${{ matrix.variant.tag }}" \
             .
 
       - name: Push image
         if: github.ref == 'refs/heads/main'
         run: |
           podman push \
-            "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant.tag }}"
+            "${{ env.IMAGE_REGISTRY }}/${{ matrix.variant.image }}:${{ matrix.variant.tag }}"
 
