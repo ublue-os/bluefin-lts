@@ -58,6 +58,11 @@ on:
         required: false
         type: string
         default: ""
+      gnome-version:
+        description: "GNOME major version to build (49 or 50)"
+        required: false
+        type: string
+        default: "49"
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -171,7 +176,7 @@ jobs:
             ENABLE_DX=1
           fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}" "${{ inputs.gnome-version }}"
           echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Setup Syft

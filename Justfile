@@ -108,7 +108,7 @@ _ensure-yq:
     fi
 
 # Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kernel_pin="": _ensure-yq
+build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kernel_pin="" $gnome_version="49": _ensure-yq
     #!/usr/bin/env bash
 
     # Get Version
@@ -128,6 +128,7 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kerne
     BUILD_ARGS+=("--build-arg" "ENABLE_DX=${dx}")
     BUILD_ARGS+=("--build-arg" "ENABLE_GDX=${gdx}")
     BUILD_ARGS+=("--build-arg" "ENABLE_HWE=${hwe}")
+    BUILD_ARGS+=("--build-arg" "GNOME_VERSION=${gnome_version}")
     # Select akmods source tag for mounted ZFS/NVIDIA images
     ARCH=$(uname -m)
     if [[ "${hwe}" -eq "1" || "${gdx}" -eq "1" ]]; then

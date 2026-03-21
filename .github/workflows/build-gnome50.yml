@@ -1,8 +1,8 @@
 name: Build Bluefin GNOME 50 (testing)
 
-# Builds lts-testing-50 and lts-hwe-testing-50 by layering GNOME 50 on top
-# of the already-built GNOME 49 image (lts-testing / lts-hwe-testing).
-# Only runs on main branch pushes; never on lts branch.
+# Builds bluefin:lts-testing-50 and bluefin-dx:lts-hwe-testing-50 using
+# the same full build pipeline as GNOME 49, selecting GNOME 50 packages
+# via the gnome-version input. Only runs on main branch pushes.
 
 permissions:
   contents: read
@@ -13,71 +13,33 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      base-tag:
-        description: "GNOME 49 base tag to upgrade from"
-        required: false
-        default: "lts-testing"
+  pull_request:
+    branches:
+      - main
+  merge_group:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: bluefin
-  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
-
 jobs:
   build:
-    name: Build GNOME 50 (${{ matrix.variant.image }}:${{ matrix.variant.tag }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        variant:
-          - image: bluefin
-            tag: lts-testing-50
-            base: lts-testing
-          - image: bluefin
-            tag: lts-hwe-testing-50
-            base: lts-hwe-testing
-          - image: bluefin-dx
-            tag: lts-testing-50
-            base: lts-testing
-          - image: bluefin-dx
-            tag: lts-hwe-testing-50
-            base: lts-hwe-testing
+    uses: ./.github/workflows/reusable-build-image.yml
+    secrets: inherit
+    with:
+      image-name: bluefin
+      tag-suffix: "50"
+      gnome-version: "50"
+      rechunk: ${{ github.event_name != 'pull_request' }}
+      publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-
-      - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin ${{ env.REGISTRY }}
-
-      - name: Set base image ref
-        id: base
-        run: |
-          BASE_TAG="${{ matrix.variant.base }}"
-          # Allow workflow_dispatch override for the first variant only
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.base-tag }}" ]; then
-            BASE_TAG="${{ inputs.base-tag }}"
-          fi
-          echo "ref=${{ env.IMAGE_REGISTRY }}/${{ matrix.variant.image }}:${BASE_TAG}" >> "$GITHUB_OUTPUT"
-
-      - name: Build GNOME 50 image
-        run: |
-          podman build \
-            --file Containerfile.gnome50 \
-            --build-arg BASE_IMAGE="${{ steps.base.outputs.ref }}" \
-            --tag "${{ env.IMAGE_REGISTRY }}/${{ matrix.variant.image }}:${{ matrix.variant.tag }}" \
-            .
-
-      - name: Push image
-        if: github.ref == 'refs/heads/main'
-        run: |
-          podman push \
-            "${{ env.IMAGE_REGISTRY }}/${{ matrix.variant.image }}:${{ matrix.variant.tag }}"
-
+  build-hwe:
+    uses: ./.github/workflows/reusable-build-image.yml
+    secrets: inherit
+    with:
+      image-name: bluefin
+      tag-suffix: "50"
+      gnome-version: "50"
+      hwe: true
+      rechunk: ${{ github.event_name != 'pull_request' }}
+      publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
