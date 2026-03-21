@@ -320,7 +320,7 @@ jobs:
         if: ${{ inputs.publish }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
-          name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}${{ inputs.hwe && '-hwe' || '' }}${{ inputs.tag-suffix != '' && format('-{0}', inputs.tag-suffix) || '' }}
           retention-days: 1
           if-no-files-found: error
           path: |
