@@ -31,7 +31,7 @@ jobs:
       image-name: bluefin
       tag-suffix: "50"
       gnome-version: "50"
-      rechunk: false
+      rechunk: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
 
   build-hwe:
@@ -42,5 +42,5 @@ jobs:
       tag-suffix: "50"
       gnome-version: "50"
       hwe: true
-      rechunk: false
+      rechunk: ${{ github.event_name != 'pull_request' }}
       publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}

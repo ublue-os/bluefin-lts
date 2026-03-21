@@ -211,11 +211,6 @@ jobs:
           skip_compression: true
           version: ${{ env.CENTOS_VERSION }}
 
-      - name: Copy image to rootless storage
-        if: ${{ inputs.publish && !inputs.rechunk }}
-        run: |
-          sudo podman save "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" | podman load
-
       - name: Load Image
         if: ${{ inputs.publish }}
         id: load
