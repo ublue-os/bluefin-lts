@@ -2,7 +2,7 @@
 # This keeps the GNOME 50 image always in sync with the 49 base and avoids
 # duplicating the full build chain.
 
-ARG BASE_IMAGE="ghcr.io/ublue-os/bluefin:lts-testing"
+ARG BASE_IMAGE="ghcr.io/ublue-os/bluefin:lts-testing@sha256:674b308d6964075a442be3408a1b620daf3420503dacaa8d388f84ab55040fba"
 FROM ${BASE_IMAGE}
 
 COPY build_scripts/upgrade-gnome49-to-50.sh /usr/local/bin/upgrade-gnome49-to-50.sh
