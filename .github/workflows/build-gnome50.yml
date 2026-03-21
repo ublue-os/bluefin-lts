@@ -1,15 +1,19 @@
 name: Build Bluefin GNOME 50 (testing)
 
+# Builds bluefin:lts-testing-50 and bluefin-dx:lts-hwe-testing-50 using
+# the same full build pipeline as GNOME 49, selecting GNOME 50 packages
+# via the gnome-version input. Only runs on main branch pushes.
+
 permissions:
   contents: read
   packages: write
   id-token: write
 
 on:
-  pull_request:
+  push:
     branches:
       - main
-  push:
+  pull_request:
     branches:
       - main
   merge_group:
@@ -26,6 +30,7 @@ jobs:
     with:
       image-name: bluefin
       tag-suffix: "50"
+      gnome-version: "50"
       rechunk: false
       publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
 
@@ -35,6 +40,7 @@ jobs:
     with:
       image-name: bluefin
       tag-suffix: "50"
+      gnome-version: "50"
       hwe: true
       rechunk: false
       publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
