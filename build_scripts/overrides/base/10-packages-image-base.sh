@@ -14,7 +14,7 @@ dnf -y install 'dnf-command(versionlock)'
 
 if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
     # GNOME 50 COPR
-    dnf copr enable -y "jreilly1821/c10s-gnome-50"
+    dnf copr enable -y "jreilly1821/c10s-gnome-50-fresh"
 
     # These upgrades MUST happen before the GNOME group install.
     # - glib2: EL10 ships 2.80.x; gnome-shell 50.x requires 2.84+ API symbols.
