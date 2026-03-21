@@ -7,10 +7,6 @@ FROM ${BASE_IMAGE}
 
 COPY build_scripts/upgrade-gnome49-to-50.sh /usr/local/bin/upgrade-gnome49-to-50.sh
 
-RUN --mount=type=tmpfs,dst=/opt \
-    --mount=type=tmpfs,dst=/tmp \
-    --mount=type=tmpfs,dst=/var \
-    --mount=type=tmpfs,dst=/boot \
-    chmod +x /usr/local/bin/upgrade-gnome49-to-50.sh && \
+RUN chmod +x /usr/local/bin/upgrade-gnome49-to-50.sh && \
     /usr/local/bin/upgrade-gnome49-to-50.sh && \
     rm /usr/local/bin/upgrade-gnome49-to-50.sh
