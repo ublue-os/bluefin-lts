@@ -1,0 +1,40 @@
+name: Build Bluefin GNOME 50 (testing)
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-build-image.yml
+    secrets: inherit
+    with:
+      image-name: bluefin
+      tag-suffix: "50"
+      rechunk: false
+      publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+
+  build-hwe:
+    uses: ./.github/workflows/reusable-build-image.yml
+    secrets: inherit
+    with:
+      image-name: bluefin
+      tag-suffix: "50"
+      hwe: true
+      rechunk: false
+      publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
