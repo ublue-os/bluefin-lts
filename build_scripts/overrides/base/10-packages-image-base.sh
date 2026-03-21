@@ -12,18 +12,18 @@ dnf -y install 'dnf-command(versionlock)'
 
 /run/context/build_scripts/scripts/kernel-swap.sh
 
-# GNOME 50 COPR
-dnf copr enable -y "jreilly1821/c10s-gnome-50"
+# GNOME 49 COPR
+dnf copr enable -y "jreilly1821/c10s-gnome-49"
 
 # These upgrades MUST happen before the GNOME group install.
-# - glib2: EL10 ships 2.80.x; gnome-shell 50.x requires 2.84+ API symbols.
-# - fontconfig: COPR pango 1.57+ links FcConfigSetDefaultSubstitute (added in
+# - glib2: EL10 ships 2.80.x; gnome-shell 49.x requires 2.82+ API symbols.
+# - fontconfig: COPR pango 1.57 links FcConfigSetDefaultSubstitute (added in
 #   fontconfig 2.17.0); EL10 base ships 2.15.0 — causes a symbol lookup error
 #   at gnome-shell startup.
-# - selinux-policy: COPR 43.x is required for GDM 50 userdb varlink socket
-#   architecture; EL10 base 42.x lacks the necessary policy rules.
-dnf -y install selinux-policy selinux-policy-targeted
-dnf -y upgrade glib2 fontconfig
+# - gobject-introspection / gjs: glib2 2.84+ ships both libgirepository-1.0
+#   and libgirepository-2.0. If only one is upgraded, both get loaded and
+#   double-registering GIRepository crashes gnome-shell at startup.
+dnf -y upgrade glib2 fontconfig gobject-introspection gjs
 
 # Please, dont remove this as it will break everything GNOME related
 dnf versionlock add glib2 fontconfig
@@ -98,7 +98,7 @@ dnf -y install \
 	plymouth \
 	plymouth-system-theme \
 	fwupd \
-	gnome50-el10-compat \
+	gnome49-el10-compat \
 	systemd-{resolved,container,oomd} \
 	libcamera{,-{v4l2,gstreamer,tools}}
 
