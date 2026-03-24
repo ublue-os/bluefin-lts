@@ -67,7 +67,7 @@ jobs:
           fi
 
       - name: Generate changelog
-        uses: hanthor/changelog-action@2d212cd35f65cfe33954dd79013887e7bee76580 # master
+        uses: hanthor/changelog-action@0f9fc8c023d1f28f69e31ad64e2161d308a56284 # master
         with:
           stream: ${{ steps.target.outputs.target }}
           family: bluefin-lts
