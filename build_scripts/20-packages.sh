@@ -25,6 +25,7 @@ dnf -y install \
 	hplip \
 	ibus-chewing \
 	jetbrains-mono-fonts-all \
+	jxl-pixbuf-loader \
 	just \
 	nss-mdns \
 	ntfs-3g \
