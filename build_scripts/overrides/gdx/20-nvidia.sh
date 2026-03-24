@@ -65,7 +65,10 @@ systemctl enable ublue-nvctk-cdi.service
 semodule --verbose --install /usr/share/selinux/packages/nvidia-container.pp
 
 # Universal Blue specific Initramfs fixes
-cp /etc/modprobe.d/nvidia-modeset.conf /usr/lib/modprobe.d/nvidia-modeset.conf
+# nvidia-modeset.conf may not exist on all architectures (e.g. arm64/SBSA)
+if [[ -f /etc/modprobe.d/nvidia-modeset.conf ]]; then
+    cp /etc/modprobe.d/nvidia-modeset.conf /usr/lib/modprobe.d/nvidia-modeset.conf
+fi
 # we must force driver load to fix black screen on boot for nvidia desktops
 sed -i 's@omit_drivers@force_drivers@g' /usr/lib/dracut/dracut.conf.d/99-nvidia.conf
 # as we need forced load, also mustpre-load intel/amd iGPU else chromium web browsers fail to use hardware acceleration
