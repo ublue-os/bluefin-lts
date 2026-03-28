@@ -3,6 +3,11 @@ name: Build Bluefin GNOME 50 (testing)
 # Builds bluefin and bluefin-dx lts-testing-50 / lts-hwe-testing-50 using
 # the same full build pipeline as GNOME 49, selecting GNOME 50 packages
 # via the gnome-version input. Only runs on main branch pushes.
+#
+# pull_request and merge_group triggers intentionally omitted: the GNOME 50
+# build currently fails with a dracut cross-device link error (EXDEV) on
+# GitHub Actions runners, which blocks all Renovate PRs from auto-merging.
+# This workflow runs post-merge (push) only until the build issue is resolved.
 
 permissions:
   contents: read
@@ -14,10 +19,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-  merge_group:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
