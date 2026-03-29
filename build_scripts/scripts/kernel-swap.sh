@@ -43,6 +43,12 @@ for pkg in "${INSTALL_PKGS[@]}"; do
   RPM_NAMES+=("/tmp/kernel-rpms/$pkg-$CACHED_VERSION.rpm")
 done
 
+# /tmp and /boot are separate tmpfs mounts during the container build.
+# dracut defaults to /tmp as its working directory and then tries to
+# rename the initramfs into /boot, which fails with EXDEV (os error 18)
+# because they are different filesystems.  Point dracut at /boot so the
+# temporary work directory and the final output share the same mount.
+export DRACUT_TMPDIR=/boot
 dnf -y install "${RPM_NAMES[@]}"
 
 # HWE-specific: Install common akmods

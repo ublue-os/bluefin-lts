@@ -58,6 +58,11 @@ on:
         required: false
         type: string
         default: ""
+      gnome-version:
+        description: "GNOME major version to build (49 or 50)"
+        required: false
+        type: string
+        default: "49"
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
@@ -141,6 +146,7 @@ jobs:
           HWE: ${{ inputs.hwe }}
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG_SUFFIX: ${{ inputs.tag-suffix }}
         run: |
           set -x
           just=$(which just)
@@ -158,6 +164,10 @@ jobs:
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
           fi
 
+          if [ -n "${INPUT_TAG_SUFFIX}" ]; then
+            export DEFAULT_TAG="${DEFAULT_TAG}-${INPUT_TAG_SUFFIX}"
+          fi
+
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
           if [[ "${FLAVOR}" =~ "gdx" ]] ; then
             ENABLE_GDX=1
@@ -166,14 +176,14 @@ jobs:
             ENABLE_DX=1
           fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}"
+          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}" "${{ inputs.gnome-version }}"
           echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Setup Syft
         id: setup-syft
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
         continue-on-error: true
-        uses: anchore/sbom-action/download-syft@57aae528053a48a3f6235f2d9461b05fbcb7366d # v0
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
 
       - name: Generate SBOM
         id: generate-sbom
@@ -310,7 +320,7 @@ jobs:
         if: ${{ inputs.publish }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
-          name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}${{ inputs.hwe && '-hwe' || '' }}${{ inputs.tag-suffix != '' && format('-{0}', inputs.tag-suffix) || '' }}
           retention-days: 1
           if-no-files-found: error
           path: |
@@ -324,7 +334,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:73de6aadd7e28fb516fa1270fcb411b94ee79949635e7de2a4bdb8705f6c120c
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:a5a619c1793039dcf92f02178f37c94bb3d6001403716da59d6092dfe8d9b502
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
@@ -361,6 +371,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
           HWE: ${{ inputs.hwe }}
+          INPUT_TAG_SUFFIX: ${{ inputs.tag-suffix }}
         run: |
           export CENTOS_VERSION_SUFFIX=""
           if [[ "${HWE}" == "true" ]] ; then
@@ -371,6 +382,10 @@ jobs:
             export TAG_SUFFIX="testing"
             export DEFAULT_TAG="${DEFAULT_TAG}-${TAG_SUFFIX}"
             export CENTOS_VERSION_SUFFIX="${CENTOS_VERSION_SUFFIX}-${TAG_SUFFIX}"
+          fi
+          if [ -n "${INPUT_TAG_SUFFIX}" ]; then
+            export DEFAULT_TAG="${DEFAULT_TAG}-${INPUT_TAG_SUFFIX}"
+            export CENTOS_VERSION_SUFFIX="${CENTOS_VERSION_SUFFIX}-${INPUT_TAG_SUFFIX}"
           fi
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> "${GITHUB_ENV}"
           echo "CENTOS_VERSION_SUFFIX=${CENTOS_VERSION_SUFFIX}" >> "${GITHUB_ENV}"
