@@ -4,6 +4,7 @@ export centos_version := env("CENTOS_VERSION", "stream10")
 export default_tag := env("DEFAULT_TAG", "lts")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
 export coreos_stable_version := env("COREOS_STABLE_VERSION", "42")
+export HOME := env("HOME", "")
 export common_image := env("COMMON_IMAGE", "ghcr.io/projectbluefin/common:latest")
 export brew_image := env("BREW_IMAGE", "ghcr.io/ublue-os/brew:latest")
 
@@ -392,6 +393,20 @@ run-vm-iso $iso_file="output/bootiso/install.iso": && (_run-vm "" "" "iso" "" is
 lint:
     /usr/bin/find . -iname "*.sh" -type f -exec shellcheck "{}" ';'
 
-# Runs shfmt on all Bash scripts
-format:
-    /usr/bin/find . -iname "*.sh" -type f -exec shfmt --write "{}" ';'
+# Create a test VM with SSH enabled for debugging/testing
+# Create a test VM with SSH enabled for debugging/testing
+
+# Usage: just create-test-vm [name] [tag] [ssh-key]
+[group('VM Testing')]
+create-test-vm name="bluefin-test-ssh" tag="lts-hwe" ssh_key="":
+    @echo "Creating test VM: {{ name }}"
+    @if [ -z "{{ ssh_key }}" ]; then ssh_key="{{ HOME }}/.ssh/id_ed25519.pub"; fi
+    @./scripts/create-test-vm.sh "{{ name }}" "{{ tag }}" "{{ ssh_key }}"
+
+# Create and immediately start a test VM
+[group('VM Testing')]
+run-test-vm name="bluefin-test-ssh" tag="lts-hwe":
+    @just create-test-vm "{{ name }}" "{{ tag }}" ""
+    @echo "Starting VM: {{ name }}"
+    @limactl start "{{ name }}"
+    @echo "VM is starting. Connect with: limactl shell {{ name }}"

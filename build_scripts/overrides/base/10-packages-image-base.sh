@@ -15,6 +15,10 @@ dnf -y install 'dnf-command(versionlock)'
 if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
     # GNOME 50 COPR
     dnf copr enable -y "jreilly1821/c10s-gnome-50-fresh"
+    # libjxl 0.11 in this COPR has a different ABI than EPEL's 0.10, which breaks
+    # epel-multimedia's libavcodec (needs libjxl.so.0.10).  Exclude it so EPEL wins.
+    GNOME50_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-50*" | head -1)
+    echo "exclude=libjxl*" >> "${GNOME50_REPO}"
 
     # These upgrades MUST happen before the GNOME group install.
     # - glib2: EL10 ships 2.80.x; gnome-shell 50.x requires 2.84+ API symbols.
