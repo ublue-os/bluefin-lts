@@ -19,3 +19,6 @@
 [submodule "system_files/usr/share/gnome-shell/extensions/search-light@icedman.github.com"]
 	path = system_files/usr/share/gnome-shell/extensions/search-light@icedman.github.com
 	url = https://github.com/icedman/search-light.git
+[submodule "system_files/usr/share/gnome-shell/extensions/tmp/bazaar-integration@kolunmi.github.io"]
+	path = system_files/usr/share/gnome-shell/extensions/tmp/bazaar-integration@kolunmi.github.io
+	url = https://github.com/AlexanderVanhee/bazaar-companion.git
