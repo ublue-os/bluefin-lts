@@ -71,8 +71,8 @@ if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
     # Versionlock GNOME 50 components to prevent downgrades to EL10 base versions
     dnf versionlock add gnome-shell gdm mutter gnome-session-wayland-session \
         gnome-settings-daemon gnome-control-center gsettings-desktop-schemas \
-        gtk4 libadwaita pango fontconfig
+        gtk4 libadwaita pango fontconfig selinux-policy selinux-policy-targeted gnutls
 else
     # Versionlock GNOME 49 components to prevent upgrades to a mismatched version
-    dnf versionlock add gnome-shell gdm gnome-session-wayland-session gobject-introspection gjs pango
+    dnf versionlock add gnome-shell gdm gnome-session-wayland-session gobject-introspection gjs pango fontconfig selinux-policy selinux-policy-targeted gnutls
 fi
