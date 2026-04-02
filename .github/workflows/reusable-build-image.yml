@@ -334,7 +334,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:36afa78d34330ad78b7adfefc9301ea4127585a797a2371eab6624a8a51e2461
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:c9fd6c107b3a94655bad261fa3669ddad8e6013f8693c477e152bc8c976041fc
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
