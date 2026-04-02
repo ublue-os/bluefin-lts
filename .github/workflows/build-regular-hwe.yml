@@ -4,6 +4,7 @@ permissions:
   contents: read
   packages: write
   id-token: write
+  attestations: write
 
 on:
   pull_request:
@@ -28,6 +29,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
     with:
       image-name: bluefin
       kernel-pin: 6.17.12-200.fc42
