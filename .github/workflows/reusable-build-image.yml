@@ -112,6 +112,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
     outputs:
       image_tag: ${{ steps.build-image.outputs.image_tag }}
 
@@ -182,23 +183,23 @@ jobs:
       - name: Setup Syft
         id: setup-syft
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        continue-on-error: true
         uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          syft-version: v1.39.0
 
       - name: Generate SBOM
         id: generate-sbom
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        continue-on-error: true
         env:
           IMAGE: ${{ env.IMAGE_NAME }}
           DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
           SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
         run: |
           sudo systemctl start podman.socket
-          OUTPUT_PATH="$(mktemp -d)/sbom.json"
+          SBOM="$(mktemp -d)/sbom.json"
           export SYFT_PARALLELISM=$(($(nproc)*2))
-          sudo "$SYFT_CMD" "${IMAGE}:${DEFAULT_TAG}" -o "spdx-json=${OUTPUT_PATH}"
-          echo "OUTPUT_PATH=${OUTPUT_PATH}" >> "${GITHUB_OUTPUT}"
+          sudo "$SYFT_CMD" "${IMAGE}:${DEFAULT_TAG}" -o "spdx-json=${SBOM}"
+          echo "SBOM=${SBOM}" >> "${GITHUB_OUTPUT}"
 
       - name: Run Rechunker
         if: ${{ inputs.rechunk && inputs.publish }}
@@ -273,37 +274,55 @@ jobs:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
-      - name: Add SBOM Attestation
+      - name: Install ORAS
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        continue-on-error: true
+        uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
+
+      - name: Login to GitHub Container Registry with ORAS
+        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Upload SBOM
+        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+        id: upload-sbom
         env:
           IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.push.outputs.remote_image_digest }}
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-          SBOM_OUTPUT: ${{ steps.generate-sbom.outputs.OUTPUT_PATH }}
+          SBOM: ${{ steps.generate-sbom.outputs.SBOM }}
         run: |
-          cd "$(dirname "$SBOM_OUTPUT")"
+          cd "$(dirname "${SBOM}")"
+          oras attach \
+            --artifact-type application/vnd.spdx+json \
+            --annotation "filename=$(basename "${SBOM}")" \
+            "${IMAGE}@${DIGEST}" \
+            "$(basename "${SBOM}")"
+          sbom_digest=$(oras discover --format json "${IMAGE}@${DIGEST}" \
+            | jq -r '[.referrers[] | select(.artifactType == "application/vnd.spdx+json") | .digest] | first')
+          if [[ -z "${sbom_digest}" || "${sbom_digest}" == "null" ]]; then
+            echo "ERROR: SBOM referrer not found after upload" >&2
+            exit 1
+          fi
+          echo "sbom_digest=${sbom_digest}" >> "${GITHUB_OUTPUT}"
 
-          # Compress the SBOM and create the predicate
-          TYPE="urn:ublue-os:attestation:spdx+json+zstd:v1"
-          zstd -19 "./sbom.json" -o "./sbom.json.zst"
-          BASE64_SBOM_FILE="payload.b64"
-          base64 "./sbom.json.zst" | tr -d '\n' > "${BASE64_SBOM_FILE}"
-          PREDICATE_FILE="payload.json"
-          jq -n \
-            --arg compression "zstd" \
-            --arg mediaType "application/spdx+json" \
-            --rawfile payload "${BASE64_SBOM_FILE}" \
-            '{compression: $compression, mediaType: $mediaType, payload: $payload}' \
-            > "$PREDICATE_FILE"
-          rm -f "${BASE64_SBOM_FILE}"
+      - name: Sign SBOM OCI Artifact
+        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+        env:
+          COSIGN_EXPERIMENTAL: false
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          SBOM_DIGEST: ${{ steps.upload-sbom.outputs.sbom_digest }}
+        run: |
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${SBOM_DIGEST}"
 
-          # Create the attestation
-          cosign attest -y \
-            --predicate "${PREDICATE_FILE}" \
-            --type $TYPE \
-            --key env://COSIGN_PRIVATE_KEY \
-            "${IMAGE}@${DIGEST}"
+      - name: Attestation
+        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 #v4.1.0
+        with:
+          subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.remote_image_digest }}
+          push-to-registry: true
 
       - name: Create Job Outputs
         if: ${{ inputs.publish }}
@@ -334,7 +353,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:a5a619c1793039dcf92f02178f37c94bb3d6001403716da59d6092dfe8d9b502
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:52e71f61c6afd1f8d2625cff4465d8ecee156668ca665f7e9c582d1cc914eb6a
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
