@@ -126,9 +126,9 @@ dnf -y install \
 	libcamera{,-{v4l2,gstreamer,tools}}
 
 if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
-    dnf -y install gnome50-el10-compat
+    dnf -y install gnome50-el10-compat lgda
 else
-    dnf -y install gnome49-el10-compat
+    dnf -y install gnome49-el10-compat lgda
 fi
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
