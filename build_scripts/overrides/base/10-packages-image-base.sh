@@ -33,6 +33,12 @@ if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
 else
     # GNOME 49 COPR (default)
     dnf copr enable -y "jreilly1821/c10s-gnome-49"
+    # gdk-pixbuf2 2.44.5 in this COPR has no built-in image format loaders (PNG,
+    # JPEG, SVG, etc.) and ships no -modules subpackage.  Exclude it so the base
+    # EL10 gdk-pixbuf2 (2.42.x, with working built-in loaders) is kept — otherwise
+    # gnome-shell cannot decode most icon files.
+    GNOME49_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-49*" | head -1)
+    echo "exclude=gdk-pixbuf2*" >> "${GNOME49_REPO}"
 
     # These upgrades MUST happen before the GNOME group install.
     # - glib2: EL10 ships 2.80.x; GNOME 49/50 require newer API symbols.
