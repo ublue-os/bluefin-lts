@@ -10,6 +10,9 @@ HARDCODED_RPM_MONTH="12"
 sed -i "/picture-uri/ s/${HARDCODED_RPM_MONTH}/$(date +%m)/" "/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override"
 glib-compile-schemas /usr/share/glib-2.0/schemas
 
+# Rebuild gdk-pixbuf loader cache so all installed loaders are registered
+gdk-pixbuf-query-loaders-64 --update-cache
+
 # Offline Bluefin documentation
 curl --retry 3 -Lo /tmp/bluefin.pdf https://github.com/ublue-os/bluefin-docs/releases/download/0.1/bluefin.pdf
 install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
