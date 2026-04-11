@@ -14,7 +14,7 @@ dnf -y install 'dnf-command(versionlock)'
 
 if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
     # GNOME 50 COPR
-    dnf copr enable -y "jreilly1821/c10s-gnome-50-fresh"
+    dnf copr enable -y "jreilly1821/c10s-gnome-50"
     # libjxl 0.11 in this COPR has a different ABI than EPEL's 0.10, which breaks
     # epel-multimedia's libavcodec (needs libjxl.so.0.10).  Exclude it so EPEL wins.
     GNOME50_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-50*" | head -1)
@@ -33,6 +33,12 @@ if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
 else
     # GNOME 49 COPR (default)
     dnf copr enable -y "jreilly1821/c10s-gnome-49"
+    # gdk-pixbuf2 2.44.5 in this COPR has no built-in image format loaders (PNG,
+    # JPEG, SVG, etc.) and ships no -modules subpackage.  Exclude it so the base
+    # EL10 gdk-pixbuf2 (2.42.x, with working built-in loaders) is kept — otherwise
+    # gnome-shell cannot decode most icon files.
+    GNOME49_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-49*" | head -1)
+    echo "exclude=gdk-pixbuf2*" >> "${GNOME49_REPO}"
 
     # These upgrades MUST happen before the GNOME group install.
     # - glib2: EL10 ships 2.80.x; GNOME 49/50 require newer API symbols.
@@ -126,9 +132,9 @@ dnf -y install \
 	libcamera{,-{v4l2,gstreamer,tools}}
 
 if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
-    dnf -y install gnome50-el10-compat
+    dnf -y install gnome50-el10-compat libgda
 else
-    dnf -y install gnome49-el10-compat
+    dnf -y install gnome49-el10-compat libgda
 fi
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
