@@ -78,7 +78,14 @@ jobs:
         run: |
           # Source the output.env file to get TAG and TITLE
           if [ -f output.env ]; then
-            cat output.env >> $GITHUB_OUTPUT
+            # Strip surrounding double-quotes from values before writing to GITHUB_OUTPUT.
+            # changelog-action writes TITLE="some value" which stores the quotes literally
+            # in GITHUB_OUTPUT, causing bash to see TITLE=""value"" and fail with exit 127.
+            while IFS='=' read -r key value; do
+              value="${value#\"}"
+              value="${value%\"}"
+              echo "${key}=${value}" >> $GITHUB_OUTPUT
+            done < output.env
           else
             echo "output.env not found; assuming changelog generation was skipped"
             echo "skip_release=true" >> $GITHUB_OUTPUT
