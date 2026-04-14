@@ -31,4 +31,12 @@ jobs:
           gh workflow run build-dx-hwe.yml --ref lts -R ${{ github.repository }}
           
           echo "✅ Triggered all 5 LTS build workflows on lts branch"
+          
+          # Trigger release generation directly. The generate-release workflow uses
+          # workflow_run to watch Build Bluefin LTS GDX, but workflow_run does not
+          # propagate when the triggering workflow was dispatched via GITHUB_TOKEN.
+          # Dispatching generate-release directly here bypasses that limitation.
+          gh workflow run generate-release.yml --ref main -f target=lts -R ${{ github.repository }}
+          
+          echo "✅ Triggered release generation"
           echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
