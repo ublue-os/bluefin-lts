@@ -16,27 +16,74 @@ concurrency:
 jobs:
   trigger-lts-builds:
     runs-on: ubuntu-latest
+    # Allow up to 3 hours for builds to complete before timing out.
+    timeout-minutes: 180
     steps:
       - name: Trigger all LTS builds on lts branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          
-          # Trigger all 5 build workflows on lts branch
+
+          # Record time just before dispatch so we can find the run IDs afterward.
+          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
           gh workflow run build-regular.yml --ref lts -R ${{ github.repository }}
           gh workflow run build-dx.yml --ref lts -R ${{ github.repository }}
           gh workflow run build-gdx.yml --ref lts -R ${{ github.repository }}
           gh workflow run build-regular-hwe.yml --ref lts -R ${{ github.repository }}
           gh workflow run build-dx-hwe.yml --ref lts -R ${{ github.repository }}
-          
+
           echo "✅ Triggered all 5 LTS build workflows on lts branch"
-          
-          # Trigger release generation directly. The generate-release workflow uses
-          # workflow_run to watch Build Bluefin LTS GDX, but workflow_run does not
-          # propagate when the triggering workflow was dispatched via GITHUB_TOKEN.
-          # Dispatching generate-release directly here bypasses that limitation.
-          gh workflow run generate-release.yml --ref main -f target=lts -R ${{ github.repository }}
-          
+
+      - name: Wait for regular LTS build to complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Wait for the API to register the newly dispatched run (usually < 30s).
+          sleep 60
+
+          # Find the build-regular.yml run dispatched after our trigger time.
+          # Retry for up to 10 minutes in case of API lag.
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow build-regular.yml \
+              --branch lts \
+              --repo ${{ github.repository }} \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for build-regular.yml run to appear in API (attempt $i/20)..."
+            sleep 30
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate build-regular.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
+
+          echo "Watching build-regular.yml run $RUN_ID — this takes ~60 minutes..."
+          # --exit-status causes this step to fail if the build fails,
+          # preventing a release from being generated for a broken image.
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ Regular LTS build completed successfully"
+
+      - name: Trigger release generation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Build is confirmed complete — the new lts-YYYYMMDD tag is in GHCR.
+          # generate-release.yml queries GHCR for the latest tag, so it will
+          # now find the tag from this week's build instead of the previous one.
+          gh workflow run generate-release.yml --ref main -f target=lts \
+            -R ${{ github.repository }}
+
           echo "✅ Triggered release generation"
           echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
