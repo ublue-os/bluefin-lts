@@ -56,7 +56,7 @@ if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
   
   # Use the same akmods flavor and Fedora version as coreos-stable-42
   AKMODS_FLAVOR="coreos-stable"
-  FEDORA_VERSION="42"
+  FEDORA_VERSION="43"
   
   # Create writable directory for common akmods downloads (tmpfs /tmp is mounted)
   COMMON_AKMODS_DIR="/run/common-akmods"
