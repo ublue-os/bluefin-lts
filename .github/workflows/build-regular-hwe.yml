@@ -32,7 +32,6 @@ jobs:
       attestations: write
     with:
       image-name: bluefin
-      kernel-pin: 6.19.12-100.fc42
       rechunk: ${{ github.event_name != 'pull_request' }}
       publish: ${{ (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/lts' || github.ref == 'refs/heads/main')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
       hwe: true
