@@ -57,6 +57,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y skopeo jq
 
+      - name: Setup Syft
+        id: setup-syft
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          syft-version: v1.39.0
+
       - name: Determine target
         id: target
         run: |
@@ -91,6 +97,38 @@ jobs:
             echo "skip_release=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: Generate release SBOMs
+        if: steps.changelog.outputs.skip_release != 'true'
+        env:
+          IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+          RELEASE_TAG: ${{ steps.changelog.outputs.TAG }}
+          SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
+          TARGET: ${{ steps.target.outputs.target }}
+        run: |
+          mkdir -p release-assets
+          export SYFT_PARALLELISM=$(($(nproc)*2))
+
+          case "${TARGET}" in
+            lts)
+              images=(bluefin bluefin-dx bluefin-gdx)
+              ;;
+            dx)
+              images=(bluefin-dx)
+              ;;
+            gdx)
+              images=(bluefin-gdx)
+              ;;
+            *)
+              echo "Unsupported release target: ${TARGET}" >&2
+              exit 1
+              ;;
+          esac
+
+          for image in "${images[@]}"; do
+            sbom_path="release-assets/${image}-${RELEASE_TAG}.spdx.json"
+            "${SYFT_CMD}" "registry:${IMAGE_REGISTRY}/${image}:${RELEASE_TAG}" -o "spdx-json=${sbom_path}"
+          done
+
       - name: Create GitHub Release
         if: steps.changelog.outputs.skip_release != 'true'
         env:
@@ -109,7 +147,8 @@ jobs:
           gh release create "$TAG" \
             --title "$TITLE" \
             --notes-file changelog.md \
-            --target lts
+            --target lts \
+            release-assets/*.spdx.json
 
       - name: Upload changelog artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
