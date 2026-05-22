@@ -97,8 +97,48 @@ jobs:
             echo "skip_release=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Generate release SBOMs
+      - name: Check for existing release
+        id: release
         if: steps.changelog.outputs.skip_release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ steps.target.outputs.target }}
+        run: |
+          TAG="${{ steps.changelog.outputs.TAG }}"
+          case "${TARGET}" in
+            lts)
+              expected_assets=(bluefin-"${TAG}".spdx.json bluefin-dx-"${TAG}".spdx.json bluefin-gdx-"${TAG}".spdx.json)
+              ;;
+            dx)
+              expected_assets=(bluefin-dx-"${TAG}".spdx.json)
+              ;;
+            gdx)
+              expected_assets=(bluefin-gdx-"${TAG}".spdx.json)
+              ;;
+            *)
+              echo "Unsupported release target: ${TARGET}" >&2
+              exit 1
+              ;;
+          esac
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            assets_json="$(gh release view "$TAG" --json assets --jq '[.assets[].name]')"
+            needs_assets=false
+            for asset in "${expected_assets[@]}"; do
+              if ! jq -e --arg asset "${asset}" '.[] | select(. == $asset)' <<<"${assets_json}" >/dev/null; then
+                needs_assets=true
+                break
+              fi
+            done
+            echo "needs_assets=${needs_assets}" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "needs_assets=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate release SBOMs
+        if: steps.changelog.outputs.skip_release != 'true' && steps.release.outputs.needs_assets == 'true'
         env:
           IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
           RELEASE_TAG: ${{ steps.changelog.outputs.TAG }}
@@ -129,21 +169,21 @@ jobs:
             "${SYFT_CMD}" "registry:${IMAGE_REGISTRY}/${image}:${RELEASE_TAG}" -o "spdx-json=${sbom_path}"
           done
 
-      - name: Create GitHub Release
-        if: steps.changelog.outputs.skip_release != 'true'
+      - name: Publish release assets
+        if: steps.changelog.outputs.skip_release != 'true' && steps.release.outputs.needs_assets == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.changelog.outputs.TAG }}"
           TITLE="${{ steps.changelog.outputs.TITLE }}"
-          
-          # Check if release already exists
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists, skipping creation"
+
+          if [ "${{ steps.release.outputs.exists }}" = "true" ]; then
+            gh release upload "$TAG" \
+              --clobber \
+              release-assets/*.spdx.json
             exit 0
           fi
-          
-          # Create the release
+
           gh release create "$TAG" \
             --title "$TITLE" \
             --notes-file changelog.md \
