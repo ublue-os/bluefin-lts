@@ -1,0 +1,16 @@
+name: PR Validation — testsuite
+
+on:
+  pull_request:
+    branches:
+      - main
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    uses: projectbluefin/testsuite/.github/workflows/pr-validate.yml@main
+    secrets: inherit
