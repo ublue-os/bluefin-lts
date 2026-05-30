@@ -63,10 +63,6 @@ on:
         required: false
         type: string
         default: "49"
-    secrets:
-      SIGNING_SECRET:
-        description: "The private key used to sign the image"
-        required: false
 
 env:
   IMAGE_NAME: ${{ inputs.image-name }}
@@ -268,11 +264,9 @@ jobs:
         if: ${{ inputs.publish }}
         run: |
           IMAGE_FULL="${IMAGE_REGISTRY}/${IMAGE_NAME}"
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_FULL}@${{ steps.push.outputs.remote_image_digest }}
+          cosign sign -y ${IMAGE_FULL}@${{ steps.push.outputs.remote_image_digest }}
         env:
           TAGS: ${{ steps.push.outputs.digest }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
 
       - name: Install ORAS
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
@@ -308,13 +302,11 @@ jobs:
       - name: Sign SBOM OCI Artifact
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
         env:
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
           IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           SBOM_DIGEST: ${{ steps.upload-sbom.outputs.sbom_digest }}
         run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${SBOM_DIGEST}"
+          cosign sign -y "${IMAGE_REGISTRY}/${IMAGE_NAME}@${SBOM_DIGEST}"
 
       - name: Attestation
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
@@ -567,7 +559,5 @@ jobs:
         env:
           DIGEST: ${{ needs.manifest.outputs.digest }}
           IMAGE: ${{ needs.manifest.outputs.image }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
         run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
+          cosign sign -y "${IMAGE}@${DIGEST}"

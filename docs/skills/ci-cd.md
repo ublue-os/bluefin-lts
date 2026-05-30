@@ -96,7 +96,7 @@ The weekly release e2e is the real quality gate for build correctness.
 
 `scheduled-lts-release.yml` job chain:
 1. `trigger-lts-builds` — triggers 5 builds on `lts`, waits for regular + dx + gdx to complete
-2. `testsuite` — e2e smoke on `ghcr.io/ublue-os/bluefin:lts` via `projectbluefin/testsuite/e2e.yml@main`
+2. `testsuite` — e2e smoke on `ghcr.io/projectbluefin/bluefin:lts` via `projectbluefin/testsuite/e2e.yml@main`
 3. `generate-release` (needs: testsuite) — only fires if e2e passes; dispatches `generate-release.yml`
 
 If e2e fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
