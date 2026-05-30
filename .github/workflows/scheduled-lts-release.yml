@@ -144,21 +144,6 @@ jobs:
           gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
           echo "✅ GDX LTS build completed successfully"
 
-      - name: Trigger release generation
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          # Build is confirmed complete — the new lts-YYYYMMDD tag is in GHCR.
-          # generate-release.yml queries GHCR for the latest tag, so it will
-          # now find the tag from this week's build instead of the previous one.
-          gh workflow run generate-release.yml --ref main -f target=lts \
-            -R ${{ github.repository }}
-
-          echo "✅ Triggered release generation"
-          echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
-
   testsuite:
     name: Testsuite — post-release smoke
     needs: trigger-lts-builds
@@ -166,3 +151,21 @@ jobs:
     with:
       image: ghcr.io/ublue-os/bluefin:lts
       suites: smoke
+
+  generate-release:
+    name: Generate release
+    needs: testsuite
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Trigger release generation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run generate-release.yml --ref main -f target=lts \
+            -R ${{ github.repository }}
+          echo "✅ Triggered release generation (e2e smoke passed)"
+          echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
