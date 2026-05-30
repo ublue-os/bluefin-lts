@@ -4,7 +4,7 @@ set -xeuo pipefail
 
 ARCH=$(uname -m)
 
-# This is the base for a minimal GNOME system on CentOS Stream.
+# This is the base for a minimal GNOME 50 system on CentOS Stream.
 
 # This thing slows down downloads A LOT for no reason
 dnf remove -y subscription-manager
@@ -12,48 +12,23 @@ dnf -y install 'dnf-command(versionlock)'
 
 /run/context/build_scripts/scripts/kernel-swap.sh
 
-if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
-    # GNOME 50 COPR
-    dnf copr enable -y "jreilly1821/c10s-gnome-50"
-    # libjxl 0.11 in this COPR has a different ABI than EPEL's 0.10, which breaks
-    # epel-multimedia's libavcodec (needs libjxl.so.0.10).  Exclude it so EPEL wins.
-    GNOME50_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-50*" | head -1)
-    echo "exclude=libjxl*" >> "${GNOME50_REPO}"
+# GNOME 50 COPR
+dnf copr enable -y "jreilly1821/c10s-gnome-50"
+# libjxl 0.11 in this COPR has a different ABI than EPEL's 0.10, which breaks
+# epel-multimedia's libavcodec (needs libjxl.so.0.10).  Exclude it so EPEL wins.
+GNOME50_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-50*" | head -1)
+echo "exclude=libjxl*" >> "${GNOME50_REPO}"
 
-    # These upgrades MUST happen before the GNOME group install.
-    # - glib2: EL10 ships 2.80.x; GNOME 49/50 require newer API symbols.
-    # - fontconfig: COPR pango 1.57+ links FcConfigSetDefaultSubstitute (added in
-    #   fontconfig 2.17.0); EL10 base ships 2.15.0 — causes a symbol lookup error
-    #   at gnome-shell startup.
-    # - selinux-policy: COPR 43.x is required for GDM 49/50 userdb varlink socket
-    #   architecture; EL10 base 42.x lacks the necessary policy rules.
-    # - gnutls: newer glib2 from COPR may depend on gnutls symbols not in base.
-    dnf -y install selinux-policy selinux-policy-targeted gnutls
-    dnf -y upgrade glib2 fontconfig
-else
-    # GNOME 49 COPR (default)
-    dnf copr enable -y "jreilly1821/c10s-gnome-49"
-    # gdk-pixbuf2 2.44.5 in this COPR has no built-in image format loaders (PNG,
-    # JPEG, SVG, etc.) and ships no -modules subpackage.  Exclude it so the base
-    # EL10 gdk-pixbuf2 (2.42.x, with working built-in loaders) is kept — otherwise
-    # gnome-shell cannot decode most icon files.
-    GNOME49_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-49*" | head -1)
-    echo "exclude=gdk-pixbuf2*" >> "${GNOME49_REPO}"
-
-    # These upgrades MUST happen before the GNOME group install.
-    # - glib2: EL10 ships 2.80.x; GNOME 49/50 require newer API symbols.
-    # - fontconfig: COPR pango 1.57+ links FcConfigSetDefaultSubstitute (added in
-    #   fontconfig 2.17.0); EL10 base ships 2.15.0 — causes a symbol lookup error
-    #   at gnome-shell startup.
-    # - selinux-policy: COPR 43.x is required for GDM 49/50 userdb varlink socket
-    #   architecture; EL10 base 42.x lacks the necessary policy rules.
-    # - gobject-introspection / gjs: glib2 2.84+ ships both libgirepository-1.0
-    #   and libgirepository-2.0. If only one is upgraded, both get loaded and
-    #   double-registering GIRepository crashes gnome-shell at startup.
-    # - gnutls: newer glib2 from COPR may depend on gnutls symbols not in base.
-    dnf -y install selinux-policy selinux-policy-targeted gnutls
-    dnf -y upgrade glib2 fontconfig gobject-introspection gjs
-fi
+# These upgrades MUST happen before the GNOME group install.
+# - glib2: EL10 ships 2.80.x; GNOME 50 requires newer API symbols.
+# - fontconfig: COPR pango 1.57+ links FcConfigSetDefaultSubstitute (added in
+#   fontconfig 2.17.0); EL10 base ships 2.15.0 — causes a symbol lookup error
+#   at gnome-shell startup.
+# - selinux-policy: COPR 43.x is required for GDM 50 userdb varlink socket
+#   architecture; EL10 base 42.x lacks the necessary policy rules.
+# - gnutls: newer glib2 from COPR may depend on gnutls symbols not in base.
+dnf -y install selinux-policy selinux-policy-targeted gnutls
+dnf -y upgrade glib2 fontconfig
 
 # Please, dont remove this as it will break everything GNOME related
 dnf versionlock add glib2 fontconfig
@@ -131,11 +106,7 @@ dnf -y install \
 	systemd-{resolved,container,oomd} \
 	libcamera{,-{v4l2,gstreamer,tools}}
 
-if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
-    dnf -y install gnome50-el10-compat libgda
-else
-    dnf -y install gnome49-el10-compat libgda
-fi
+dnf -y install gnome50-el10-compat libgda
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
 dnf -y remove console-login-helper-messages

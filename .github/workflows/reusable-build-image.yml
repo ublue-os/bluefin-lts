@@ -59,10 +59,10 @@ on:
         type: string
         default: ""
       gnome-version:
-        description: "GNOME major version to build (49 or 50)"
+        description: "GNOME major version to build (50)"
         required: false
         type: string
-        default: "49"
+        default: "50"
 
 env:
   IMAGE_NAME: ${{ inputs.image-name }}
