@@ -17,12 +17,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: false
 
       - name: Install just
-        uses: taiki-e/install-action@just
+        uses: taiki-e/install-action@d56249f532886d210664917b882ad7e152e17d68 # just
 
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
