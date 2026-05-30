@@ -1,0 +1,36 @@
+# Custom Command Menu extension configuration
+# https://github.com/StorageB/custom-command-menu
+#
+# TRANSITION: This extension replaces Logo Menu (logomenu@aryan_k), which is currently
+# shipped and configured by projectbluefin/common in:
+#   system_files/bluefin/etc/dconf/db/distro.d/04-bluefin-logomenu-extension
+#
+# Once common removes logomenu and adopts custom-command-menu, the common-side keyfile
+# (04-bluefin-logomenu-extension) should be replaced with this equivalent configuration
+# and this LTS-local override file can be removed — LTS will inherit from common.
+#
+# Until then, the orphaned logomenu dconf keys from common are harmless (no-op since
+# logomenu@aryan_k is no longer installed). The /usr/bin/missioncenter-helper and
+# /usr/bin/distroshelf-helper binaries that logomenu used to install are gone; all
+# app launches now use flatpak run directly.
+#
+# The extension uses command1-99 keys of type (sssb): (label, command, icon, visible).
+# menuoptions-setting: 0=text label, 1=custom text, 2=icon. Set to 2 to show icon.
+
+[org/gnome/shell/extensions/custom-command-list]
+menuoptions-setting=2
+menuicon-setting='ublue-logo-symbolic'
+menulocation-setting=1
+menuposition-setting=0
+command-order=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+command1=('---$(hostname)', '', '', true)
+command2=('About', 'gnome-control-center system about', '', true)
+command3=('System Monitor', '/usr/bin/flatpak run io.missioncenter.MissionCenter', '', true)
+command4=('System Settings', 'gnome-control-center', '', true)
+command5=('---Applications', '', '', true)
+command6=('App Store', '/usr/bin/flatpak run io.github.kolunmi.Bazaar', '', true)
+command7=('Extensions', '/usr/bin/flatpak run com.mattjakeman.ExtensionManager', '', true)
+command8=('Terminal', 'xdg-terminal-exec', '', true)
+command9=('---Help', '', '', true)
+command10=('Documentation', 'xdg-open https://docs.projectbluefin.io/', '', true)
+command11=('Ask Bluefin', 'xdg-open https://ask.projectbluefin.io', '', true)

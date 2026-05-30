@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   actions: write
+  packages: read
 
 concurrency:
   group: scheduled-lts-release
@@ -157,3 +158,11 @@ jobs:
 
           echo "✅ Triggered release generation"
           echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
+
+  testsuite:
+    name: Testsuite — post-release smoke
+    needs: trigger-lts-builds
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    with:
+      image: ghcr.io/ublue-os/bluefin:lts
+      suites: smoke
