@@ -63,13 +63,18 @@
 
 **Implementation:** inline `buildah build` with the upstream `Containerfile.splitter`:
 ```bash
-buildah build --skip-unused-stages=false \
+sudo buildah build --skip-unused-stages=false \
   --from "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
   --build-arg "CHUNKAH=quay.io/coreos/chunkah:v0.5.0@sha256:352097f3d32186ac11082f8b74cd544678b00388b50c96ba5c8e79503a454fe3" \
-  --build-arg "CHUNKAH_CONFIG_STR=$(podman inspect ...)" \
+  --build-arg "CHUNKAH_CONFIG_STR=$(sudo podman inspect ...)" \
   --build-arg "CHUNKAH_ARGS=--max-layers 128 --prune /sysroot/ --label ostree.commit- --label ostree.final-diffid-" \
   -t "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+  -v "$(pwd):/run/src" \
+  --security-opt=label=disable \
   https://github.com/coreos/chunkah/releases/download/v0.5.0/Containerfile.splitter
+sudo rm -f out.ociarchive
+# Transfer from root (buildah) storage to user (podman) storage
+sudo podman save "${IMG}" | podman load
 ```
 
 **Key flags for bootc images:**
@@ -77,6 +82,8 @@ buildah build --skip-unused-stages=false \
 - `--max-layers 128` — upstream recommendation for large bootc desktop images
 - `--label ostree.commit- --label ostree.final-diffid-` — strips stale OSTree annotations
 - `CHUNKAH_CONFIG_STR` — preserves `containers.bootc=1` and all other OCI labels
+- `-v $(pwd):/run/src --security-opt=label=disable` — **required** for buildah < v1.44 (Ubuntu 24.04 ships 1.33.x) so the bind-mount persists `out.ociarchive` to the host CWD
+- `sudo podman save ... | podman load` — **required**: `sudo buildah` writes to root container storage; unprivileged `podman` (used by Login/Push steps) uses a separate user store. The pipe transfers the rechunked image to user storage.
 
 **Push:** all per-arch pushes use `--compression-format zstd:chunked --force-compression`.
 zstd:chunked is complementary to chunkah: chunkah maximizes layer reuse (build-time);
@@ -84,6 +91,24 @@ zstd:chunked minimizes bytes fetched within changed layers (pull-time, HTTP rang
 
 **`rechunk` input** (`bool`, default `true`): skip on PRs (`github.event_name != 'pull_request'`).
 After rechunking, the image is retagged in-place; `Load Image` always picks up from `localhost/${IMAGE_NAME}:${DEFAULT_TAG}`.
+
+## GHCR Package Access — PACKAGES_TOKEN
+
+`ghcr.io/projectbluefin/bluefin` is linked to `projectbluefin/bluefin` (the main Bluefin repo),
+not to `projectbluefin/bluefin-lts`. `GITHUB_TOKEN` from `bluefin-lts` is denied `write_package`.
+
+**Workaround:** All `podman login`/`docker login`/`oras login` steps use:
+```yaml
+PUSH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
+```
+
+`PACKAGES_TOKEN` is a classic OAuth token (castrojo) with `write:packages` stored as a repo secret.
+
+**To remove the workaround** (preferred long-term):
+1. Go to https://github.com/orgs/projectbluefin/packages/container/bluefin/settings
+2. Under "Manage Actions access" → "Add repository" → `projectbluefin/bluefin-lts` → Write
+3. Repeat for `bluefin-dx` and `bluefin-gdx` packages
+4. Delete the `PACKAGES_TOKEN` secret; revert login steps to `secrets.GITHUB_TOKEN`
 
 ## SBOM rules
 
