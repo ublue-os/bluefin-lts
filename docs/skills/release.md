@@ -20,17 +20,17 @@
 ## Fork sync pattern (`castrojo` fork)
 
 ```bash
-git fetch upstream
-git rebase upstream/main
+git fetch projectbluefin
+git rebase projectbluefin/main
 git push origin <branch> --force-with-lease
 
-# after upstream merge
+# after merge to projectbluefin
 git checkout main
-git reset --hard upstream/main
+git reset --hard projectbluefin/main
 git push origin main --force-with-lease
 ```
 
-Do not merge `upstream/main` into the fork; rebase instead.
+Do not merge `projectbluefin/main` into the fork; rebase instead.
 
 ## Registry queries
 
