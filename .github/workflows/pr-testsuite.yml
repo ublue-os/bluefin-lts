@@ -38,7 +38,7 @@ jobs:
     permissions:
       contents: read
       packages: write  # testsuite pushes screenshot OCI artifacts to GHCR
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@12bd892e476ef930ae3240eff71402390bba8da9 # main
     with:
       image: ghcr.io/projectbluefin/bluefin:lts-testing
       suites: smoke

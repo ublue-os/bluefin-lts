@@ -21,8 +21,8 @@ Creates a test VM from a Bluefin LTS bootc image with SSH enabled, suitable for 
 # Create a test VM with default settings
 ./scripts/create-test-vm.sh
 
-# Create a VM named "gnome49-test" using lts-hwe-testing image
-./scripts/create-test-vm.sh gnome49-test lts-hwe-testing
+# Create a VM named "gnome50-test" using lts-hwe-testing image
+./scripts/create-test-vm.sh gnome50-test lts-hwe-testing
 
 # Create with specific SSH key
 ./scripts/test-vm.sh my-test lts-hwe ~/.ssh/mykey.pub
