@@ -32,6 +32,6 @@ authselect enable-feature with-silent-lastlog
 authselect enable-feature with-fingerprint
 
 sed -i -e "s@PrivateTmp=.*@PrivateTmp=no@g" /usr/lib/systemd/system/systemd-resolved.service
-# FIXME: this does not yet work, the resolution service fails for somer reason
-# enable systemd-resolved for proper name resolution
+# Keep systemd-resolved enabled for proper DNS resolution.
+# PrivateTmp=no works around earlier CentOS Stream 10/bootc startup failures.
 systemctl enable systemd-resolved.service

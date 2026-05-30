@@ -14,7 +14,7 @@ glib-compile-schemas /usr/share/glib-2.0/schemas
 gdk-pixbuf-query-loaders-64 --update-cache
 
 # Offline Bluefin documentation
-curl --retry 3 -Lo /tmp/bluefin.pdf https://github.com/ublue-os/bluefin-docs/releases/download/0.1/bluefin.pdf
+curl --retry 3 -Lo /tmp/bluefin.pdf https://github.com/projectbluefin/documentation/releases/download/0.1/bluefin.pdf
 install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
 
 # Add Flathub by default
