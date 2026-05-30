@@ -12,8 +12,9 @@
 | `reusable-build-image.yml` | shared build/push/sign logic |
 | `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on e2e |
 | `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
-| `pr-testsuite.yml` | runs `just check` + `just lint` on every PR; the only required check |
+| `pr-testsuite.yml` | runs `just check` + `just lint` + **e2e smoke** on every PR; only `Lint & syntax` is a required check |
 | `renovate-automerge.yml` | auto-merges Renovate PRs when pr-testsuite passes |
+| ~~`build-gnome50.yml`~~ | **deleted 2026-05-30** — GNOME 50 is now the default; `lts-testing-50` tags are no longer produced |
 
 ## Branches and tags
 
@@ -136,7 +137,7 @@ If nothing is pushed, nothing should sign.
 
 Renovate PRs are fully automated — no human needed:
 
-1. Renovate opens PR → `pr-testsuite.yml` runs `just check` + `just lint` (~5 min)
+1. Renovate opens PR → `pr-testsuite.yml` runs `just check` + `just lint` + e2e smoke (~15 min)
 2. `renovate-automerge.yml` triggers on `workflow_run` success → calls `gh pr merge --auto --merge`
 3. Merge queue merges with `MERGE` commit (not squash)
 
@@ -148,7 +149,7 @@ The weekly release e2e is the real quality gate for build correctness.
 
 `scheduled-lts-release.yml` job chain:
 1. `trigger-lts-builds` — triggers 5 builds on `lts`, waits for regular + dx + gdx to complete
-2. `testsuite` — e2e smoke on `ghcr.io/projectbluefin/bluefin:lts` via `projectbluefin/testsuite/e2e.yml@main`
+2. `testsuite` — e2e smoke on `ghcr.io/projectbluefin/bluefin:lts` via `projectbluefin/testsuite/e2e.yml` (pinned SHA, updated by Renovate)
 3. `generate-release` (needs: testsuite) — only fires if e2e passes; dispatches `generate-release.yml`
 
 If e2e fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
