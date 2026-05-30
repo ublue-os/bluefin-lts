@@ -211,6 +211,9 @@ jobs:
           # --label KEY-       strips stale OSTree commit/diffid annotations
           # CHUNKAH_CONFIG_STR preserves containers.bootc=1 and other OCI labels
           CHUNKAH_REF="quay.io/coreos/chunkah:v0.5.0@sha256:352097f3d32186ac11082f8b74cd544678b00388b50c96ba5c8e79503a454fe3"
+          # -v and --security-opt are required for buildah < v1.44 (Ubuntu 24.04 ships 1.33.x)
+          # so that the bind-mount of /run/src persists out.ociarchive to the host CWD,
+          # allowing the final `FROM oci-archive:out.ociarchive` stage to find the file.
           sudo buildah build \
             --skip-unused-stages=false \
             --from "${IMG}" \
@@ -218,7 +221,10 @@ jobs:
             --build-arg "CHUNKAH_CONFIG_STR=$(sudo podman inspect "${IMG}")" \
             --build-arg "CHUNKAH_ARGS=--max-layers 128 --prune /sysroot/ --label ostree.commit- --label ostree.final-diffid-" \
             -t "${IMG}" \
+            -v "$(pwd):/run/src" \
+            --security-opt=label=disable \
             https://github.com/coreos/chunkah/releases/download/v0.5.0/Containerfile.splitter
+          sudo rm -f out.ociarchive
 
       - name: Load Image
         if: ${{ inputs.publish }}
