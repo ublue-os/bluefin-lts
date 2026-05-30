@@ -10,6 +10,7 @@
 Larger, more lethal [Bluefin](https://projectbluefin.io). `bluefin:lts` is built on CentOS Stream 10.
 
 ![image](https://github.com/user-attachments/assets/2e160934-44e6-4aee-b2b8-accb3bcf0a41)
+[Deepwiki](https://deepwiki.com/projectbluefin/bluefin-lts)
 
 ## Instructions
 
