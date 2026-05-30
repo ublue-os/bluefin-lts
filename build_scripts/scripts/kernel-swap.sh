@@ -113,4 +113,4 @@ dnf versionlock add \
 
 # Add akmods secureboot key
 mkdir -p /etc/pki/akmods/certs
-curl --retry 15 -Lo /etc/pki/akmods/certs/akmods-ublue.der "https://github.com/ublue-os/akmods/raw/main/certs/public_key.der"
+ghcurl "https://github.com/ublue-os/akmods/raw/main/certs/public_key.der" --retry 15 -Lo /etc/pki/akmods/certs/akmods-ublue.der

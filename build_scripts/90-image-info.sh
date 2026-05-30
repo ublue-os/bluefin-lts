@@ -54,7 +54,7 @@ EOF
 
 # Weekly user count for fastfetch
 # FIXME: change this back to -lts once CentOS fixed their countme
-curl --retry 3 https://raw.githubusercontent.com/ublue-os/countme/main/badge-endpoints/bluefin.json | jq -r ".message" > /usr/share/ublue-os/fastfetch-user-count
+ghcurl https://raw.githubusercontent.com/ublue-os/countme/main/badge-endpoints/bluefin.json --retry 3 | jq -r ".message" > /usr/share/ublue-os/fastfetch-user-count
 
 # bazaar weekly downloads used for fastfetch
 curl -X 'GET' \

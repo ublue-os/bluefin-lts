@@ -14,7 +14,7 @@ glib-compile-schemas /usr/share/glib-2.0/schemas
 gdk-pixbuf-query-loaders-64 --update-cache
 
 # Offline Bluefin documentation
-curl --retry 3 -Lo /tmp/bluefin.pdf https://github.com/projectbluefin/documentation/releases/download/0.1/bluefin.pdf
+ghcurl https://github.com/projectbluefin/documentation/releases/download/0.1/bluefin.pdf --retry 3 -Lo /tmp/bluefin.pdf
 install -Dm0644 -t /usr/share/doc/bluefin/ /tmp/bluefin.pdf
 
 # Add Flathub by default
@@ -43,3 +43,10 @@ echo "add_dracutmodules+=\" resume \"" >/etc/dracut.conf.d/resume.conf
 KERNEL_SUFFIX=""
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
+
+# Footgun, See: https://github.com/ublue-os/main/issues/598
+rm -f /usr/bin/chsh /usr/bin/lchsh
+
+# Add linuxbrew to the list of paths usable by `sudo`
+# not a sudoers.d override because we want to get updates from upstream and not break everything
+sed -Ei "s/secure_path = (.*)/secure_path = \1:\/home\/linuxbrew\/.linuxbrew\/bin/" /etc/sudoers
