@@ -11,7 +11,6 @@
 | `build-dx-hwe.yml` | caller for HWE `bluefin-dx` |
 | `reusable-build-image.yml` | shared build/push/sign logic |
 | `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on e2e |
-| `create-lts-pr.yml` | opens/updates draft `main→lts` promotion PR |
 | `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
 | `pr-testsuite.yml` | runs `just check` + `just lint` on every PR; the only required check |
 | `renovate-automerge.yml` | auto-merges Renovate PRs when pr-testsuite passes |
@@ -58,19 +57,47 @@
 
 `TAG_SUFFIX` is intentionally **not** written to `GITHUB_ENV`. Do not "fix" that; `CENTOS_VERSION_SUFFIX` already carries the suffix and adding both would create `*-testing-testing`.
 
+## Rechunker — chunkah v0.5.0
+
+`reusable-build-image.yml` uses `coreos/chunkah` v0.5.0 (not `ublue-os/legacy-rechunk`).
+
+**Implementation:** inline `buildah build` with the upstream `Containerfile.splitter`:
+```bash
+buildah build --skip-unused-stages=false \
+  --from "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+  --build-arg "CHUNKAH=quay.io/coreos/chunkah:v0.5.0@sha256:352097f3d32186ac11082f8b74cd544678b00388b50c96ba5c8e79503a454fe3" \
+  --build-arg "CHUNKAH_CONFIG_STR=$(podman inspect ...)" \
+  --build-arg "CHUNKAH_ARGS=--max-layers 128 --prune /sysroot/ --label ostree.commit- --label ostree.final-diffid-" \
+  -t "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+  https://github.com/coreos/chunkah/releases/download/v0.5.0/Containerfile.splitter
+```
+
+**Key flags for bootc images:**
+- `--prune /sysroot/` — strips OSTree data not needed in OCI transport
+- `--max-layers 128` — upstream recommendation for large bootc desktop images
+- `--label ostree.commit- --label ostree.final-diffid-` — strips stale OSTree annotations
+- `CHUNKAH_CONFIG_STR` — preserves `containers.bootc=1` and all other OCI labels
+
+**Push:** all per-arch pushes use `--compression-format zstd:chunked --force-compression`.
+zstd:chunked is complementary to chunkah: chunkah maximizes layer reuse (build-time);
+zstd:chunked minimizes bytes fetched within changed layers (pull-time, HTTP range requests).
+
+**`rechunk` input** (`bool`, default `true`): skip on PRs (`github.event_name != 'pull_request'`).
+After rechunking, the image is retagged in-place; `Load Image` always picks up from `localhost/${IMAGE_NAME}:${DEFAULT_TAG}`.
+
 ## SBOM rules
 
 - Generate/attest SBOMs **only** on `refs/heads/lts` **and** when `inputs.publish` is true.
 - All SBOM steps must keep `continue-on-error: true`.
 - Failed SBOM attestation must never block image publishing.
-- LTS uses SPDX JSON artifacts on the amd64 manifest digest; signing is key-based, not OIDC keyless.
+- LTS uses SPDX JSON artifacts on the amd64 manifest digest; signing uses keyless cosign (Sigstore OIDC).
 
 ## Condition quick reference
 
 | Step/job | Condition |
 |---|---|
 | SBOM steps | `github.ref == 'refs/heads/lts' && inputs.publish` + `continue-on-error: true` |
-| Rechunk | `inputs.rechunk && inputs.publish` |
+| Rechunk (chunkah) | `inputs.rechunk && inputs.publish` |
 | Load/Login/Push/Cosign/Outputs/Manifest push | `inputs.publish` |
 | top-level `sign` job + manifest signing | `inputs.publish` |
 
