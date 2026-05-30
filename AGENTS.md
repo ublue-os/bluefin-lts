@@ -1,26 +1,7 @@
-# AGENTS.md — projectbluefin/bluefin-lts
+# Bluefin LTS — Agent & Copilot Instructions
 
-This file is for AI agents (Copilot, Claude, etc.) working in this repository.
-
-## What this repo does
-
-`bluefin-lts` is a Long-Term Support variant of Bluefin, built on CentOS Stream with bootc.
-It consumes `ghcr.io/projectbluefin/common:latest` and produces CentOS-based images
-that track a slower release cadence suitable for enterprise/production use.
-
-**Branch model:**
-- `main` — development, default branch, PRs target here
-- `lts` — production, one-way promotion from main, never commit directly
-
-## Skills
-
-| Task | Load |
-|---|---|
-| Build + variant matrix | `bluefin-build` |
-| CI failures | `bluefin-ci` |
-| Package changes | `bluefin-packages` |
-| Release process | `bluefin-release` |
-| LTS-specific rules | `bluefin-lts` |
+**Bluefin LTS** is the long-term support variant of Bluefin, built on CentOS Stream with bootc.
+Home repo: [projectbluefin/bluefin-lts](https://github.com/projectbluefin/bluefin-lts)
 
 ## Org pipeline — projectbluefin
 
@@ -37,9 +18,6 @@ dakota  (main→:latest)       ←── images ──→ testsuite (e2e gate)
                                  ▼
                                 iso (installation media)
 ```
-
-Each image repo pulls `ghcr.io/projectbluefin/common:latest` as a base layer.
-testsuite gates `:latest` promotion in all three image repos.
 
 ### Issue lifecycle
 
@@ -65,27 +43,39 @@ When in doubt, post nothing.
 
 ### Mandatory gates
 
-- `just check && pre-commit run --all-files` before every commit
-- PR title: Conventional Commits format (`feat:`, `fix:`, `chore(deps):`, etc.)
+- `just check && just lint` before every commit
+- PR title: Conventional Commits format
 - Attribution on every AI-authored commit: `Assisted-by: <Model> via <Tool>`
 - Max 4 open PRs at a time per agent
 - No WIP PRs
 
-## Working on this repo
+## Skills
 
-**Before opening a PR:**
-1. All PRs target `main`
-2. Never push directly to `lts`
-3. Production promotion: main → lts happens via automated scheduled release
-4. Run `just check` before committing
+Load only what the task needs:
 
-**Key files:**
-- `.github/workflows/` — build + release workflows
-- `docs/` — variant and upgrade documentation
+| Task | Load |
+|---|---|
+| Local build, validation, packages | `docs/skills/build.md` |
+| CI/CD workflows, publish logic, tag namespaces | `docs/skills/ci-cd.md` |
+| Testing PRs on ghost homelab (titan-lts) | `docs/skills/testlab.md` |
+| Release, rollback, registry, ISO status | `docs/skills/release.md` |
 
-## Related repos
+## Branch model
 
-- Upstream base: [projectbluefin/common](https://github.com/projectbluefin/common)
-- Bluefin (Fedora variant): [projectbluefin/bluefin](https://github.com/projectbluefin/bluefin)
-- E2E tests: [projectbluefin/testsuite](https://github.com/projectbluefin/testsuite)
-- Install media: [projectbluefin/iso](https://github.com/projectbluefin/iso)
+- `main` — active development (default). All PRs target `main`.
+- `lts` — production releases only. Promotion is one-way: `main → lts`.
+
+## Hard rules
+
+- **NEVER cancel builds** — 45–90 min, set 120+ min timeout
+- **NEVER squash-merge** promotion PRs (`main→lts`) — breaks merge base permanently
+- **NEVER re-enable LTS ISO builds** — Anaconda is broken on CentOS Stream base
+- **NEVER commit directly to `lts` branch** — land in `main` first
+- **NEVER merge `lts→main`** — flow is one-way: `main→lts` only
+
+## Quick commands
+
+```bash
+just check && just lint     # validate before every commit
+just build bluefin lts      # full build (120+ min timeout)
+```
