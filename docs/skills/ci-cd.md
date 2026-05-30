@@ -10,9 +10,11 @@
 | `build-regular-hwe.yml` | caller for HWE `bluefin` |
 | `build-dx-hwe.yml` | caller for HWE `bluefin-dx` |
 | `reusable-build-image.yml` | shared build/push/sign logic |
-| `scheduled-lts-release.yml` | only Tuesday production dispatcher |
+| `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on e2e |
 | `create-lts-pr.yml` | opens/updates draft `main→lts` promotion PR |
-| `generate-release.yml` | creates GitHub Release after LTS publish |
+| `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
+| `pr-testsuite.yml` | runs `just check` + `just lint` on every PR; the only required check |
+| `renovate-automerge.yml` | auto-merges Renovate PRs when pr-testsuite passes |
 
 ## Branches and tags
 
@@ -78,7 +80,29 @@ If nothing is pushed, nothing should sign.
 
 `scheduled-lts-release.yml` is the **only** owner of Tuesday `0 6 * * 2` production runs. Do **not** add `schedule:` to the 5 build callers; scheduled caller runs on `main`, evaluates `publish=false`, and wastes runners.
 
+## Renovate auto-merge pipeline (added 2026-05-30)
+
+Renovate PRs are fully automated — no human needed:
+
+1. Renovate opens PR → `pr-testsuite.yml` runs `just check` + `just lint` (~5 min)
+2. `renovate-automerge.yml` triggers on `workflow_run` success → calls `gh pr merge --auto --merge`
+3. Merge queue merges with `MERGE` commit (not squash)
+
+**Required status check** (ruleset 4940669): `Lint & syntax` only.  
+Builds run on PRs but are **informational** — they do not block merging.  
+The weekly release e2e is the real quality gate for build correctness.
+
+## Weekly release pipeline (updated 2026-05-30)
+
+`scheduled-lts-release.yml` job chain:
+1. `trigger-lts-builds` — triggers 5 builds on `lts`, waits for regular + dx + gdx to complete
+2. `testsuite` — e2e smoke on `ghcr.io/ublue-os/bluefin:lts` via `projectbluefin/testsuite/e2e.yml@main`
+3. `generate-release` (needs: testsuite) — only fires if e2e passes; dispatches `generate-release.yml`
+
+If e2e fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
+
 ## Release-generation pitfalls
 
 - `workflow_run` chaining does not propagate from `GITHUB_TOKEN`-dispatched workflows reliably enough for LTS release generation.
 - If touching `scheduled-lts-release.yml`, preserve the explicit wait/poll pattern before `generate-release.yml` so release creation happens after published tags exist.
+- `pr-validate.yml` in `projectbluefin/testsuite` is NOT a reusable workflow (no `workflow_call`). Never call it with `uses:`; it is the testsuite's own linter.

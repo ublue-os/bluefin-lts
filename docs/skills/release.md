@@ -6,15 +6,16 @@
 2. Merge must be a **regular merge commit**.
 3. `push` to `lts` only validates; it does **not** publish.
 4. `scheduled-lts-release.yml` owns the Tuesday `0 6 * * 2` production run.
-5. For urgent publishes, manually dispatch the same workflow on `lts`.
-6. After publish, `generate-release.yml` creates the GitHub Release.
+5. **e2e smoke test must pass** before GitHub Release is created.
+6. For urgent publishes, manually dispatch `scheduled-lts-release.yml` on `lts`.
 
 ## Promotion / branch safety
 
 - Never squash-merge promotion PRs.
 - Never merge `lts→main`.
 - Never commit directly to `lts`; land in `main` first.
-- `main` uses a merge queue: `gh pr merge --auto` enqueues; do not promise immediate merge.
+- `main` uses a merge queue with **MERGE** method (not squash): `gh pr merge --auto` enqueues; do not promise immediate merge.
+- Required check on `main` is `Lint & syntax` (pr-testsuite) only — builds are informational.
 
 ## Fork sync pattern (`castrojo` fork)
 
