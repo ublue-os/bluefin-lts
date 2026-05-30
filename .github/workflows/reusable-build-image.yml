@@ -225,6 +225,10 @@ jobs:
             --security-opt=label=disable \
             https://github.com/coreos/chunkah/releases/download/v0.5.0/Containerfile.splitter
           sudo rm -f out.ociarchive
+          # Transfer rechunked image from root (buildah) storage to user (podman) storage.
+          # buildah runs as root so its container store is separate from the runner-user's podman store.
+          # Piping save→load makes the tagged image visible to the unprivileged podman steps below.
+          sudo podman save "${IMG}" | podman load
 
       - name: Load Image
         if: ${{ inputs.publish }}
