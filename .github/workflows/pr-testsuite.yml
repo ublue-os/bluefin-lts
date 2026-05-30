@@ -32,3 +32,13 @@ jobs:
 
       - name: Shellcheck
         run: just lint
+
+  testsuite:
+    name: E2E smoke
+    permissions:
+      contents: read
+      packages: write  # testsuite pushes screenshot OCI artifacts to GHCR
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
+    with:
+      image: ghcr.io/projectbluefin/bluefin:lts-testing
+      suites: smoke
