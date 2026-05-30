@@ -246,9 +246,12 @@ jobs:
         if: ${{ inputs.publish }}
         env:
           REGISTRY: ghcr.io
+          # PACKAGES_TOKEN is a PAT with write:packages; falls back to GITHUB_TOKEN once
+          # the package is linked to this repo in GHCR package settings.
+          PUSH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
+          echo "${PUSH_TOKEN}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
+          echo "${PUSH_TOKEN}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
 
       - name: Push to GHCR
         if: ${{ inputs.publish }}
@@ -287,8 +290,10 @@ jobs:
 
       - name: Login to GitHub Container Registry with ORAS
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+        env:
+          PUSH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "${PUSH_TOKEN}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Upload SBOM
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
@@ -525,8 +530,9 @@ jobs:
         if: ${{ inputs.publish }}
         env:
           REGISTRY: ghcr.io
+          PUSH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
+          echo "${PUSH_TOKEN}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
 
       - name: Push Manifest
         if: ${{ inputs.publish }}
@@ -560,8 +566,9 @@ jobs:
         if: ${{ inputs.publish }}
         env:
           REGISTRY: ghcr.io
+          PUSH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
+          echo "${PUSH_TOKEN}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
           cat ${XDG_RUNTIME_DIR}/containers/auth.json > ~/.docker/config.json
 
       - name: Install Cosign
