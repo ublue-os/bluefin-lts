@@ -149,7 +149,7 @@ jobs:
     needs: trigger-lts-builds
     uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main
     with:
-      image: ghcr.io/ublue-os/bluefin:lts
+      image: ghcr.io/projectbluefin/bluefin:lts
       suites: smoke
 
   generate-release:

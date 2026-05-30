@@ -13,13 +13,13 @@ CPUS="4"
 
 echo "=== Bluefin LTS Test VM Creator ==="
 echo "VM Name: $VM_NAME"
-echo "Base Image: ghcr.io/ublue-os/bluefin:$IMAGE_TAG"
+echo "Base Image: ghcr.io/projectbluefin/bluefin:$IMAGE_TAG"
 echo "SSH Key: $SSH_PUB_KEY"
 echo ""
 
 # Step 1: Pull the base image
 echo "Step 1: Pulling base image..."
-podman pull "ghcr.io/ublue-os/bluefin:$IMAGE_TAG"
+podman pull "ghcr.io/projectbluefin/bluefin:$IMAGE_TAG"
 
 # Step 2: Create disk image
 echo "Step 2: Creating disk image..."
@@ -32,7 +32,7 @@ echo "Step 3: Installing to disk with SSH key injection..."
 sudo podman run --rm --privileged --pid=host -e BOOTC_SETENFORCE0_FALLBACK=1 \
     -v /tmp:/tmp \
     -v "$(dirname "$SSH_PUB_KEY"):/ssh" \
-    "ghcr.io/ublue-os/bluefin:$IMAGE_TAG" \
+    "ghcr.io/projectbluefin/bluefin:$IMAGE_TAG" \
     bootc install to-disk \
     --via-loopback \
     --filesystem xfs \

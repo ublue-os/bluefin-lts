@@ -1,4 +1,4 @@
-export repo_organization := env("GITHUB_REPOSITORY_OWNER", "ublue-os")
+export repo_organization := env("GITHUB_REPOSITORY_OWNER", "projectbluefin")
 export image_name := env("IMAGE_NAME", "bluefin")
 export centos_version := env("CENTOS_VERSION", "stream10")
 export default_tag := env("DEFAULT_TAG", "lts")

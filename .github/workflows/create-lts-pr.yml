@@ -36,7 +36,7 @@ jobs:
         # Regular merge commits always have 2 parents (lts tip + main tip).
         #
         # Permanent fix: request upstream to disable allow_squash_merge in repo settings.
-        # https://github.com/ublue-os/bluefin-lts/issues (file upstream issue)
+        # https://github.com/projectbluefin/bluefin-lts/issues (file upstream issue)
         continue-on-error: true
         run: |
           PARENT_COUNT=$(git cat-file -p origin/lts | grep -c "^parent")
