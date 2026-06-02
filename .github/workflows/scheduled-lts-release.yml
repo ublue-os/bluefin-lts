@@ -147,7 +147,7 @@ jobs:
   testsuite:
     name: Testsuite — post-release smoke
     needs: trigger-lts-builds
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@59dac647501c3d3700bd57e726939491dd96636c # main
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@927c1117c1f42df87089c4eaa15f4f978d21f576 # main
     with:
       image: ghcr.io/ublue-os/bluefin:lts
       suites: smoke
