@@ -59,14 +59,10 @@ on:
         type: string
         default: ""
       gnome-version:
-        description: "GNOME major version to build (49 or 50)"
+        description: "GNOME major version to build (50)"
         required: false
         type: string
-        default: "49"
-    secrets:
-      SIGNING_SECRET:
-        description: "The private key used to sign the image"
-        required: false
+        default: "50"
 
 env:
   IMAGE_NAME: ${{ inputs.image-name }}
@@ -117,12 +113,12 @@ jobs:
       image_tag: ${{ steps.build-image.outputs.image_tag }}
 
     steps:
-      - name: Install dependencies
-        if: matrix.platform == 'arm64'
-        run: |
-          sudo apt update -y
-          sudo apt install -y \
-            podman
+      - name: Setup runner
+        uses: projectbluefin/actions/bootc-build/setup-runner@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        with:
+          storage-backend: btrfs
+          update-podman: "true"
+          install-tools: '["just", "cosign", "oras", "syft"]'
 
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # v10
@@ -138,6 +134,13 @@ jobs:
       - name: Check Just Syntax
         shell: bash
         run: just check
+
+      - name: Restore DNF cache
+        uses: projectbluefin/actions/bootc-build/dnf-cache@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        with:
+          action: restore
+          cache-name: bluefin-lts-${{ matrix.platform }}-${{ env.CENTOS_VERSION }}
+          architecture: ${{ matrix.platform }}
 
       - name: Build Image
         id: build-image
@@ -201,31 +204,20 @@ jobs:
           sudo "$SYFT_CMD" "${IMAGE}:${DEFAULT_TAG}" -o "spdx-json=${SBOM}"
           echo "SBOM=${SBOM}" >> "${GITHUB_OUTPUT}"
 
-      - name: Run Rechunker
+      - name: Rechunk image
         if: ${{ inputs.rechunk && inputs.publish }}
-        id: rechunk
-        uses: ublue-os/legacy-rechunk@a925083d9af7cb04b3e2a6e8c01bfa495f38b710 # v1.0.0
+        uses: projectbluefin/actions/bootc-build/chunka@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
         with:
-          rechunk: ghcr.io/ublue-os/legacy-rechunk:v1.0.1
-          ref: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          prev-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          skip_compression: true
-          version: ${{ env.CENTOS_VERSION }}
+          source-image: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          output-image: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          max-layers: "128"
+          force-compression: "true"
 
       - name: Load Image
         if: ${{ inputs.publish }}
         id: load
-        env:
-          RECHUNK_RAN: ${{ inputs.rechunk }}
-          RECHUNK_REF: ${{ steps.rechunk.outputs.ref }}
-          RECHUNK_LOCATION: ${{ steps.rechunk.outputs.location }}
         run: |
-          if [ "${RECHUNK_RAN}" == "true" ] ; then
-            IMAGE="$(podman pull "${RECHUNK_REF}")"
-            sudo rm -rf "${RECHUNK_LOCATION}"
-          else
-            IMAGE="localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-          fi
+          IMAGE="localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
           podman image tag "${IMAGE}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
 
           IMAGE="${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
@@ -233,96 +225,42 @@ jobs:
           echo "image=${IMAGE}" >> "${GITHUB_OUTPUT}"
           echo "digest=${IMAGE_DIGEST}" >> "${GITHUB_OUTPUT}"
 
-      - name: Login to GitHub Container Registry
-        if: ${{ inputs.publish }}
-        env:
-          REGISTRY: ghcr.io
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-
-      - name: Push to GHCR
+      - name: Push image
         if: ${{ inputs.publish }}
         id: push
-        env:
-          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          IMAGE_DIGEST: ${{ steps.load.outputs.digest }}
-          PLATFORM: ${{ matrix.platform }}
-          HWE: ${{ inputs.hwe }}
-          MAX_RETRIES: 3
-        run: |
-          set -x
-          podman tag "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}"
-          for i in $(seq "${MAX_RETRIES}"); do
-            podman push --digestfile=/tmp/digestfile "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
-          done
-          REMOTE_IMAGE_DIGEST=$(cat /tmp/digestfile)
-          echo "remote_image_digest=${REMOTE_IMAGE_DIGEST}" >> $GITHUB_OUTPUT
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
-        if: ${{ inputs.publish }}
-
-      - name: Sign Image
-        if: ${{ inputs.publish }}
-        run: |
-          IMAGE_FULL="${IMAGE_REGISTRY}/${IMAGE_NAME}"
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_FULL}@${{ steps.push.outputs.remote_image_digest }}
-        env:
-          TAGS: ${{ steps.push.outputs.digest }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-
-      - name: Install ORAS
-        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
-
-      - name: Login to GitHub Container Registry with ORAS
-        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Upload SBOM
-        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        id: upload-sbom
-        env:
-          IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          DIGEST: ${{ steps.push.outputs.remote_image_digest }}
-          SBOM: ${{ steps.generate-sbom.outputs.SBOM }}
-        run: |
-          cd "$(dirname "${SBOM}")"
-          oras attach \
-            --artifact-type application/vnd.spdx+json \
-            --annotation "filename=$(basename "${SBOM}")" \
-            "${IMAGE}@${DIGEST}" \
-            "$(basename "${SBOM}")"
-          sbom_digest=$(oras discover --format json "${IMAGE}@${DIGEST}" \
-            | jq -r '[.referrers[] | select(.artifactType == "application/vnd.spdx+json") | .digest] | first')
-          if [[ -z "${sbom_digest}" || "${sbom_digest}" == "null" ]]; then
-            echo "ERROR: SBOM referrer not found after upload" >&2
-            exit 1
-          fi
-          echo "sbom_digest=${sbom_digest}" >> "${GITHUB_OUTPUT}"
-
-      - name: Sign SBOM OCI Artifact
-        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        env:
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          SBOM_DIGEST: ${{ steps.upload-sbom.outputs.sbom_digest }}
-        run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${SBOM_DIGEST}"
-
-      - name: Attestation
-        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 #v4.1.0
+        uses: projectbluefin/actions/bootc-build/push-image@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
         with:
-          subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.remote_image_digest }}
-          push-to-registry: true
+          image-name: ${{ env.IMAGE_NAME }}
+          tags: "${{ env.DEFAULT_TAG }}-${{ matrix.platform }}"
+          registry: ghcr.io
+          max-attempts: "3"
+          retry-wait-seconds: "15"
+          force-compression: "true"
+          fix-auth-permissions: "true"
+          github-token: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Save DNF cache
+        if: always() && !cancelled()
+        uses: projectbluefin/actions/bootc-build/dnf-cache@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        with:
+          action: save
+          cache-name: bluefin-lts-${{ matrix.platform }}-${{ env.CENTOS_VERSION }}
+          architecture: ${{ matrix.platform }}
+          allow-write: "true"
+
+      - name: Sign and publish image
+        if: ${{ inputs.publish }}
+        id: sign
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          digest: ${{ steps.push.outputs.digest }}
+          signing-mode: keyless
+          generate-sbom: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+          push-attestation: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
+          github-token: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
+          syft-version: v1.44.0
+          image-name: ${{ env.IMAGE_NAME }}
 
       - name: Create Job Outputs
         if: ${{ inputs.publish }}
@@ -330,7 +268,7 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           PLATFORM: ${{ matrix.platform }}
           HWE: ${{ inputs.hwe }}
-          DIGEST: ${{ steps.push.outputs.remote_image_digest }}
+          DIGEST: ${{ steps.push.outputs.digest }}
         run: |
           mkdir -p /tmp/outputs/digests
           echo "${DIGEST}" > "/tmp/outputs/digests/${IMAGE_NAME}-${HWE}-${PLATFORM}.txt"
@@ -482,63 +420,17 @@ jobs:
           done
           echo "DIGESTS_JSON=$(echo "$DIGESTS_JSON" | jq -c '.')" >> "${GITHUB_OUTPUT}"
 
-      - name: Create Manifest
-        if: ${{ inputs.publish }}
-        id: create-manifest
-        env:
-          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-        run: |
-          podman manifest create ${IMAGE_REGISTRY}/${IMAGE_NAME}
-          echo "MANIFEST=${IMAGE_REGISTRY}/${IMAGE_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Populate Manifest
-        if: ${{ inputs.publish }}
-        env:
-          MANIFEST: ${{ steps.create-manifest.outputs.MANIFEST }}
-          DIGESTS_JSON: ${{ steps.load-outputs.outputs.DIGESTS_JSON }}
-          LABELS: ${{ steps.metadata.outputs.labels }}
-          PLATFORMS: "${{ inputs.platforms }}"
-        run: |
-          DIGESTS=$(echo "$DIGESTS_JSON" | jq -c '.')
-          # turn the comma separated string into a list
-          platforms=()
-          IFS=',' read -r -a platforms <<< "${PLATFORMS}"
-          for platform in ${platforms[@]}; do
-            digest="$(echo $DIGESTS | jq -r ".$platform")"
-            echo "Adding ${IMAGE_REGISTRY}/${IMAGE_NAME}@${digest} for ${platform}"
-            podman manifest add "${MANIFEST}" "${IMAGE_REGISTRY}/${IMAGE_NAME}@${digest}" --arch "${platform}"
-          done
-
-          # Apply the labels to the manifest (separated by newlines)
-          while IFS= read -r label; do
-            echo "Applying label ${label} to manifest"
-            podman manifest annotate --index --annotation "$label" "${MANIFEST}"
-          done <<< "${LABELS}"
-
-      - name: Login to GitHub Container Registry
-        if: ${{ inputs.publish }}
-        env:
-          REGISTRY: ghcr.io
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-
-      - name: Push Manifest
+      - name: Create and push manifest
         if: ${{ inputs.publish }}
         id: push_manifest
-        env:
-          MANIFEST: ${{ steps.create-manifest.outputs.MANIFEST }}
-          TAGS: ${{ steps.metadata.outputs.tags }}
-          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-        run: |
-          while IFS= read -r tag; do
-            podman manifest push --all=false --digestfile=/tmp/digestfile $MANIFEST $IMAGE_REGISTRY/$IMAGE_NAME:$tag
-          done <<< "$TAGS"
-
-          DIGEST=$(cat /tmp/digestfile)
-          echo "DIGEST=$DIGEST" >> $GITHUB_OUTPUT
-          echo "IMAGE=$IMAGE_REGISTRY/$IMAGE_NAME" >> $GITHUB_OUTPUT
+        uses: projectbluefin/actions/bootc-build/create-manifest@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        with:
+          image-name: ${{ env.IMAGE_NAME }}
+          registry: ghcr.io
+          digests-json: ${{ steps.load-outputs.outputs.DIGESTS_JSON }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          github-token: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
 
   # Cosign throws errors when ran inside the Fedora container for one reason or another
   # so we move this to another step in order to run on Ubuntu
@@ -551,23 +443,12 @@ jobs:
       packages: write
       id-token: write
     steps:
-      - name: Login to GitHub Container Registry
-        if: ${{ inputs.publish }}
-        env:
-          REGISTRY: ghcr.io
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-          cat ${XDG_RUNTIME_DIR}/containers/auth.json > ~/.docker/config.json
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
-
-      - name: Sign Manifest
-        if: ${{ inputs.publish }}
-        env:
-          DIGEST: ${{ needs.manifest.outputs.digest }}
-          IMAGE: ${{ needs.manifest.outputs.image }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-        run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
+      - name: Sign manifest
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        with:
+          image: ${{ needs.manifest.outputs.image }}
+          digest: ${{ needs.manifest.outputs.digest }}
+          signing-mode: keyless
+          generate-sbom: "false"
+          push-attestation: "false"
+          github-token: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
