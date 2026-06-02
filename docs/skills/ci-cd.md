@@ -12,7 +12,7 @@
 | `reusable-build-image.yml` | shared build/push/sign logic — calls `projectbluefin/actions@v1` composite actions |
 | `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on e2e; gated by `environment: production` (2-human approval) |
 | `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
-| `pr-testsuite.yml` | runs `just check` + `just lint` + **e2e smoke** on every PR; only `Lint & syntax` is a required check |
+| `pr-testsuite.yml` | runs **`validate-pr@v1`** (just check, shellcheck, hadolint, pre-commit) + **e2e smoke** on every PR; only `Lint & syntax` is a required check |
 | `renovate-automerge.yml` | auto-merges Renovate PRs when pr-testsuite passes |
 | `skill-drift.yml` | warns on PRs that change CI/build files without updating docs/skills |
 | ~~`build-gnome50.yml`~~ | **deleted 2026-05-30** — GNOME 50 is now the default; `lts-testing-50` tags are no longer produced |
@@ -58,6 +58,53 @@
 | `manifest` job | non-production refs append `-testing` to `DEFAULT_TAG` and `CENTOS_VERSION_SUFFIX` |
 
 `TAG_SUFFIX` is intentionally **not** written to `GITHUB_ENV`. Do not "fix" that; `CENTOS_VERSION_SUFFIX` already carries the suffix and adding both would create `*-testing-testing`.
+
+## Centralized CI — `projectbluefin/actions`
+
+Common CI/CD logic lives in reusable GitHub Actions at **https://github.com/projectbluefin/actions** (`@v1`).
+
+### Actions adopted by bluefin-lts
+
+| Action | Where used | LTS-specific override |
+|---|---|---|
+| `bootc-build/validate-pr` | `pr-testsuite.yml` | `shellcheck-glob: "build_scripts/**/*.sh"` (lts uses `build_scripts/`, not `build_files/`) |
+| `bootc-build/detect-changes` | `build-dx.yml`, `build-regular.yml` | `filters:` input with `build_scripts/**` and `image-versions.yaml` |
+| `bootc-build/chunka` | `reusable-build-image.yml` | `force-compression: true` (CentOS Stream requires gzip→zstd migration) |
+| `bootc-build/setup-runner` | `reusable-build-image.yml` | default inputs |
+| `bootc-build/dnf-cache` | `reusable-build-image.yml` | default inputs |
+| `bootc-build/push-image` | `reusable-build-image.yml` | default inputs |
+| `bootc-build/sign-and-publish` | `reusable-build-image.yml` | `signing-mode: keyless` |
+
+### detect-changes filter override
+
+bluefin-lts uses different paths from bluefin. **Always pass the `filters` input** when using detect-changes here:
+
+```yaml
+- uses: projectbluefin/actions/bootc-build/detect-changes@v1
+  id: detect
+  with:
+    filters: |
+      image:
+        - 'Containerfile'
+        - 'build_scripts/**'
+        - 'system_files/**'
+        - 'image-versions.yaml'
+        - 'Justfile'
+      nvidia:
+        - 'Containerfile'
+```
+
+Using the default (bluefin paths: `build_files/**`, `image-versions.yml`) would silently skip builds when real image changes land.
+
+### validate-pr glob override
+
+Default `shellcheck-glob` watches `build_files/**/*.sh`. LTS must override:
+
+```yaml
+- uses: projectbluefin/actions/bootc-build/validate-pr@v1
+  with:
+    shellcheck-glob: "build_scripts/**/*.sh"
+```
 
 ## Rechunker — chunka@v1 (projectbluefin/actions)
 
@@ -123,8 +170,8 @@ Renovate PRs are fully automated — no human needed:
 2. `renovate-automerge.yml` triggers on `workflow_run` success → calls `gh pr merge --auto --merge`
 3. Merge queue merges with `MERGE` commit (not squash)
 
-**Required status check** (ruleset 4940669): `Lint & syntax` only.  
-Builds run on PRs but are **informational** — they do not block merging.  
+**Required status check** (ruleset 4940669): `Lint & syntax` only.
+Builds run on PRs but are **informational** — they do not block merging.
 The weekly release e2e is the real quality gate for build correctness.
 
 ## Weekly release pipeline (updated 2026-06-02)
