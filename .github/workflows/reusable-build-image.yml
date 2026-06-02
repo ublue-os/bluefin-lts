@@ -88,13 +88,14 @@ jobs:
         run: |
           # turn the comma separated string into a list
           platforms=()
+          # shellcheck disable=SC2153
           IFS=',' read -r -a platforms <<< "${PLATFORMS}"
 
           MATRIX="{\"include\":[]}"
           for platform in "${platforms[@]}"; do
             MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\"}]")"
           done
-          echo "matrix=$(echo "${MATRIX}" | jq -c '.')" >> $GITHUB_OUTPUT
+          echo "matrix=$(echo "${MATRIX}" | jq -c '.')" >> "$GITHUB_OUTPUT"
 
   build_push:
     name: Build and push image
@@ -180,7 +181,7 @@ jobs:
             ENABLE_DX=1
           fi
 
-          sudo $just build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}" "${{ inputs.gnome-version }}"
+          sudo "$just" build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}" "${{ inputs.gnome-version }}"
           echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Setup Syft
@@ -313,7 +314,7 @@ jobs:
           JOBS: ${{ toJson(needs) }}
         run: |
           echo "Job status:"
-          echo $JOBS | jq -r 'to_entries[] | " - \(.key): \(.value.result)"'
+          echo "$JOBS" | jq -r 'to_entries[] | " - \(.key): \(.value.result)"'
 
           for i in $(echo "${JOBS}" | jq -r 'to_entries[] | .value.result'); do
             if [ "$i" != "success" ] && [ "$i" != "skipped" ]; then
@@ -354,7 +355,7 @@ jobs:
           # E.G: 2022-02-08T15:38:15Z'
           # https://artifacthub.io/docs/topics/repositories/container-images/
           # https://linux.die.net/man/1/date
-          echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Extract numbers from input
         id: extract-numbers

@@ -22,7 +22,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.detect.outputs.should_build }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Detect image changes
+        id: detect
+        uses: projectbluefin/actions/bootc-build/detect-changes@v1
+        with:
+          filters: |
+            image:
+              - 'Containerfile'
+              - 'build_scripts/**'
+              - 'system_files/**'
+              - 'image-versions.yaml'
+              - 'Justfile'
+            nvidia:
+              - 'Containerfile'
+
   build:
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.should_build == 'true' || github.event_name != 'pull_request'
     uses: ./.github/workflows/reusable-build-image.yml
     secrets: inherit
     with:

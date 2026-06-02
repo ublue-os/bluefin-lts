@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
 
           # Record time just before dispatch so we can find the run IDs afterward.
-          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
           gh workflow run build-regular.yml --ref lts -R ${{ github.repository }}
           gh workflow run build-dx.yml --ref lts -R ${{ github.repository }}

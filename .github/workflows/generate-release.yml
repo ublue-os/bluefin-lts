@@ -34,7 +34,7 @@ jobs:
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'lts' &&
        github.event.workflow_run.event == 'workflow_dispatch')
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -61,9 +61,9 @@ jobs:
         id: target
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "target=${{ inputs.target }}" >> $GITHUB_OUTPUT
+            echo "target=${{ inputs.target }}" >> "$GITHUB_OUTPUT"
           else
-            echo "target=lts" >> $GITHUB_OUTPUT
+            echo "target=lts" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate changelog
@@ -84,11 +84,11 @@ jobs:
             while IFS='=' read -r key value; do
               value="${value#\"}"
               value="${value%\"}"
-              echo "${key}=${value}" >> $GITHUB_OUTPUT
+              echo "${key}=${value}" >> "$GITHUB_OUTPUT"
             done < output.env
           else
             echo "output.env not found; assuming changelog generation was skipped"
-            echo "skip_release=true" >> $GITHUB_OUTPUT
+            echo "skip_release=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create GitHub Release
@@ -98,13 +98,13 @@ jobs:
         run: |
           TAG="${{ steps.changelog.outputs.TAG }}"
           TITLE="${{ steps.changelog.outputs.TITLE }}"
-          
+
           # Check if release already exists
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists, skipping creation"
             exit 0
           fi
-          
+
           # Create the release
           gh release create "$TAG" \
             --title "$TITLE" \
