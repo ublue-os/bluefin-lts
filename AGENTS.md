@@ -48,6 +48,10 @@ When in doubt, post nothing.
 - Attribution on every AI-authored commit: `Assisted-by: <Model> via <Tool>`
 - Max 4 open PRs at a time per agent
 - No WIP PRs
+- **Agents MUST NOT push directly to `main`.** All changes via PR. Branch protection enforces this.
+- **Agents MUST NOT push directly to `lts`.** Land in `main` first; `create-lts-pr.yml` handles promotion.
+- **Production builds** (`scheduled-lts-release.yml`) require 2 distinct human approvals in the GitHub `production` Environment. No agent may trigger, approve, or bypass this gate. Admin bypasses are permanently logged in Environment deployment history.
+- **`.github/workflows/`, `Justfile`, and `build_files/` are CODEOWNERS-protected** — PRs touching these paths require maintainer review.
 
 ## Skills
 
