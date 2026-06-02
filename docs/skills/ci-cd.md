@@ -9,11 +9,12 @@
 | `build-gdx.yml` | caller for `bluefin-gdx` |
 | `build-regular-hwe.yml` | caller for HWE `bluefin` |
 | `build-dx-hwe.yml` | caller for HWE `bluefin-dx` |
-| `reusable-build-image.yml` | shared build/push/sign logic |
-| `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on e2e |
+| `reusable-build-image.yml` | shared build/push/sign logic — calls `projectbluefin/actions@v1` composite actions |
+| `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on e2e; gated by `environment: production` (2-human approval) |
 | `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
 | `pr-testsuite.yml` | runs `just check` + `just lint` + **e2e smoke** on every PR; only `Lint & syntax` is a required check |
 | `renovate-automerge.yml` | auto-merges Renovate PRs when pr-testsuite passes |
+| `skill-drift.yml` | warns on PRs that change CI/build files without updating docs/skills |
 | ~~`build-gnome50.yml`~~ | **deleted 2026-05-30** — GNOME 50 is now the default; `lts-testing-50` tags are no longer produced |
 
 ## Branches and tags
@@ -58,40 +59,21 @@
 
 `TAG_SUFFIX` is intentionally **not** written to `GITHUB_ENV`. Do not "fix" that; `CENTOS_VERSION_SUFFIX` already carries the suffix and adding both would create `*-testing-testing`.
 
-## Rechunker — chunkah v0.5.0
+## Rechunker — chunka@v1 (projectbluefin/actions)
 
-`reusable-build-image.yml` uses `coreos/chunkah` v0.5.0 (not `ublue-os/legacy-rechunk`).
+`reusable-build-image.yml` calls `projectbluefin/actions/bootc-build/chunka@v1` with `force-compression: true`.
 
-**Implementation:** inline `buildah build` with the upstream `Containerfile.splitter`:
-```bash
-sudo buildah build --skip-unused-stages=false \
-  --from "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-  --build-arg "CHUNKAH=quay.io/coreos/chunkah:v0.5.0@sha256:352097f3d32186ac11082f8b74cd544678b00388b50c96ba5c8e79503a454fe3" \
-  --build-arg "CHUNKAH_CONFIG_STR=$(sudo podman inspect ...)" \
-  --build-arg "CHUNKAH_ARGS=--max-layers 128 --prune /sysroot/ --label ostree.commit- --label ostree.final-diffid-" \
-  -t "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-  -v "$(pwd):/run/src" \
-  --security-opt=label=disable \
-  https://github.com/coreos/chunkah/releases/download/v0.5.0/Containerfile.splitter
-sudo rm -f out.ociarchive
-# Transfer from root (buildah) storage to user (podman) storage
-sudo podman save "${IMG}" | podman load
-```
+**Why `force-compression: true`:** LTS uses CentOS Stream 10, which must migrate existing registry layers from `gzip` to `zstd:chunked`. Fedora consumers (bluefin) leave this at the default `false` because their images are already `zstd:chunked`.
 
-**Key flags for bootc images:**
-- `--prune /sysroot/` — strips OSTree data not needed in OCI transport
-- `--max-layers 128` — upstream recommendation for large bootc desktop images
-- `--label ostree.commit- --label ostree.final-diffid-` — strips stale OSTree annotations
-- `CHUNKAH_CONFIG_STR` — preserves `containers.bootc=1` and all other OCI labels
-- `-v $(pwd):/run/src --security-opt=label=disable` — **required** for buildah < v1.44 (Ubuntu 24.04 ships 1.33.x) so the bind-mount persists `out.ociarchive` to the host CWD
-- `sudo podman save ... | podman load` — **required**: `sudo buildah` writes to root container storage; unprivileged `podman` (used by Login/Push steps) uses a separate user store. The pipe transfers the rechunked image to user storage.
+**What the action does internally** (reference only — do not duplicate inline):
+- `buildah build` with upstream `Containerfile.splitter` at the pinned chunkah SHA
+- Key flags: `--prune /sysroot/`, `--max-layers 128`, `--label ostree.commit-`, `--label ostree.final-diffid-`
+- `-v $(pwd):/run/src --security-opt=label=disable` for buildah < v1.44 bind-mount stability
+- `sudo podman save | podman load` to transfer rechunked image from root (buildah) to user (podman) storage
 
-**Push:** all per-arch pushes use `--compression-format zstd:chunked --force-compression`.
-zstd:chunked is complementary to chunkah: chunkah maximizes layer reuse (build-time);
-zstd:chunked minimizes bytes fetched within changed layers (pull-time, HTTP range requests).
+**Do not reproduce the inline buildah invocation.** All details live in `projectbluefin/actions/bootc-build/chunka/action.yml` and `docs/skills/composite-actions.md` → "chunka". If a flag needs changing, update the shared action, not `reusable-build-image.yml`.
 
-**`rechunk` input** (`bool`, default `true`): skip on PRs (`github.event_name != 'pull_request'`).
-After rechunking, the image is retagged in-place; `Load Image` always picks up from `localhost/${IMAGE_NAME}:${DEFAULT_TAG}`.
+**`rechunk` input** (`bool`, default `true`): skip on PRs (`github.event_name != 'pull_request'`). After rechunking, the image is retagged in-place; `Load Image` always picks up from `localhost/${IMAGE_NAME}:${DEFAULT_TAG}`.
 
 ## GHCR Package Access — PACKAGES_TOKEN
 
@@ -145,14 +127,16 @@ Renovate PRs are fully automated — no human needed:
 Builds run on PRs but are **informational** — they do not block merging.  
 The weekly release e2e is the real quality gate for build correctness.
 
-## Weekly release pipeline (updated 2026-05-30)
+## Weekly release pipeline (updated 2026-06-02)
 
 `scheduled-lts-release.yml` job chain:
-1. `trigger-lts-builds` — triggers 5 builds on `lts`, waits for regular + dx + gdx to complete
+1. `trigger-lts-builds` — **gated by `environment: production` (2 required human approvals)**; triggers 5 builds on `lts`, waits for regular + dx + gdx to complete
 2. `testsuite` — e2e smoke on `ghcr.io/projectbluefin/bluefin:lts` via `projectbluefin/testsuite/e2e.yml` (pinned SHA, updated by Renovate)
 3. `generate-release` (needs: testsuite) — only fires if e2e passes; dispatches `generate-release.yml`
 
 If e2e fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
+
+**Production gate:** before Tuesday builds run, two distinct maintainers must approve the deployment in the GitHub Environments UI. The gate is on `trigger-lts-builds`, so all downstream jobs (testsuite, generate-release) only run after approval. See `projectbluefin/actions/docs/skills/factory-operations.md` → "Production Gate" for configuration details.
 
 ## Release-generation pitfalls
 
