@@ -8,3 +8,7 @@ build_files/        @castrojo @p5 @m2Giles @tulilirockz
 
 # Exempt from CODEOWNERS review (Renovate-managed, auto-merged by renovate-automerge.yml)
 image-versions.yml
+
+# Docs and design — triagers can approve
+docs/**  @projectbluefin/triagers @projectbluefin/maintainers
+*.md     @projectbluefin/triagers @projectbluefin/maintainers
