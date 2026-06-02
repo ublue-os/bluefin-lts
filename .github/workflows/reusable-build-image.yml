@@ -114,7 +114,7 @@ jobs:
 
     steps:
       - name: Setup runner
-        uses: projectbluefin/actions/bootc-build/setup-runner@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        uses: projectbluefin/actions/bootc-build/setup-runner@v1 # feat/lts-force-compression
         with:
           storage-backend: btrfs
           update-podman: "true"
@@ -136,7 +136,7 @@ jobs:
         run: just check
 
       - name: Restore DNF cache
-        uses: projectbluefin/actions/bootc-build/dnf-cache@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        uses: projectbluefin/actions/bootc-build/dnf-cache@v1 # feat/lts-force-compression
         with:
           action: restore
           cache-name: bluefin-lts-${{ matrix.platform }}-${{ env.CENTOS_VERSION }}
@@ -206,7 +206,7 @@ jobs:
 
       - name: Rechunk image
         if: ${{ inputs.rechunk && inputs.publish }}
-        uses: projectbluefin/actions/bootc-build/chunka@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        uses: projectbluefin/actions/bootc-build/chunka@v1 # feat/lts-force-compression
         with:
           source-image: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           output-image: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
@@ -228,7 +228,7 @@ jobs:
       - name: Push image
         if: ${{ inputs.publish }}
         id: push
-        uses: projectbluefin/actions/bootc-build/push-image@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        uses: projectbluefin/actions/bootc-build/push-image@v1 # feat/lts-force-compression
         with:
           image-name: ${{ env.IMAGE_NAME }}
           tags: "${{ env.DEFAULT_TAG }}-${{ matrix.platform }}"
@@ -241,7 +241,7 @@ jobs:
 
       - name: Save DNF cache
         if: always() && !cancelled()
-        uses: projectbluefin/actions/bootc-build/dnf-cache@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        uses: projectbluefin/actions/bootc-build/dnf-cache@v1 # feat/lts-force-compression
         with:
           action: save
           cache-name: bluefin-lts-${{ matrix.platform }}-${{ env.CENTOS_VERSION }}
@@ -251,7 +251,7 @@ jobs:
       - name: Sign and publish image
         if: ${{ inputs.publish }}
         id: sign
-        uses: projectbluefin/actions/bootc-build/sign-and-publish@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@v1 # feat/lts-force-compression
         with:
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           digest: ${{ steps.push.outputs.digest }}
@@ -423,7 +423,7 @@ jobs:
       - name: Create and push manifest
         if: ${{ inputs.publish }}
         id: push_manifest
-        uses: projectbluefin/actions/bootc-build/create-manifest@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        uses: projectbluefin/actions/bootc-build/create-manifest@v1 # feat/lts-force-compression
         with:
           image-name: ${{ env.IMAGE_NAME }}
           registry: ghcr.io
@@ -444,7 +444,7 @@ jobs:
       id-token: write
     steps:
       - name: Sign manifest
-        uses: projectbluefin/actions/bootc-build/sign-and-publish@cfb4b6dd1a39c9dc6de5283c3fe8d370a4b760ec # feat/lts-force-compression
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@v1 # feat/lts-force-compression
         with:
           image: ${{ needs.manifest.outputs.image }}
           digest: ${{ needs.manifest.outputs.digest }}
