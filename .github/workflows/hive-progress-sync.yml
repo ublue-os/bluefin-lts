@@ -1,0 +1,136 @@
+# hive-progress-sync — posts Bluefin LTS queue stats to the projectbluefin org
+# project board (todo.projectbluefin.io) hourly and on every push to main.
+#
+# Tracks: queue/agent-ready, queue/claimed, hive/p0, hive/p1 counts
+# CI status: build-regular.yml (bluefin-lts' primary image build workflow)
+#
+# Requires: PROJECT_TOKEN secret with project + read:project OAuth scopes
+# Project board: PVT_kwDOCCE0ds4BLZBC (todo.projectbluefin.io, #2)
+
+name: Hive Progress Sync
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '45 * * * *'  # offset from knuckle's :30 sync to avoid races
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      issues: read
+
+    steps:
+      - name: Post bluefin-lts queue status to project board
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          python3 << 'PYEOF'
+          import json, subprocess, sys, os
+          from datetime import datetime, timezone
+
+          PROJECT_ID    = "PVT_kwDOCCE0ds4BLZBC"
+          REPO          = "projectbluefin/bluefin-lts"
+          ISSUES_URL    = f"https://github.com/{REPO}/issues"
+          DASHBOARD_URL = "https://github.com/orgs/projectbluefin/projects/2"
+
+          def gh(*args):
+              result = subprocess.run(
+                  ["gh"] + list(args),
+                  capture_output=True, text=True
+              )
+              if result.returncode != 0:
+                  print(f"gh error: {result.stderr}", file=sys.stderr)
+                  sys.exit(1)
+              return result.stdout.strip()
+
+          # CI status: latest completed build-regular.yml run
+          ci_raw  = gh("run", "list", "--repo", REPO, "--workflow", "build-regular.yml",
+                       "--branch", "main", "--status", "completed",
+                       "--limit", "1", "--json", "conclusion")
+          ci_runs = json.loads(ci_raw)
+          if ci_runs and ci_runs[0].get("conclusion") == "success":
+              ci = "CI ✅"
+          elif ci_runs and ci_runs[0].get("conclusion") in ("failure", "startup_failure"):
+              ci = "CI ❌"
+          else:
+              ci = "CI ⏳"
+
+          # Queue counts
+          def count_label(label):
+              raw = gh("issue", "list", "--repo", REPO,
+                       "--label", label, "--state", "open", "--limit", "1000",
+                       "--json", "number")
+              return len(json.loads(raw))
+
+          n_ready   = count_label("queue/agent-ready")
+          n_claimed = count_label("queue/claimed")
+          n_p0      = count_label("hive/p0")
+          n_p1      = count_label("hive/p1")
+
+          now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+          p0_fragment = f" · ▲ {n_p0} P0" if n_p0 > 0 else ""
+          p1_fragment = f" · {n_p1} P1" if n_p1 > 0 else ""
+          status_line = f"`{ci}` · {n_ready} ready · {n_claimed} claimed{p0_fragment}{p1_fragment}"
+
+          body = "\n".join([
+              f"### Bluefin LTS 🧊",
+              "",
+              status_line,
+              "",
+              f"_Updated {now_utc} · [Issue queue]({ISSUES_URL})_",
+          ])
+
+          print(f"Status body:\n{body}")
+
+          if n_p0 > 0:
+              status = "OFF_TRACK"
+          elif n_claimed > 0:
+              status = "ON_TRACK"
+          else:
+              status = "AT_RISK"
+
+          project_token = os.environ.get("PROJECT_TOKEN", "")
+          if not project_token:
+              print("WARNING: PROJECT_TOKEN not set — skipping project board post", file=sys.stderr)
+              sys.exit(0)
+
+          mutation = """
+          mutation($projectId: ID!, $body: String!, $status: ProjectV2StatusUpdateStatus!) {
+            createProjectV2StatusUpdate(input: {
+              projectId: $projectId
+              body: $body
+              status: $status
+            }) {
+              statusUpdate { id createdAt }
+            }
+          }
+          """
+
+          result = subprocess.run(
+              ["gh", "api", "graphql",
+               "-f", f"query={mutation}",
+               "-f", f"projectId={PROJECT_ID}",
+               "-f", f"body={body}",
+               "-f", f"status={status}"],
+              capture_output=True, text=True,
+              env={**os.environ, "GH_TOKEN": project_token}
+          )
+
+          if result.returncode != 0 or '"errors"' in result.stdout:
+              print("ERROR posting status update:", file=sys.stderr)
+              print(result.stdout, file=sys.stderr)
+              print(result.stderr, file=sys.stderr)
+              sys.exit(1)
+
+          resp      = json.loads(result.stdout)
+          update_id = resp["data"]["createProjectV2StatusUpdate"]["statusUpdate"]["id"]
+          print(f"Posted: {update_id}")
+          PYEOF
+        shell: bash
