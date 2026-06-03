@@ -32,6 +32,11 @@
 
   "packageRules": [
     {
+      // Pin common image at current digest — no automatic updates
+      "matchPackageNames": ["ghcr.io/projectbluefin/common"],
+      "enabled": false
+    },
+    {
       // Auto-merge all digest/pin updates across all managers (dockerfile, github-actions, regex/Justfile)
       "automerge": true,
       "matchUpdateTypes": ["digest", "pin", "pinDigest"]
