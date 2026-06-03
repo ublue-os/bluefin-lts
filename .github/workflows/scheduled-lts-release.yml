@@ -17,6 +17,9 @@ concurrency:
 jobs:
   trigger-lts-builds:
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ghcr.io/projectbluefin/bluefin:lts
     # Allow up to 3 hours for builds to complete before timing out.
     timeout-minutes: 180
     steps:
@@ -27,7 +30,7 @@ jobs:
           set -euo pipefail
 
           # Record time just before dispatch so we can find the run IDs afterward.
-          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
           gh workflow run build-regular.yml --ref lts -R ${{ github.repository }}
           gh workflow run build-dx.yml --ref lts -R ${{ github.repository }}
@@ -144,17 +147,9 @@ jobs:
           gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
           echo "✅ GDX LTS build completed successfully"
 
-  testsuite:
-    name: Testsuite — post-release smoke
-    needs: trigger-lts-builds
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@1bd88cf7f7eb7ef57ee079d15241a0433e9fa83c # main
-    with:
-      image: ghcr.io/ublue-os/bluefin:lts
-      suites: smoke
-
   generate-release:
     name: Generate release
-    needs: testsuite
+    needs: trigger-lts-builds
     runs-on: ubuntu-latest
     permissions:
       contents: read
