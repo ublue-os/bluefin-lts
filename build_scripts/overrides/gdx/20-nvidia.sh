@@ -40,7 +40,6 @@ NVIDIA_PKG_VERSION="3:${KMOD_VERSION}"
 
 dnf install -y --enablerepo="fedora-nvidia" \
     "libnvidia-fbc-${NVIDIA_PKG_VERSION}" \
-    "libnvidia-ml-${NVIDIA_PKG_VERSION}" \
     "nvidia-driver-${NVIDIA_PKG_VERSION}" \
     "nvidia-driver-cuda-${NVIDIA_PKG_VERSION}" \
     "nvidia-settings-${NVIDIA_PKG_VERSION}" \

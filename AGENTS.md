@@ -33,6 +33,8 @@ dakota  (main→:latest)       ←── images ──→ testsuite (e2e gate)
 
 No PR activity in 7 days returns a claimed issue to the queue automatically.
 
+**When an agent opens a PR:** remove `queue/agent-ready` from the issue, add `queue/claimed` to both the issue and the PR. This signals the work is done and a human is next to review.
+
 ### PR comment policy
 
 One comment per PR event, max. Combine all findings. Never post a follow-up — edit the existing comment.
