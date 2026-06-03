@@ -26,9 +26,9 @@ Long-term support Bluefin stream built on CentOS Stream 10.
 
 ```bash
 # LTS — recommended
-sudo bootc switch ghcr.io/ublue-os/bluefin:lts --enforce-container-sigpolicy
+sudo bootc switch ghcr.io/projectbluefin/bluefin:lts --enforce-container-sigpolicy
 # LTS — NVIDIA
-sudo bootc switch ghcr.io/ublue-os/bluefin-nvidia-open:latest --enforce-container-sigpolicy
+sudo bootc switch ghcr.io/projectbluefin/bluefin-nvidia-open:lts --enforce-container-sigpolicy
 ```
 
 ### Bluefin DX LTS
@@ -37,9 +37,9 @@ Long-term support developer image with cloud-native tooling pre-installed.
 
 ```bash
 # LTS — recommended
-sudo bootc switch ghcr.io/ublue-os/bluefin-dx:lts --enforce-container-sigpolicy
+sudo bootc switch ghcr.io/projectbluefin/bluefin-dx:lts --enforce-container-sigpolicy
 # LTS — NVIDIA
-sudo bootc switch ghcr.io/ublue-os/bluefin-dx-nvidia-open:latest --enforce-container-sigpolicy
+sudo bootc switch ghcr.io/projectbluefin/bluefin-dx-nvidia-open:lts --enforce-container-sigpolicy
 ```
 
 ### Bluefin GDX
@@ -48,7 +48,7 @@ AI-focused track with LTS roots.
 
 ```bash
 # LTS
-sudo bootc switch ghcr.io/ublue-os/bluefin-gdx:lts --enforce-container-sigpolicy
+sudo bootc switch ghcr.io/projectbluefin/bluefin-gdx:lts --enforce-container-sigpolicy
 ```
 
 ## Getting Started
