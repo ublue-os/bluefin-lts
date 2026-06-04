@@ -9,8 +9,8 @@ General contributor guidance lives at [docs.projectbluefin.io/contributing](http
 ## Pull requests
 
 - Open PRs against the `main` branch
-- Run `just check` before opening a PR
-- PR CI on `main` runs lint/syntax validation and smoke tests
+- Run `just check && just lint` before opening a PR
+- PR CI on `main` runs lint/syntax validation; the E2E smoke test is informational only (see [issue #34](https://github.com/projectbluefin/bluefin-lts/issues/34))
 
 ## Prerequisites
 
