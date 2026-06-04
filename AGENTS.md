@@ -46,6 +46,7 @@ When in doubt, post nothing.
 ### Mandatory gates
 
 - `just check && just lint` before every commit
+- **Pre-commit guard:** `no-floating-action-tags` blocks third-party `@main`/`@v*` floating action tags at commit time. `projectbluefin/` refs (`@v1`, `@main`) are intentional managed tags and are exempted.
 - PR title: Conventional Commits format
 - Attribution on every AI-authored commit: `Assisted-by: <Model> via <Tool>`
 - Max 4 open PRs at a time per agent
