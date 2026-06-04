@@ -14,6 +14,7 @@ ARCH="$(uname -m)"
 if [ "$ARCH" = "aarch64" ]; then
     NVIDIA_ARCH="sbsa"
 else
+    # shellcheck disable=SC2034
     NVIDIA_ARCH="$ARCH"
 fi
 

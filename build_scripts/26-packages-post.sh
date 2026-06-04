@@ -35,6 +35,7 @@ sed -i 's|^IPv6_rpfilter=.*|IPv6_rpfilter=loose|g' /etc/firewalld/firewalld.conf
 grep -F -e "DefaultZone=FedoraWorkstation" /etc/firewalld/firewalld.conf
 grep -F -e "IPv6_rpfilter=loose" /etc/firewalld/firewalld.conf
 
+# shellcheck disable=SC2012
 depmod -a "$(ls -1 /lib/modules/ | tail -1)"
 
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage

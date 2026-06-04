@@ -21,4 +21,3 @@ EOF
 
 install -Dpm0644 "${ANNOYING_JQ_WORKAROUND}" "${IMAGE_INFO}"
 cat "${IMAGE_INFO}"
-

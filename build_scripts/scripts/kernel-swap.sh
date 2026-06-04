@@ -26,6 +26,7 @@ echo "Installing kernel from mounted kernel-rpms..."
 find /tmp/kernel-rpms
 
 # Extract version from the first kernel rpm filename (handles both .el10 and .fc42 dist tags)
+# shellcheck disable=SC2012
 CACHED_VERSION=$(cd /tmp/kernel-rpms && ls kernel-[0-9]*.rpm 2>/dev/null | head -1 | sed -E 's/^kernel-//;s/\.rpm$//')
 
 if [[ -z "$CACHED_VERSION" ]]; then
@@ -49,35 +50,35 @@ dnf -y install "${RPM_NAMES[@]}"
 # These are not in the base mounts, so we download them via skopeo
 if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
   echo "HWE mode enabled - installing common akmods..."
-  
+
   # Detect kernel version from installed kernel
   KERNEL_VERSION=$(rpm -q kernel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}')
   echo "Detected kernel version: ${KERNEL_VERSION}"
-  
+
   # Use the same akmods flavor and Fedora version as coreos-stable-42
   AKMODS_FLAVOR="coreos-stable"
   FEDORA_VERSION="43"
-  
+
   # Create writable directory for common akmods downloads (tmpfs /tmp is mounted)
   COMMON_AKMODS_DIR="/run/common-akmods"
   mkdir -p "$COMMON_AKMODS_DIR"
-  
+
   # Fetch common akmods container for the kernel version
   echo "Downloading common akmods for kernel ${KERNEL_VERSION}..."
   skopeo copy --retry-times 3 \
     docker://ghcr.io/ublue-os/akmods:"${AKMODS_FLAVOR}"-"${FEDORA_VERSION}"-"${KERNEL_VERSION}" \
     dir:"$COMMON_AKMODS_DIR"/akmods-container
-  
+
   # Extract the common akmods rpms
   AKMODS_TARGZ=$(jq -r '.layers[].digest' <"$COMMON_AKMODS_DIR"/akmods-container/manifest.json | cut -d : -f 2)
   tar -xzf "$COMMON_AKMODS_DIR"/akmods-container/"$AKMODS_TARGZ" -C "$COMMON_AKMODS_DIR"
-  
+
   # Install common akmods if they exist
   if [[ -d "$COMMON_AKMODS_DIR"/rpms ]]; then
     echo "Available common akmods packages:"
     ls -lh "$COMMON_AKMODS_DIR"/rpms/ || true
     ls -lh "$COMMON_AKMODS_DIR"/rpms/kmods/ || true
-    
+
     echo "Installing common akmods with dependencies..."
     # Install both the -kmod-common packages (from rpms/) and kmod-* packages (from rpms/kmods/)
     dnf -y install \

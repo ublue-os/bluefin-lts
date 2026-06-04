@@ -24,7 +24,7 @@ package_blacklist:
 # Image variants for different targets
 image_variants:
   - ""
-  - "-dx" 
+  - "-dx"
   - "-gdx"
 
 # Regex patterns
@@ -47,12 +47,12 @@ templates:
   hwe_kernel_table: |
     ### Hardware Enablement (HWE) Kernel Comparison
     The HWE variant provides newer kernel versions for improved hardware support.
-    
+
     | Image Variant | Kernel Version |
     | --- | --- |
     | **Standard** (bluefin:lts) | {pkgrel:kernel} |
     | **HWE** (bluefin:lts-hwe) | {pkgrel:kernel-hwe} |
-    
+
     > **Note:** HWE images are recommended for newer hardware that requires recent kernel features.
   changelog_format: |
     {handwritten}

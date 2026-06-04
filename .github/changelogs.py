@@ -958,10 +958,10 @@ def setup_argument_parser() -> argparse.ArgumentParser:
 Examples:
   # Simple usage
   %(prog)s lts
-  
+
   # CI/CD usage (recommended for GitHub Actions)
   %(prog)s lts --ci
-  
+
   # With custom options
   %(prog)s lts --workdir /path/to/git/repo --verbose
   %(prog)s lts --pretty "Custom Version" --handwritten notes.txt

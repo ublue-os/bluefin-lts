@@ -52,8 +52,8 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
-dnf -y copr enable ublue-os/packages 
-dnf -y copr disable ublue-os/packages 
+dnf -y copr enable ublue-os/packages
+dnf -y copr disable ublue-os/packages
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install uupd
 
 dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
@@ -71,4 +71,3 @@ dnf -y --setopt=install_weak_deps=False install gcc
 dnf versionlock add gnome-shell gdm mutter gnome-session-wayland-session \
     gnome-settings-daemon gnome-control-center gsettings-desktop-schemas \
     gtk4 libadwaita pango fontconfig selinux-policy selinux-policy-targeted gnutls
-

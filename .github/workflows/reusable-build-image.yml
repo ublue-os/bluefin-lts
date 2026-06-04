@@ -121,9 +121,6 @@ jobs:
           update-podman: "true"
           install-tools: '["just", "cosign", "oras", "syft"]'
 
-      - name: Maximize build space
-        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # v10
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -184,26 +181,6 @@ jobs:
           sudo "$just" build "${IMAGE_NAME}" "${DEFAULT_TAG}" "${ENABLE_DX}" "${ENABLE_GDX}" "${ENABLE_HWE}" "${{ inputs.kernel-pin }}" "${{ inputs.gnome-version }}"
           echo "image_tag=${DEFAULT_TAG}" >> "${GITHUB_OUTPUT}"
 
-      - name: Setup Syft
-        id: setup-syft
-        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
-        with:
-          syft-version: v1.39.0
-
-      - name: Generate SBOM
-        id: generate-sbom
-        if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        env:
-          IMAGE: ${{ env.IMAGE_NAME }}
-          DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
-          SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
-        run: |
-          sudo systemctl start podman.socket
-          SBOM="$(mktemp -d)/sbom.json"
-          export SYFT_PARALLELISM=$(($(nproc)*2))
-          sudo "$SYFT_CMD" "${IMAGE}:${DEFAULT_TAG}" -o "spdx-json=${SBOM}"
-          echo "SBOM=${SBOM}" >> "${GITHUB_OUTPUT}"
 
       - name: Rechunk image
         if: ${{ inputs.rechunk && inputs.publish }}
@@ -217,14 +194,16 @@ jobs:
       - name: Load Image
         if: ${{ inputs.publish }}
         id: load
+        env:
+          RECHUNK: ${{ inputs.rechunk }}
+          PLATFORM: ${{ matrix.platform }}
         run: |
-          IMAGE="localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-          podman image tag "${IMAGE}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
-
-          IMAGE="${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
-          IMAGE_DIGEST="$(podman image inspect --format '{{.Digest}}' "${IMAGE}")"
-          echo "image=${IMAGE}" >> "${GITHUB_OUTPUT}"
-          echo "digest=${IMAGE_DIGEST}" >> "${GITHUB_OUTPUT}"
+          # chunka@v1 outputs to user (rootless) storage; transfer to rootful for push-image@v1
+          if [[ "${RECHUNK}" == "true" ]]; then
+            podman save "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" | sudo podman load
+          fi
+          # Tag with per-arch suffix in rootful storage as expected by push-image@v1
+          sudo podman tag "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}"
 
       - name: Push image
         if: ${{ inputs.publish }}
@@ -291,24 +270,13 @@ jobs:
     needs:
       - generate_matrix
       - build_push
-    container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:441d6709305552a3411e585ad98aacb9dadda00c80f3267483c38ac6f86f49d4
-      options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
       packages: write
       id-token: write
     outputs:
-      image: ${{ steps.push_manifest.outputs.IMAGE }}
-      digest: ${{ steps.push_manifest.outputs.DIGEST }}
+      digest: ${{ steps.push_manifest.outputs.digest }}
     steps:
-      - name: Install dependencies
-        run: |
-          apk add jq git podman uutils bash conmon crun netavark fuse-overlayfs libstdc++
-          ln -sf /bin/bash /bin/sh
-          mkdir -p /etc/containers
-          echo '{"default":[{"type":"insecureAcceptAnything"}]}' | jq . > /etc/containers/policy.json
-
       - name: Exit on failure
         env:
           JOBS: ${{ toJson(needs) }}
@@ -433,22 +401,12 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           github-token: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
 
-  # Cosign throws errors when ran inside the Fedora container for one reason or another
-  # so we move this to another step in order to run on Ubuntu
-  sign:
-    needs: manifest
-    if: ${{ inputs.publish }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    steps:
       - name: Sign manifest
+        if: ${{ inputs.publish }}
         uses: projectbluefin/actions/bootc-build/sign-and-publish@v1
         with:
-          image: ${{ needs.manifest.outputs.image }}
-          digest: ${{ needs.manifest.outputs.digest }}
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          digest: ${{ steps.push_manifest.outputs.digest }}
           signing-mode: keyless
           generate-sbom: "false"
           push-attestation: "false"

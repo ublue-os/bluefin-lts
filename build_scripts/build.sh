@@ -25,7 +25,7 @@ run_buildscripts_for() {
 			WHAT=$CUSTOM_NAME
 		fi
 		printf "::group:: ===$WHAT-%s===\n" "$(basename "$script")"
-		"$(realpath $script)"
+		"$(realpath "$script")"
 		printf "::endgroup::\n"
 	done
 }

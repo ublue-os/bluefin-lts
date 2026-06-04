@@ -2,6 +2,7 @@
 
 set -xeuo pipefail
 
+# shellcheck disable=SC2034
 ARCH=$(uname -m)
 
 # This is the base for a minimal GNOME 50 system on CentOS Stream.
