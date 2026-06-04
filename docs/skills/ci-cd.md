@@ -10,7 +10,7 @@
 | `build-regular-hwe.yml` | caller for HWE `bluefin` |
 | `build-dx-hwe.yml` | caller for HWE `bluefin-dx` |
 | `reusable-build-image.yml` | shared build/push/sign logic — calls `projectbluefin/actions@v1` composite actions |
-| `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on e2e; gated by `environment: production` (2-human approval) |
+| `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on `upgrade-test.yml@v1`; gated by `environment: production` (2-human approval) |
 | `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
 | `pr-testsuite.yml` | runs **`validate-pr@v1`** (just check, shellcheck, hadolint, pre-commit) + **e2e smoke** on every PR; only `Lint & syntax` is a required check |
 | `renovate-automerge.yml` | auto-merges Renovate PRs when pr-testsuite passes |
@@ -73,7 +73,8 @@ Common CI/CD logic lives in reusable GitHub Actions at **https://github.com/proj
 | `bootc-build/setup-runner` | `reusable-build-image.yml` | default inputs |
 | `bootc-build/dnf-cache` | `reusable-build-image.yml` | default inputs |
 | `bootc-build/push-image` | `reusable-build-image.yml` | default inputs |
-| `bootc-build/sign-and-publish` | `reusable-build-image.yml` | `signing-mode: keyless` |
+| `bootc-build/sign-and-publish` | `reusable-build-image.yml` (build_push job + manifest job) | `signing-mode: keyless` |
+| `bootc-build/create-manifest` | `reusable-build-image.yml` (manifest job) | default inputs |
 
 ### detect-changes filter override
 
@@ -154,7 +155,7 @@ PUSH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
 | SBOM steps | `github.ref == 'refs/heads/lts' && inputs.publish` + `continue-on-error: true` |
 | Rechunk (chunkah) | `inputs.rechunk && inputs.publish` |
 | Load/Login/Push/Cosign/Outputs/Manifest push | `inputs.publish` |
-| top-level `sign` job + manifest signing | `inputs.publish` |
+| manifest signing (inline in manifest job) | `inputs.publish` |
 
 If nothing is pushed, nothing should sign.
 
@@ -174,14 +175,16 @@ Renovate PRs are fully automated — no human needed:
 Builds run on PRs but are **informational** — they do not block merging.
 The weekly release e2e is the real quality gate for build correctness.
 
-## Weekly release pipeline (updated 2026-06-02)
+## Weekly release pipeline (updated 2026-06-04)
 
 `scheduled-lts-release.yml` job chain:
 1. `trigger-lts-builds` — **gated by `environment: production` (2 required human approvals)**; triggers 5 builds on `lts`, waits for regular + dx + gdx to complete
-2. `testsuite` — e2e smoke on `ghcr.io/projectbluefin/bluefin:lts` via `projectbluefin/testsuite/e2e.yml` (pinned SHA, updated by Renovate)
-3. `generate-release` (needs: testsuite) — only fires if e2e passes; dispatches `generate-release.yml`
+2. `run-upgrade-test` — lifecycle upgrade test on `ghcr.io/projectbluefin/bluefin:lts` via `projectbluefin/actions/.github/workflows/upgrade-test.yml@v1`; `suites: lifecycle`, `chunked_enabled: false`
+3. `generate-release` (needs: [trigger-lts-builds, run-upgrade-test]) — only fires if upgrade-test passes; dispatches `generate-release.yml`
 
-If e2e fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
+If the upgrade test fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
+
+The old `testsuite` job (calling `projectbluefin/testsuite/e2e.yml`) was removed in PR #46 — that workflow is no longer maintained.
 
 **Production gate:** before Tuesday builds run, two distinct maintainers must approve the deployment in the GitHub Environments UI. The gate is on `trigger-lts-builds`, so all downstream jobs (testsuite, generate-release) only run after approval. See `projectbluefin/actions/docs/skills/factory-operations.md` → "Production Gate" for configuration details.
 

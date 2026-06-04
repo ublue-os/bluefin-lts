@@ -6,7 +6,7 @@
 2. Merge must be a **regular merge commit**.
 3. `push` to `lts` only validates; it does **not** publish.
 4. `scheduled-lts-release.yml` owns the Tuesday `0 6 * * 2` production run.
-5. **e2e smoke test must pass** before GitHub Release is created.
+5. **upgrade-test must pass** before GitHub Release is created.
 6. For urgent publishes, manually dispatch `scheduled-lts-release.yml` on `lts`.
 
 ## Promotion / branch safety
