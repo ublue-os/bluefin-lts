@@ -32,6 +32,17 @@
 
   "packageRules": [
     {
+      // Pin common image at current digest — no automatic updates
+      "matchPackageNames": ["ghcr.io/projectbluefin/common"],
+      "enabled": false
+    },
+    {
+      // testsuite tracks main by digest with no tags; updates are merged weekly to prevent commit-level spam
+      "matchDepNames": ["projectbluefin/testsuite"],
+      "schedule": ["before 9am on Monday"],
+      "automerge": true
+    },
+    {
       // Auto-merge all digest/pin updates across all managers (dockerfile, github-actions, regex/Justfile)
       "automerge": true,
       "matchUpdateTypes": ["digest", "pin", "pinDigest"]
