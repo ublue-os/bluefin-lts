@@ -52,12 +52,12 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
-dnf -y copr enable ublue-os/packages
-dnf -y copr disable ublue-os/packages
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install uupd
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/packages/repo/epel-${MAJOR_VERSION_NUMBER}/ublue-os-packages-epel-${MAJOR_VERSION_NUMBER}.repo"
+dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
+dnf -y --enablerepo "copr:copr.fedorainfracloud.org:ublue-os:packages" install uupd
 
-dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
-dnf -y copr disable che/nerd-fonts
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
+dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:che:nerd-fonts"
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 	nerd-fonts
 

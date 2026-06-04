@@ -13,10 +13,10 @@ dnf -y install 'dnf-command(versionlock)'
 
 /run/context/build_scripts/scripts/kernel-swap.sh
 
-# GNOME 50 COPR
-dnf copr enable -y "jreilly1821/c10s-gnome-50"
-# libjxl 0.11 in this COPR has a different ABI than EPEL's 0.10, which breaks
-# epel-multimedia's libavcodec (needs libjxl.so.0.10).  Exclude it so EPEL wins.
+# GNOME 50 repo file
+# libjxl 0.11 in this repo has a different ABI than EPEL's 0.10, which breaks
+# epel-multimedia's libavcodec (needs libjxl.so.0.10). Exclude it so EPEL wins.
+dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/jreilly1821/c10s-gnome-50/repo/centos-stream-${MAJOR_VERSION_NUMBER}/jreilly1821-c10s-gnome-50-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
 GNOME50_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-50*" | head -1)
 echo "exclude=libjxl*" >> "${GNOME50_REPO}"
 

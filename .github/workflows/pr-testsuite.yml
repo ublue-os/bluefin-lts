@@ -21,6 +21,20 @@ jobs:
         with:
           submodules: false
 
+      - name: Guard against COPR usage (CentOS-incompatible)
+        shell: bash
+        run: |
+          echo "Checking for COPR usage (incompatible with CentOS Stream 10)..."
+          if grep -r "copr enable\|copr_install_isolated\|dnf5 copr" build_files/ build_scripts/ 2>/dev/null | grep -v "^Binary"; then
+            echo ""
+            echo "ERROR: Found COPR usage in build scripts."
+            echo "bluefin-lts is built on CentOS Stream 10 where COPR does not exist."
+            echo "Use EPEL or CentOS Stream repos instead."
+            echo "See docs/skills/centos-vs-fedora.md for details."
+            exit 1
+          fi
+          echo "No COPR usage found."
+
       - name: Validate PR
         uses: projectbluefin/actions/bootc-build/validate-pr@v1
         with:
