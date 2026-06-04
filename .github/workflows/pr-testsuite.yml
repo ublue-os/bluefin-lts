@@ -25,7 +25,8 @@ jobs:
         shell: bash
         run: |
           echo "Checking for COPR usage (incompatible with CentOS Stream 10)..."
-          if grep -r "copr enable\|copr_install_isolated\|dnf5 copr" build_files/ build_scripts/ 2>/dev/null | grep -v "^Binary"; then
+          # LTS build logic lives in build_scripts/ only. Do not copy bluefin's build_files/ path here.
+          if grep -r "copr enable\|copr_install_isolated\|dnf5 copr" build_scripts/ 2>/dev/null | grep -v "^Binary"; then
             echo ""
             echo "ERROR: Found COPR usage in build scripts."
             echo "bluefin-lts is built on CentOS Stream 10 where COPR does not exist."
@@ -39,6 +40,7 @@ jobs:
         uses: projectbluefin/actions/bootc-build/validate-pr@v1
         with:
           hadolint-config: ""
+          # LTS shell lives under build_scripts/, not bluefin's build_files/.
           shellcheck-glob: "build_scripts/**/*.sh"
 
   testsuite:

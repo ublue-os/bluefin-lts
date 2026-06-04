@@ -25,4 +25,4 @@ bluefin-lts is built on **CentOS Stream 10**, not Fedora. This has critical impl
 
 ## CI guard
 
-A CI step checks that `copr enable` does not appear in any build script. If you see this CI failure, you are using a Fedora-only pattern that must be replaced.
+A CI step checks that `copr enable` does not appear in `build_scripts/`. If you see this CI failure, you are using a Fedora-only pattern that must be replaced. LTS does not use bluefin's `build_files/` path.

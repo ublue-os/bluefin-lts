@@ -76,6 +76,19 @@ Common CI/CD logic lives in reusable GitHub Actions at **https://github.com/proj
 | `bootc-build/sign-and-publish` | `reusable-build-image.yml` (build_push job + manifest job) | `signing-mode: keyless` |
 | `bootc-build/create-manifest` | `reusable-build-image.yml` (manifest job) | default inputs |
 
+### bluefin vs bluefin-lts quick reference
+
+These repo-local differences are the ones AI edits most often miss:
+
+| Concern | bluefin default | bluefin-lts |
+|---|---|---|
+| Build shell path | `build_files/**/*.sh` | `build_scripts/**/*.sh` |
+| Version file | `image-versions.yml` | `image-versions.yaml` |
+| detect-changes filter | shared defaults often assume bluefin paths | always pass explicit `filters:` in `build-regular.yml` and `build-dx.yml` |
+| PR shellcheck override | default action glob | `shellcheck-glob: "build_scripts/**/*.sh"` in `pr-testsuite.yml` |
+
+If you copy workflow snippets from bluefin, translate those paths before saving.
+
 ### detect-changes filter override
 
 bluefin-lts uses different paths from bluefin. **Always pass the `filters` input** when using detect-changes here:
@@ -106,6 +119,8 @@ Default `shellcheck-glob` watches `build_files/**/*.sh`. LTS must override:
   with:
     shellcheck-glob: "build_scripts/**/*.sh"
 ```
+
+The same `build_scripts/` + `image-versions.yaml` distinction should stay consistent in `AGENTS.md`, `.github/CODEOWNERS`, and `skill-drift.yml`.
 
 ## Rechunker — chunka@v1 (projectbluefin/actions)
 

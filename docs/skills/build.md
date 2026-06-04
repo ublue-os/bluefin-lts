@@ -68,6 +68,8 @@ Never run VMs in CI; KVM/graphics are required.
 | `Containerfile` | main image definition |
 | `image.toml`, `iso.toml` | BIB configs |
 
+Workflow guardrails key off these exact names. When copying from bluefin, replace `build_files/` with `build_scripts/` and `image-versions.yml` with `image-versions.yaml`.
+
 ## Debugging checklist
 
 | Symptom | Check |

@@ -35,6 +35,8 @@ jobs:
         id: detect
         uses: projectbluefin/actions/bootc-build/detect-changes@v1
         with:
+          # bluefin-lts does not use bluefin's build_files/ or image-versions.yml defaults.
+          # Keep these repo-local overrides aligned with docs/skills/ci-cd.md.
           filters: |
             image:
               - 'Containerfile'
