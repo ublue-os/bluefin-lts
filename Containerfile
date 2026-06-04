@@ -44,4 +44,4 @@ RUN --mount=type=tmpfs,dst=/opt \
 
 # Makes `/opt` writeable by default
 # Needs to be here to make the main image build strict (no /opt there)
-RUN rm -rf /opt && ln -s /var/opt /opt
+RUN rm -rf /opt && ln -s /var/opt /opt 
