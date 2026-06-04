@@ -35,3 +35,6 @@ sed -i -e "s@PrivateTmp=.*@PrivateTmp=no@g" /usr/lib/systemd/system/systemd-reso
 # Keep systemd-resolved enabled for proper DNS resolution.
 # PrivateTmp=no works around earlier CentOS Stream 10/bootc startup failures.
 systemctl enable systemd-resolved.service
+
+# Onboard to bootc unified storage on first boot (experimental — enables zstd:chunked partial pulls)
+systemctl enable bootc-unified-storage.service

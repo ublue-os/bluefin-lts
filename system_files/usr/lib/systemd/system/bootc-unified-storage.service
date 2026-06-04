@@ -1,0 +1,31 @@
+# bootc unified storage onboarding — experimental
+#
+# Onboards this system to bootc-owned containers-storage (/usr/lib/bootc/storage)
+# so that future upgrades use the unified pull path: zstd:chunked deduplication,
+# shared layer storage between bootc and podman, and efficient partial chunk pulls.
+#
+# Operates entirely on local ostree data — no network access required.
+# Requires a reflink-capable filesystem (XFS or btrfs); degrades gracefully on ext4.
+#
+# Runs once: ExecStartPost creates the sentinel; ConditionPathExists skips on subsequent boots.
+# On failure, Restart=on-failure retries on the next boot until it succeeds.
+#
+# Feature status in bootc upstream: experimental
+# Tracking: https://github.com/bootc-dev/bootc/issues/20
+[Unit]
+Description=Enable bootc unified storage (experimental)
+Documentation=https://containers.github.io/bootc/experimental-unified-storage.html
+ConditionPathExists=/run/ostree-booted
+ConditionPathExists=!/var/lib/.bootc-unified-storage
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=bootc image set-unified
+ExecStartPost=touch /var/lib/.bootc-unified-storage
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
