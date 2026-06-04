@@ -18,6 +18,7 @@
 | `hive-progress-sync.yml` | posts queue stats (agent-ready, claimed, p0, p1 counts) + CI status to the projectbluefin org project board hourly and on push to `main`; requires `PROJECT_TOKEN` secret |
 | `validate-renovate.yaml` | validates `.github/renovate.json5` on PRs and pushes to `main` that touch the Renovate config |
 | `post-merge-e2e.yml` | runs E2E smoke+common suites after a successful `Build Bluefin LTS` run on `main`; informational only |
+| `bonedigger.yml` | issue lifecycle automation — moves issues through `filed→approved→queued→claimed→done` states; runs on issue events and daily at 09:00 UTC |
 | ~~`build-gnome50.yml`~~ | **deleted 2026-05-30** — GNOME 50 is now the default; `lts-testing-50` tags are no longer produced |
 | ~~`create-lts-pr.yml`~~ | **deleted 2026-05-30** — promotion to `lts` is now handled automatically by GitHub Actions |
 
