@@ -8,7 +8,7 @@
   "baseBranchPatterns": ["main"],
 
   "extends": [
-    "config:best-practices",
+    "github>projectbluefin/renovate-config",
   ],
 
   "git-submodules": {
