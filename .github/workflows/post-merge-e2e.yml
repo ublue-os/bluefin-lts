@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
   packages: write  # testsuite uploads screenshots to GHCR
 
 concurrency:
@@ -32,3 +33,56 @@ jobs:
     with:
       image: ghcr.io/projectbluefin/bluefin:lts-testing
       suites: smoke,common
+
+  report-failure:
+    needs: [e2e-smoke]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update failure issue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const image = 'ghcr.io/projectbluefin/bluefin:lts-testing';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const sha = ('${{ github.event.workflow_run.head_sha || github.sha }}').slice(0, 8);
+            const title = `ci: lts post-merge e2e failure — ${sha}`;
+            const body = `## LTS Post-Merge E2E Failure\n\n**Image:** \`${image}\`\n**Commit:** ${sha}\n**Run:** ${runUrl}\n**Suites:** smoke,common\n\n_Automatically opened by post-merge-e2e.yml_`;
+
+            const preferredLabels = ['area/testing', 'kind/bug', 'priority/p1'];
+            const repoLabels = await github.paginate(github.rest.issues.listLabelsForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            const labels = preferredLabels.filter((name) =>
+              repoLabels.some((label) => label.name === name)
+            );
+
+            const existing = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const dup = existing.find((issue) => !issue.pull_request && issue.title === title);
+
+            if (dup) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: dup.number,
+                body: `Failure recurred in run ${runUrl} for image \`${image}\``,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels,
+              });
+            }
