@@ -1,7 +1,7 @@
 # hive-progress-sync — posts Bluefin LTS queue stats to the projectbluefin org
 # project board (todo.projectbluefin.io) hourly and on every push to main.
 #
-# Tracks: queue/agent-ready, queue/claimed, hive/p0, hive/p1 counts
+# Tracks: status/queued, status/claimed, hive/p0, hive/p1 counts
 # CI status: build-regular.yml (bluefin-lts' primary image build workflow)
 #
 # Requires: PROJECT_TOKEN secret with project + read:project OAuth scopes
@@ -68,8 +68,8 @@ jobs:
                        "--json", "number")
               return len(json.loads(raw))
 
-          n_ready   = count_label("queue/agent-ready")
-          n_claimed = count_label("queue/claimed")
+          n_ready   = count_label("status/queued")
+          n_claimed = count_label("status/claimed")
           n_p0      = count_label("hive/p0")
           n_p1      = count_label("hive/p1")
 

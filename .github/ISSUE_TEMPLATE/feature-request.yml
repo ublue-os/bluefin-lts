@@ -1,6 +1,6 @@
 name: "Feature request"
 description: "Propose something new. Specific proposals ship. Vague ones wait."
-labels: ["type/feature", "status/discussing"]
+labels: ["kind/enhancement", "status/discussing"]
 type: "Feature"
 body:
   - type: markdown
@@ -8,52 +8,38 @@ body:
       value: |
         ## Humans decide what gets built. Contributors build it.
 
-        This is not a ticket system — it is a conversation between you and the people building Bluefin LTS.
-        A maintainer will read this, decide if it fits the project direction, and approve it.
-        Once approved, a contributor or agent can claim and ship it.
+        The bottleneck is almost never implementation. It is clarity.
 
-        **The bottleneck is almost never implementation. It is clarity.**
+        Contributors can implement well-scoped work fast. But they can only act on what is clearly defined.
+
+        > **How this gets built:**
+        > ```
+        > filed ──▶ discussing ──▶ approved ──▶ queued ──▶ claimed ──▶ done
+        >        [status/         [status/     [status/   [status/
+        >         discussing]      approved]    queued]    claimed]
+        > ```
+        > Your proposal enters discussion. A maintainer approves it when the spec is clear.
+        > Then a contributor or agent `/claim`s it and builds it.
 
   - type: textarea
     id: problem
     attributes:
       label: "What would you like to see?"
-      description: "Plain language. What is missing, broken, or annoying? Be specific — name the command, the file, the workflow step."
-      placeholder: "Add this feature or ask for a design review"
+      description: "Plain language. What is missing, broken, or annoying?"
     validations:
       required: true
 
   - type: textarea
-    id: solution
+    id: proposal
     attributes:
-      label: "What does done look like?"
-      description: "Describe the end state. What command do you run? What do you see? A concrete finish line is what allows this to be implemented."
-      placeholder: "I should be able to do X"
+      label: "Proposed solution"
+      description: "If you have one. Vague 'just add X' without rationale waits."
     validations:
-      required: true
-
-  - type: dropdown
-    id: area
-    attributes:
-      label: "Affected area"
-      options:
-        - "just recipes / ujust"
-        - "GNOME / desktop"
-        - "bootc / image updates"
-        - "install / ISO"
-        - "nvidia"
-        - "flatpak / apps"
-        - "brew / CLI tools"
-        - "CI / automation"
-        - "hardware / drivers"
-        - "other"
-    validations:
-      required: true
+      required: false
 
   - type: textarea
     id: extra
     attributes:
       label: "Extra context"
-      description: "Optional. Related issues, upstream references, or files you think are affected."
     validations:
       required: false

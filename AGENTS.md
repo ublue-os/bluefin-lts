@@ -27,13 +27,13 @@ dakota  (main→:latest)       ←── images ──→ testsuite (e2e gate)
 |---|---|
 | `filed` | Issue opened |
 | `approved` | Maintainer adds `status/approved` or comments `/approve` |
-| `queued` | `queue/agent-ready` auto-added alongside approval |
+| `queued` | `status/queued` auto-added alongside approval |
 | `claimed` | Comment `/claim` — assigned, removed from pool |
 | `done` | Fix shipped + 3× `ujust verify` or maintainer override |
 
 No PR activity in 7 days returns a claimed issue to the queue automatically.
 
-**When an agent opens a PR:** remove `queue/agent-ready` from the issue, add `queue/claimed` to both the issue and the PR. This signals the work is done and a human is next to review.
+**When an agent opens a PR:** remove `status/queued` from the issue, add `status/claimed` to both the issue and the PR. This signals the work is done and a human is next to review.
 
 ### PR comment policy
 

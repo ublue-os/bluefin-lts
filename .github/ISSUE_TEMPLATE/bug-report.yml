@@ -1,42 +1,67 @@
-name: Bug Report
-description: Report an issue about using Bluefin
+name: "Bug report"
+description: "Something is broken. You are the only person who can confirm it."
+labels: ["kind/bug", "status/triage"]
+type: "Bug"
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to fill out this bug report! (She bites sometimes)
-  - type: textarea
-    id: describe-bug
+        ## You are the most important person in this process
+
+        No agent can reproduce what happened on your machine. You are the ground truth.
+
+        Run this before filling out the form:
+
+        ```bash
+        ujust report
+        ```
+
+  - type: markdown
     attributes:
-      label: Describe the bug
-      description: A clear and concise description of what the bug is.
-      placeholder: Tell us what happened! WE DO NOT SUPPORT REBASING FROM ANOTHER OS! If you went off the beaten path we cannot help you!
-      value: "When I entered 2 + 2, I got the answer 6."
+      value: |
+        > **How this gets resolved:**
+        > ```
+        > filed ──▶ triage ──▶ approved ──▶ queued ──▶ claimed ──▶ done
+        >        [status/    [status/     [status/   [status/
+        >         triage]     approved]    queued]    claimed]
+        > ```
+        > You filed it. A maintainer sets kind/area/priority and removes `status/triage`.
+        > `/approve` queues it. A contributor or agent `/claim`s it and ships the fix.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Before submitting"
+      options:
+        - label: "I searched existing issues and this is not a duplicate"
+          required: true
+
+  - type: input
+    id: report-link
+    attributes:
+      label: "ujust report gist URL"
+      placeholder: "https://gist.github.com/..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "What did you see? What did you expect? Be specific."
     validations:
       required: true
+
   - type: textarea
-    id: expected-bahavior
+    id: repro
     attributes:
-      label: What did you expect to happen?
-      description: A clear and concise description of what you expected to happen.
-      placeholder: What were you expecting to happen?
-      value: "I expected 2 + 2 to equal 4, but instead 2 + 2 equaled 6!"
+      label: "Steps to reproduce"
     validations:
       required: true
+
   - type: textarea
-    id: version
+    id: extra
     attributes:
-      label: Output of `bootc status`
-      description: Please run `sudo bootc status` and paste the output here, it is the only way we can verify the exact image you are on for debugging purposes.
-      render: shell
-  - type: textarea
-    id: groups
-    attributes:
-      label: Output of `groups`
-      description: Please run `groups` and paste the output here.
-      render: shell
-  - type: textarea
-    id: extra-context
-    attributes:
-      label: Extra information or context
-      description: Add any other context about the problem here.
+      label: "Extra context"
+    validations:
+      required: false
