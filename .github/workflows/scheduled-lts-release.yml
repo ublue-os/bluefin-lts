@@ -147,9 +147,116 @@ jobs:
           gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
           echo "✅ GDX LTS build completed successfully"
 
+      - name: Wait for regular HWE LTS build to complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow build-regular-hwe.yml \
+              --branch lts \
+              --event workflow_dispatch \
+              --repo ${{ github.repository }} \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for build-regular-hwe.yml run to appear in API (attempt $i/20)..."
+            sleep 30
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate build-regular-hwe.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
+
+          echo "Watching build-regular-hwe.yml run $RUN_ID..."
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ Regular HWE LTS build completed successfully"
+
+      - name: Wait for DX HWE LTS build to complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow build-dx-hwe.yml \
+              --branch lts \
+              --event workflow_dispatch \
+              --repo ${{ github.repository }} \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for build-dx-hwe.yml run to appear in API (attempt $i/20)..."
+            sleep 30
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate build-dx-hwe.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
+
+          echo "Watching build-dx-hwe.yml run $RUN_ID..."
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ DX HWE LTS build completed successfully"
+
+  verify-signatures:
+    name: Verify cosign signatures
+    needs: trigger-lts-builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cosign
+        run: |
+          set -euo pipefail
+          COSIGN_VERSION="v2.5.0"
+          sudo curl -fsSL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" \
+            -o /usr/local/bin/cosign
+          sudo chmod +x /usr/local/bin/cosign
+
+      - name: Verify published LTS image signatures
+        run: |
+          set -euo pipefail
+
+          IMAGE_REFS=(
+            ghcr.io/projectbluefin/bluefin:lts
+            ghcr.io/projectbluefin/bluefin-dx:lts
+            ghcr.io/projectbluefin/bluefin-gdx:lts
+            ghcr.io/projectbluefin/bluefin:lts-hwe
+            ghcr.io/projectbluefin/bluefin-dx:lts-hwe
+          )
+
+          for image in "${IMAGE_REFS[@]}"; do
+            echo "Verifying signature: ${image}"
+            cosign verify \
+              --certificate-identity-regexp "https://github.com/projectbluefin/bluefin-lts/.github/workflows/" \
+              --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+              "${image}"
+            echo "✅ Signature verified: ${image}"
+          done
+
   run-upgrade-test:
     name: Upgrade test (lifecycle)
-    needs: trigger-lts-builds
+    needs: [trigger-lts-builds, verify-signatures]
     permissions:
       packages: write
       contents: read
