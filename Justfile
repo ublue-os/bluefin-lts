@@ -536,6 +536,8 @@ gen-sbom base="bluefin-lts" stream="lts" flavor="main" syft_cmd="syft":
     podman save --format oci-dir -o "${OCI_DIR}" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
     {{ syft_cmd }} "oci-dir:${OCI_DIR}" \
         -o syft-json="sbom_out/${IMAGE_NAME}/sbom.json"
+    # Fix ownership so subsequent non-root steps (sign-and-publish) can read/write the SBOM
+    chown -R "${SUDO_UID:-$(id -u)}:${SUDO_GID:-$(id -g)}" "sbom_out/" 2>/dev/null || true
 
 # Secureboot validation stub — LTS uses bootc + TPM2/Verity, not UKI.
 [group('Utility')]
