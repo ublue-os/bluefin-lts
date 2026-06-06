@@ -17,9 +17,8 @@ concurrency:
 jobs:
   trigger-lts-builds:
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://ghcr.io/projectbluefin/bluefin-lts:lts
+    # TODO(#94): Re-add environment: production gate once the factory has
+    # published its first build and reviewer assignments are confirmed.
     # Allow up to 3 hours for builds to complete before timing out.
     timeout-minutes: 180
     steps:

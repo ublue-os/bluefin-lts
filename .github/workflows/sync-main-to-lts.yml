@@ -1,0 +1,24 @@
+name: Sync main → lts
+
+# After each push to main, merge main into lts so the promotion branch
+# never falls behind. Reusable logic lives in projectbluefin/actions.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: sync-main-to-lts
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Keep lts up-to-date with main
+    uses: projectbluefin/actions/.github/workflows/reusable-sync-branches.yml@1b6ae6a57f589db7175c3748ff93337ba63457ce # v1
+    permissions:
+      contents: write
+    with:
+      source_branch: main
+      target_branch: lts
