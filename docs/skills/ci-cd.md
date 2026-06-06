@@ -234,6 +234,18 @@ PUSH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
 - Failed SBOM attestation must never block image publishing.
 - LTS uses SPDX JSON artifacts on the amd64 manifest digest; signing uses keyless cosign (Sigstore OIDC).
 
+### SBOM permission gotcha (fixed 2026-06-06 — PR #90)
+
+`reusable-build.yml` calls `sudo -E just gen-sbom` which creates `sbom_out/` **owned by root**.
+The subsequent `sign-and-publish` step runs without `sudo` and fails with `permission denied` on `sbom_out/$IMAGE/sbom.json`.
+
+**Fix is in the Justfile `gen-sbom` recipe:** after syft writes the file, ownership is returned to the invoking user:
+```bash
+chown -R "${SUDO_UID:-$(id -u)}:${SUDO_GID:-$(id -g)}" "sbom_out/" 2>/dev/null || true
+```
+
+If you ever touch `gen-sbom` in the Justfile, preserve this line.
+
 ## Condition quick reference
 
 | Step/job | Condition |

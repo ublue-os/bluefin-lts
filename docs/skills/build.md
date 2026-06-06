@@ -81,7 +81,7 @@ Workflow guardrails key off these exact names. When copying from bluefin, replac
 | missing command | `which just podman git` |
 | package pulls fail | repo/network timeout; retry after failure completes naturally |
 | storage errors | run `just clean`, verify free disk |
-| permission issues | some build paths require sudo/root |
+| permission issues | some build paths require sudo/root; `gen-sbom` runs as root — `sbom_out/` is chowned back to runner after write |
 | NVIDIA driver version mismatch in GDX | Set `COREOS_STABLE_VERSION=NN` to pin; or let it auto-resolve from CoreOS stable |
 
 Recovery loop:
