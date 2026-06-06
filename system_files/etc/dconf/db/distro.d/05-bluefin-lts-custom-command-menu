@@ -2,60 +2,18 @@
 menuoptions-setting=2
 menuicon-setting='ublue-logo-symbolic'
 menulocation-setting=1
+menuposition-setting=0
 show-arrow=false
 command-order=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
-entryrow1a-setting='---$(hostname)'
-entryrow1b-setting=''
-entryrow1c-setting=''
-visible1-setting=true
-
-entryrow2a-setting='About'
-entryrow2b-setting='gnome-control-center system about'
-entryrow2c-setting=''
-visible2-setting=true
-
-entryrow3a-setting='System Monitor'
-entryrow3b-setting='flatpak run io.missioncenter.MissionCenter'
-entryrow3c-setting=''
-visible3-setting=true
-
-entryrow4a-setting='System Settings'
-entryrow4b-setting='gnome-control-center'
-entryrow4c-setting=''
-visible4-setting=true
-
-entryrow5a-setting='---Applications'
-entryrow5b-setting=''
-entryrow5c-setting=''
-visible5-setting=true
-
-entryrow6a-setting='Bazaar App Store'
-entryrow6b-setting='/usr/bin/flatpak run io.github.kolunmi.Bazaar'
-entryrow6c-setting=''
-visible6-setting=true
-
-entryrow7a-setting='Extensions'
-entryrow7b-setting='flatpak run com.mattjakeman.ExtensionManager'
-entryrow7c-setting=''
-visible7-setting=true
-
-entryrow8a-setting='Terminal'
-entryrow8b-setting='xdg-terminal-exec'
-entryrow8c-setting=''
-visible8-setting=true
-
-entryrow9a-setting='---Help'
-entryrow9b-setting=''
-entryrow9c-setting=''
-visible9-setting=true
-
-entryrow10a-setting='Documentation'
-entryrow10b-setting='xdg-open https://docs.projectbluefin.io/'
-entryrow10c-setting=''
-visible10-setting=true
-
-entryrow11a-setting='Ask Bluefin'
-entryrow11b-setting='xdg-open https://ask.projectbluefin.io'
-entryrow11c-setting=''
-visible11-setting=true
+command1=('---$(hostname)', '', '', true)
+command2=('About', 'gnome-control-center system about', '', true)
+command3=('System Monitor', '/usr/bin/flatpak run io.missioncenter.MissionCenter', '', true)
+command4=('System Settings', 'gnome-control-center', '', true)
+command5=('---Applications', '', '', true)
+command6=('Bazaar App Store', '/usr/bin/flatpak run io.github.kolunmi.Bazaar', '', true)
+command7=('Extensions', '/usr/bin/flatpak run com.mattjakeman.ExtensionManager', '', true)
+command8=('Terminal', 'xdg-terminal-exec', '', true)
+command9=('---Help', '', '', true)
+command10=('Documentation', 'xdg-open https://docs.projectbluefin.io/', '', true)
+command11=('Ask Bluefin', 'xdg-open https://ask.projectbluefin.io', '', true)
