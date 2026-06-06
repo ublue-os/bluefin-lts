@@ -24,7 +24,6 @@ just check && just lint
 | Goal | Command | Typical time |
 |---|---|---|
 | Regular | `just build bluefin lts 0 0 0` | 45-90 min |
-| DX | `just build bluefin lts 1 0 0` | 45-90 min |
 | GDX | `just build bluefin lts 0 1 0` | 45-90 min |
 | HWE | `just build bluefin lts 0 0 1` | 45-90 min |
 
@@ -41,8 +40,7 @@ just build bluefin lts 0 1 0 "" 50 43   # GDX with explicit GNOME 50, Fedora 43 
 | Variant | What changes |
 |---|---|
 | Regular | base LTS image |
-| DX | developer tools, VS Code, Docker |
-| GDX | GPU / AI tooling |
+| GDX | GPU / AI tooling (NVIDIA) |
 | HWE | newer hardware enablement |
 
 ## VM / disk artifacts
