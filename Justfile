@@ -525,7 +525,9 @@ gen-sbom base="bluefin-lts" stream="lts" flavor="main" syft_cmd="syft":
     IMAGE_NAME="$({{ just_executable() }} image_name {{ base }} {{ stream }} {{ flavor }})"
     DEFAULT_TAG="$({{ just_executable() }} generate-default-tag {{ stream }} 1)"
     mkdir -p "sbom_out/${IMAGE_NAME}"
-    {{ syft_cmd }} "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+    OCI_DIR="sbom_out/${IMAGE_NAME}/oci-dir"
+    podman save --format oci-dir -o "${OCI_DIR}" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
+    {{ syft_cmd }} "oci-dir:${OCI_DIR}" \
         -o syft-json="sbom_out/${IMAGE_NAME}/sbom.json"
 
 # Secureboot validation stub — LTS uses bootc + TPM2/Verity, not UKI.
