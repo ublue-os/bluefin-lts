@@ -33,6 +33,7 @@ jobs:
     with:
       image: ghcr.io/projectbluefin/bluefin-lts:testing
       suites: smoke,common
+    secrets: inherit
 
   report-failure:
     needs: [e2e-smoke]
