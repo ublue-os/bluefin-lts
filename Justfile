@@ -3,7 +3,7 @@ export image_name := env("IMAGE_NAME", "bluefin")
 export centos_version := env("CENTOS_VERSION", "stream10")
 export default_tag := env("DEFAULT_TAG", "lts")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
-export coreos_stable_version := env("COREOS_STABLE_VERSION", "43")
+export coreos_stable_version := env("COREOS_STABLE_VERSION", "")
 export HOME := env("HOME", "")
 export common_image := env("COMMON_IMAGE", "ghcr.io/projectbluefin/common:latest")
 export brew_image := env("BREW_IMAGE", "ghcr.io/ublue-os/brew:latest")
@@ -130,13 +130,20 @@ build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kerne
     BUILD_ARGS+=("--build-arg" "ENABLE_GDX=${gdx}")
     BUILD_ARGS+=("--build-arg" "ENABLE_HWE=${hwe}")
     BUILD_ARGS+=("--build-arg" "GNOME_VERSION=${gnome_version}")
-    BUILD_ARGS+=("--build-arg" "FEDORA_AKMODS_VERSION=${fedora_akmods_version}")
     # Select akmods source tag for mounted ZFS/NVIDIA images
     ARCH=$(uname -m)
     if [[ "${hwe}" -eq "1" || "${gdx}" -eq "1" ]]; then
-        AKMODS_BASE="coreos-stable-${coreos_stable_version}"
+        # Dynamically follow Fedora CoreOS stable; override with COREOS_STABLE_VERSION env if set
+        if [[ -n "${coreos_stable_version:-}" ]]; then
+            coreos_fedora_ver="${coreos_stable_version}"
+        else
+            coreos_fedora_ver=$(skopeo inspect --retry-times 3 docker://quay.io/fedora/fedora-coreos:stable | jq -r '.Labels["org.opencontainers.image.version"]' | grep -oP '^[0-9]+')
+        fi
+        AKMODS_BASE="coreos-stable-${coreos_fedora_ver}"
+        BUILD_ARGS+=("--build-arg" "FEDORA_AKMODS_VERSION=${coreos_fedora_ver}")
     else
         AKMODS_BASE="centos-10"
+        BUILD_ARGS+=("--build-arg" "FEDORA_AKMODS_VERSION=${fedora_akmods_version}")
     fi
     if [[ -n "${kernel_pin}" ]]; then
         BUILD_ARGS+=("--build-arg" "AKMODS_VERSION=${AKMODS_BASE}-${kernel_pin}.${ARCH}")

@@ -9,7 +9,7 @@ set ${CI:+-x} -euo pipefail
 ### Kernel Swap - Install kernel from mounted akmods containers
 ### Containerfile provides the correct kernel via AKMODS_VERSION:
 ###   - centos-10 for standard builds
-###   - coreos-stable-42 for HWE builds
+###   - coreos-stable-<version> for HWE/GDX builds (follows Fedora CoreOS stable)
 # */
 
 KERNEL_NAME="kernel"
@@ -55,9 +55,13 @@ if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
   KERNEL_VERSION=$(rpm -q kernel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}')
   echo "Detected kernel version: ${KERNEL_VERSION}"
 
-  # Use the same akmods flavor and Fedora version as coreos-stable-42
   AKMODS_FLAVOR="coreos-stable"
-  FEDORA_VERSION="43"
+  # Derive Fedora version from the installed kernel (e.g., 7.0.8-200.fc44.x86_64 → 44)
+  FEDORA_VERSION=$(echo "${KERNEL_VERSION}" | grep -oP 'fc\K[0-9]+')
+  if [[ -z "${FEDORA_VERSION}" ]]; then
+    # Fall back to the build-arg passed at image build time
+    FEDORA_VERSION="${FEDORA_AKMODS_VERSION:-43}"
+  fi
 
   # Create writable directory for common akmods downloads (tmpfs /tmp is mounted)
   COMMON_AKMODS_DIR="/run/common-akmods"
