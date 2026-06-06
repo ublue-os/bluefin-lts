@@ -1,5 +1,11 @@
 name: Generate Release
 
+# TODO(bluefin-lts#74): migrate to bootc-build/create-release once the build
+# workflow uploads the SBOM as a GitHub Actions artifact.
+# https://github.com/projectbluefin/bluefin-lts/issues/74
+#
+# Stub — current behaviour preserved. Replace with create-release after #74.
+
 permissions:
   contents: write
 
