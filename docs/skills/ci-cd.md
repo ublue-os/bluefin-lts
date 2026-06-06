@@ -87,9 +87,20 @@ Inputs used by each caller:
 - `image_flavors` — `'["main"]'`
 - `architecture` — `'["x86_64"]'`
 
-### Shared composite actions in bluefin-lts
+### HWE and GDX kernel selection
 
-| Action | Where used | LTS-specific override |
+HWE (`bluefin-lts-hwe`) and GDX (`bluefin-gdx`) use the **Fedora CoreOS stable** kernel, not the CentOS kernel. The Justfile resolves the current Fedora CoreOS stable version at build time:
+
+```bash
+skopeo inspect docker://quay.io/fedora/fedora-coreos:stable
+# → derives Fedora version (e.g., 44) → selects coreos-stable-44 akmods
+```
+
+This means HWE/GDX kernels automatically track upstream as CoreOS advances Fedora versions — no manual pin bumps needed. Set `COREOS_STABLE_VERSION=NN` to override for testing.
+
+Regular builds (`bluefin-lts`) use `centos-10` akmods and the CentOS Stream kernel.
+
+### Shared composite actions in bluefin-lts| Action | Where used | LTS-specific override |
 |---|---|---|
 | `bootc-build/validate-pr` | `pr-testsuite.yml` | `shellcheck-glob: "build_scripts/**/*.sh"` (lts uses `build_scripts/`, not `build_files/`) |
 | `bootc-build/detect-changes` | `build-regular.yml`, `build-gdx.yml`, `build-regular-hwe.yml` | filters for `build_scripts/**` and `image-versions.yaml` |

@@ -27,11 +27,16 @@ just check && just lint
 | GDX | `just build bluefin lts 0 1 0` | 45-90 min |
 | HWE | `just build bluefin lts 0 0 1` | 45-90 min |
 
-The `gnome_version` parameter defaults to `"50"`. Override only if testing a future GNOME version. For GDX builds, `fedora_akmods_version` (default `"43"`) controls the negativo17 Fedora repo version used for NVIDIA drivers:
+The `gnome_version` parameter defaults to `"50"`. Override only if testing a future GNOME version.
+
+**HWE and GDX kernel tracking:** For HWE and GDX builds, the Fedora CoreOS stable version is resolved dynamically at build time via `skopeo inspect docker://quay.io/fedora/fedora-coreos:stable`. This version is used to select the matching `coreos-stable-<version>` akmods image tag and is passed as `FEDORA_AKMODS_VERSION` (controls negativo17 Fedora repo for NVIDIA drivers). Override with `COREOS_STABLE_VERSION` env var if you need to pin:
 
 ```bash
-just build bluefin lts 0 1 0 "" 50 43   # GDX with explicit GNOME 50, Fedora 43 akmods
+COREOS_STABLE_VERSION=44 just build bluefin lts 0 1 0   # GDX, force Fedora 44 akmods
+COREOS_STABLE_VERSION=44 just build bluefin lts 0 0 1   # HWE, force Fedora 44 akmods
 ```
+
+Regular builds continue to use `centos-10` akmods and the `fedora_akmods_version` parameter (default `"43"`) has no effect on HWE/GDX.
 
 **Never cancel builds.** Use 120+ minute timeouts.
 
@@ -77,7 +82,7 @@ Workflow guardrails key off these exact names. When copying from bluefin, replac
 | package pulls fail | repo/network timeout; retry after failure completes naturally |
 | storage errors | run `just clean`, verify free disk |
 | permission issues | some build paths require sudo/root |
-| NVIDIA driver version mismatch in GDX | Pass explicit `fedora_akmods_version=NN` to `just build` |
+| NVIDIA driver version mismatch in GDX | Set `COREOS_STABLE_VERSION=NN` to pin; or let it auto-resolve from CoreOS stable |
 
 Recovery loop:
 
