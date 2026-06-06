@@ -99,14 +99,13 @@ jobs:
           TAG="${{ steps.changelog.outputs.TAG }}"
           TITLE="${{ steps.changelog.outputs.TITLE }}"
 
-          # Check if release already exists
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists, skipping creation"
+          if gh release view "$TAG" --repo "${{ github.repository }}" &>/dev/null; then
+            echo "Release $TAG already exists — skipping."
             exit 0
           fi
 
-          # Create the release
           gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
             --title "$TITLE" \
             --notes-file changelog.md \
             --target lts
