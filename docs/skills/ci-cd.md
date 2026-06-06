@@ -7,7 +7,8 @@
 | `build-regular.yml` | caller for `bluefin-lts` |
 | `build-regular-hwe.yml` | caller for `bluefin-lts-hwe` (HWE kernel) |
 | `build-gdx.yml` | caller for `bluefin-gdx` (NVIDIA/AI) |
-| `scheduled-lts-release.yml` | only Tuesday production dispatcher; gated by `environment: production` (2-human approval); dispatches 3 build workflows on `lts` |
+| `sync-main-to-lts.yml` | auto-merges `main → lts` on every push to `main`; thin caller to `projectbluefin/actions/reusable-sync-branches.yml@v1` |
+| `scheduled-lts-release.yml` | Tuesday production dispatcher; dispatches 3 build workflows on `lts`; production environment gate **removed** (TODO #94 to restore once factory confirmed operational) |
 | `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
 | `pr-testsuite.yml` | runs **`validate-pr@v1`** (just check, shellcheck, hadolint, pre-commit) + **e2e smoke** on every PR; only `Lint & syntax` is a required check |
 | `renovate-automerge.yml` | auto-merges Renovate/mergeraptor PRs when pr-testsuite passes |
@@ -20,7 +21,7 @@
 | ~~`build-dx-hwe.yml`~~ | **deleted** — no DX HWE variant |
 | ~~`build-gnome50.yml`~~ | **deleted 2026-05-30** — GNOME 50 is now the default |
 | ~~`reusable-build-image.yml`~~ | **deleted** — replaced by `projectbluefin/actions/.github/workflows/reusable-build.yml@v1` |
-| ~~`create-lts-pr.yml`~~ | **deleted** — promotion is now via manually-reviewed PR gate (not auto-created) |
+| ~~`create-lts-pr.yml`~~ | **deleted 2026-05-30** (commit `82e2b67`) — replaced by `sync-main-to-lts.yml` (PR #97, merged 2026-06-06) |
 
 ## Branches and tags
 
@@ -37,15 +38,15 @@
 
 ## Promotion flow (`main→lts`)
 
-Promotion from `main` to `lts` is **fully automated** by GitHub Actions. `create-lts-pr.yml` was deleted.
+`sync-main-to-lts.yml` auto-merges `main → lts` on every push to `main` via direct `git push` (uses `projectbluefin/actions/reusable-sync-branches.yml@v1`). No manual PR needed.
 
-1. PRs merge to `main` via the merge queue using a **regular merge commit**.
-2. GitHub Actions automatically promotes `main → lts` after each merge.
+1. PRs merge to `main` via the merge queue using **squash merge**.
+2. `sync-main-to-lts.yml` fires immediately after and merges `main → lts` via regular `git merge`.
 3. `push` to `lts` does **not** publish images — it only validates.
-4. `scheduled-lts-release.yml` (or manual dispatch on `lts`) publishes production images.
+4. `scheduled-lts-release.yml` (manual dispatch on `lts`) publishes production images.
 
-**Never squash-merge promotion PRs.** It breaks the merge base and bloats every future PR diff.
-**Never merge `lts→main`; never commit directly to `lts`.**
+**Never squash-merge `main→lts` directly.** The sync workflow uses regular merge — this is intentional to preserve merge base.
+**Never merge `lts→main`.**
 
 ## `stream_name` — how tags are determined
 
@@ -123,15 +124,15 @@ When E2E is fixed, the flow will be:
 
 ## Weekly release pipeline
 
-`scheduled-lts-release.yml` job chain (updated 2026-06-06 — PR #73):
-1. `trigger-lts-builds` — **gated by `environment: production` (2 required human approvals)**; triggers all 3 build workflows on `lts` (`build-regular.yml`, `build-gdx.yml`, `build-regular-hwe.yml`), then sequentially waits for all 3 to complete
+`scheduled-lts-release.yml` job chain (updated 2026-06-06):
+1. `trigger-lts-builds` — ~~gated by `environment: production`~~ gate removed (TODO #94); triggers all 3 build workflows on `lts` (`build-regular.yml`, `build-gdx.yml`, `build-regular-hwe.yml`), then sequentially waits for all 3 to complete
 2. `verify-signatures` (needs: trigger-lts-builds) — verifies cosign signatures on all 3 published images
 3. `run-upgrade-test` (needs: [trigger-lts-builds, verify-signatures]) — lifecycle upgrade test on `ghcr.io/projectbluefin/bluefin-lts:lts` via `projectbluefin/actions/.github/workflows/upgrade-test.yml@v1`; `suites: lifecycle`, `chunked_enabled: false`
 4. `generate-release` (needs: [trigger-lts-builds, run-upgrade-test]) — only fires if upgrade-test passes; dispatches `generate-release.yml --ref main -f target=lts`
 
 If the upgrade test fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
 
-**Production gate:** two distinct maintainers must approve in the GitHub Environments UI before any Tuesday builds run.
+**Branch protection on `main`:** Required check `Lint & syntax` + linear history enforced. Matches `projectbluefin/bluefin`.
 
 ## `generate-release.yml` trigger logic
 

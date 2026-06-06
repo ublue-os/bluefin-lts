@@ -2,20 +2,18 @@
 
 ## Production release flow
 
-1. Promotion lands via PR from `main` to `lts`.
-2. Merge must be a **regular merge commit**.
-3. `push` to `lts` only validates; it does **not** publish.
-4. `scheduled-lts-release.yml` owns the Tuesday `0 6 * * 2` production run.
-5. **upgrade-test must pass** before GitHub Release is created.
-6. For urgent publishes, manually dispatch `scheduled-lts-release.yml` on `lts`.
+1. `sync-main-to-lts.yml` auto-promotes `main → lts` on every push via `projectbluefin/actions/reusable-sync-branches.yml@v1` — no manual PR needed.
+2. `push` to `lts` only validates; it does **not** publish.
+3. `scheduled-lts-release.yml` owns the Tuesday `0 6 * * 2` production run — or dispatch manually on `lts`.
+4. **upgrade-test must pass** before GitHub Release is created.
 
 ## Promotion / branch safety
 
-- Never squash-merge promotion PRs.
+- `main→lts` is automated via `sync-main-to-lts.yml` (regular merge, direct git push).
+- Never squash-merge `main→lts` directly — the sync workflow does regular merge intentionally.
 - Never merge `lts→main`.
-- Never commit directly to `lts`; land in `main` first.
-- `main` uses a merge queue with **MERGE** method (not squash): `gh pr merge --auto` enqueues; do not promise immediate merge.
-- Required check on `main` is `Lint & syntax` (pr-testsuite) only — builds are informational.
+- `main` uses a merge queue with **squash** method. Required check: `Lint & syntax`. Linear history enforced.
+- `gh pr merge --auto` enqueues — do not promise immediate merge.
 
 ## Fork sync pattern (`castrojo` fork)
 
