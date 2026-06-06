@@ -45,7 +45,8 @@ jobs:
 
   testsuite:
     name: E2E smoke
-    continue-on-error: true  # TODO: fix image copy into testing tag on PRs (tracked separately)
+    # continue-on-error is not valid on reusable workflow jobs (uses:).
+    # This job is informational — tracked in issue #34.
     permissions:
       contents: read
       packages: write  # testsuite pushes screenshot OCI artifacts to GHCR
@@ -53,3 +54,4 @@ jobs:
     with:
       image: ghcr.io/projectbluefin/bluefin-lts:testing
       suites: smoke
+    secrets: inherit
