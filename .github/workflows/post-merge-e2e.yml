@@ -31,7 +31,7 @@ jobs:
       packages: write
     uses: projectbluefin/testsuite/.github/workflows/e2e.yml@e7f9c65095a0cbf62689a8cd64a471ee4824630c # main
     with:
-      image: ghcr.io/projectbluefin/bluefin:lts-testing
+      image: ghcr.io/projectbluefin/bluefin-lts:testing
       suites: smoke,common
 
   report-failure:
@@ -46,7 +46,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
-            const image = 'ghcr.io/projectbluefin/bluefin:lts-testing';
+            const image = 'ghcr.io/projectbluefin/bluefin-lts:testing';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const sha = ('${{ github.event.workflow_run.head_sha || github.sha }}').slice(0, 8);
             const title = `ci: lts post-merge e2e failure — ${sha}`;

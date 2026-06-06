@@ -5,7 +5,7 @@ permissions:
 
 on:
   workflow_run:
-    workflows: ["Build Bluefin LTS GDX"]
+    workflows: ["Build Bluefin GDX"]
     types:
       - completed
     branches:

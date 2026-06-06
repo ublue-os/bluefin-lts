@@ -5,15 +5,21 @@ permissions:
   packages: write
   id-token: write
   attestations: write
+  security-events: write
 
 on:
   pull_request:
     branches:
       - main
+    paths:
+      - Containerfile
+      - Justfile
+      - build_scripts/**
+      - system_files/**
+      - image-versions.yaml
   push:
     branches:
-      - main
-      - lts
+      - main  # testing only; production images published via workflow_dispatch
   merge_group:
   workflow_dispatch:
 
@@ -24,19 +30,17 @@ concurrency:
 jobs:
   detect-changes:
     name: Detect changes
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       should_build: ${{ steps.detect.outputs.should_build }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-
-      - name: Detect image changes
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: projectbluefin/actions/bootc-build/detect-changes@v1
         id: detect
-        uses: projectbluefin/actions/bootc-build/detect-changes@v1
         with:
-          # bluefin-lts does not use bluefin's build_files/ or image-versions.yml defaults.
-          # Keep these repo-local overrides aligned with docs/skills/ci-cd.md.
           filters: |
             image:
               - 'Containerfile'
@@ -48,11 +52,22 @@ jobs:
               - 'Containerfile'
 
   build:
+    name: Build bluefin-lts image
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.should_build == 'true' || github.event_name != 'pull_request'
-    uses: ./.github/workflows/reusable-build-image.yml
+    if: |
+      always() &&
+      (github.event_name != 'pull_request' ||
+       needs.detect-changes.outputs.should_build == 'true')
+    uses: projectbluefin/actions/.github/workflows/reusable-build.yml@1c60f20d89dacc5b35f93f8d63e949316fc7a0ba # v1
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      security-events: write
     secrets: inherit
     with:
-      image-name: bluefin
-      rechunk: ${{ github.event_name != 'pull_request' }}
-      publish: ${{ (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/lts' || github.ref == 'refs/heads/main')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+      brand_name: bluefin-lts
+      stream_name: ${{ github.ref == 'refs/heads/lts' && 'lts' || 'testing' }}
+      image_flavors: '["main"]'
+      architecture: '["x86_64"]'

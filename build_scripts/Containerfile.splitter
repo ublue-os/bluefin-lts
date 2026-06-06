@@ -1,0 +1,18 @@
+# Vendored from projectbluefin/actions/bootc-build/chunka/Containerfile.splitter
+# CHUNKAH_VERSION v0.5.0 sha256:352097f3d32186ac11082f8b74cd544678b00388b50c96ba5c8e79503a454fe3
+# Do NOT fetch from the network at build time. Bump CHUNKAH_VERSION and CHUNKAH_SHA
+# in the just rechunk recipe together with this file.
+
+ARG CHUNKAH=quay.io/coreos/chunkah:latest
+ARG CHUNKAH_ARGS=""
+ARG CHUNKAH_CONFIG_STR
+
+FROM overridden AS target
+FROM ${CHUNKAH} AS chunkah
+ARG CHUNKAH_CONFIG_STR
+ARG CHUNKAH_ARGS
+RUN --mount=type=bind,target=/run/src,rw \
+    --mount=from=target,target=/chunkah \
+      chunkah build ${CHUNKAH_ARGS} > /run/src/out.ociarchive
+
+FROM oci-archive:out.ociarchive

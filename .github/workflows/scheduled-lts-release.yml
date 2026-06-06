@@ -15,132 +15,151 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # ── Dispatch all 5 LTS builds and capture their run IDs ──────────────────
-  # Outputs one run ID per build so the watch-builds matrix can fan-out and
-  # wait for all 5 in parallel rather than sequentially (~60 min vs ~5 h).
   trigger-lts-builds:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://ghcr.io/projectbluefin/bluefin:lts
-    timeout-minutes: 30
-    outputs:
-      dispatch_time: ${{ steps.dispatch.outputs.dispatch_time }}
-      regular_id:     ${{ steps.find-ids.outputs.regular_id }}
-      dx_id:          ${{ steps.find-ids.outputs.dx_id }}
-      gdx_id:         ${{ steps.find-ids.outputs.gdx_id }}
-      regular_hwe_id: ${{ steps.find-ids.outputs.regular_hwe_id }}
-      dx_hwe_id:      ${{ steps.find-ids.outputs.dx_hwe_id }}
+      url: https://ghcr.io/projectbluefin/bluefin-lts:lts
+    # Allow up to 3 hours for builds to complete before timing out.
+    timeout-minutes: 180
     steps:
       - name: Trigger all LTS builds on lts branch
-        id: dispatch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          echo "dispatch_time=${DISPATCH_TIME}" >> "$GITHUB_OUTPUT"
 
-          gh workflow run build-regular.yml     --ref lts -R ${{ github.repository }}
-          gh workflow run build-dx.yml          --ref lts -R ${{ github.repository }}
-          gh workflow run build-gdx.yml         --ref lts -R ${{ github.repository }}
+          # Record time just before dispatch so we can find the run IDs afterward.
+          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+          gh workflow run build-regular.yml --ref lts -R ${{ github.repository }}
+          gh workflow run build-gdx.yml --ref lts -R ${{ github.repository }}
           gh workflow run build-regular-hwe.yml --ref lts -R ${{ github.repository }}
-          gh workflow run build-dx-hwe.yml      --ref lts -R ${{ github.repository }}
 
-          echo "✅ Triggered all 5 LTS build workflows on lts branch"
+          echo "✅ Triggered all 3 LTS build workflows on lts branch"
 
-      - name: Resolve run IDs for all 5 builds
-        id: find-ids
+      - name: Wait for regular LTS build to complete
         env:
           GH_TOKEN: ${{ github.token }}
-          DISPATCH_TIME: ${{ steps.dispatch.outputs.dispatch_time }}
         run: |
           set -euo pipefail
 
-          # Give the API time to register all 5 dispatched runs.
+          # Wait for the API to register the newly dispatched run (usually < 30s).
           sleep 60
 
-          resolve_run_id() {
-            local workflow="$1"
-            local run_id=""
-            for i in $(seq 1 20); do
-              run_id=$(gh run list \
-                --workflow "${workflow}" \
-                --branch lts \
-                --event workflow_dispatch \
-                --repo ${{ github.repository }} \
-                --limit 10 \
-                --json databaseId,createdAt \
-                --jq ".[] | select(.createdAt >= \"${DISPATCH_TIME}\") | .databaseId" \
-                | head -1)
-              [ -n "$run_id" ] && { echo "$run_id"; return 0; }
-              echo "Waiting for ${workflow} run to appear (attempt ${i}/20)..." >&2
-              sleep 30
-            done
-            echo "ERROR: Could not locate ${workflow} run dispatched at ${DISPATCH_TIME}" >&2
-            return 1
-          }
+          # Find the build-regular.yml run dispatched after our trigger time.
+          # Retry for up to 10 minutes in case of API lag.
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow build-regular.yml \
+              --branch lts \
+              --event workflow_dispatch \
+              --repo ${{ github.repository }} \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for build-regular.yml run to appear in API (attempt $i/20)..."
+            sleep 30
+          done
 
-          REGULAR_ID=$(resolve_run_id build-regular.yml)
-          DX_ID=$(resolve_run_id build-dx.yml)
-          GDX_ID=$(resolve_run_id build-gdx.yml)
-          REGULAR_HWE_ID=$(resolve_run_id build-regular-hwe.yml)
-          DX_HWE_ID=$(resolve_run_id build-dx-hwe.yml)
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate build-regular.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
 
-          {
-            echo "regular_id=${REGULAR_ID}"
-            echo "dx_id=${DX_ID}"
-            echo "gdx_id=${GDX_ID}"
-            echo "regular_hwe_id=${REGULAR_HWE_ID}"
-            echo "dx_hwe_id=${DX_HWE_ID}"
-          } >> "$GITHUB_OUTPUT"
+          echo "Watching build-regular.yml run $RUN_ID — this takes ~60 minutes..."
+          # --exit-status causes this step to fail if the build fails,
+          # preventing a release from being generated for a broken image.
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ Regular LTS build completed successfully"
 
-          echo "✅ Resolved run IDs:"
-          echo "  build-regular:     ${REGULAR_ID}"
-          echo "  build-dx:          ${DX_ID}"
-          echo "  build-gdx:         ${GDX_ID}"
-          echo "  build-regular-hwe: ${REGULAR_HWE_ID}"
-          echo "  build-dx-hwe:      ${DX_HWE_ID}"
-
-  # ── Watch all 5 builds in parallel ───────────────────────────────────────
-  # Each matrix entry watches one build. All 5 run concurrently so the total
-  # wall-clock time is ~60–90 min (longest single build) instead of ~5 hours.
-  # fail-fast: false ensures one slow build doesn't cancel the others.
-  watch-builds:
-    name: "Watch ${{ matrix.name }}"
-    needs: trigger-lts-builds
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      max-parallel: 5
-      matrix:
-        include:
-          - name: regular
-            run_id: ${{ needs.trigger-lts-builds.outputs.regular_id }}
-          - name: dx
-            run_id: ${{ needs.trigger-lts-builds.outputs.dx_id }}
-          - name: gdx
-            run_id: ${{ needs.trigger-lts-builds.outputs.gdx_id }}
-          - name: regular-hwe
-            run_id: ${{ needs.trigger-lts-builds.outputs.regular_hwe_id }}
-          - name: dx-hwe
-            run_id: ${{ needs.trigger-lts-builds.outputs.dx_hwe_id }}
-    steps:
-      - name: Wait for ${{ matrix.name }} build to complete
+      - name: Wait for DX LTS build to complete
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          echo "Watching ${{ matrix.name }} run ${{ matrix.run_id }}..."
-          gh run watch "${{ matrix.run_id }}" \
-            --exit-status \
-            --repo ${{ github.repository }}
-          echo "✅ ${{ matrix.name }} build completed successfully"
+          # No DX variant in LTS — this step intentionally skipped.
+          echo "DX variant removed from LTS. Skipping."
+
+      - name: Wait for GDX LTS build to complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # generate-release.yml is triggered by workflow_run on "Build Bluefin LTS GDX",
+          # making GDX the intended gate for release generation. Wait for it to complete
+          # before triggering release generation so all production images are ready.
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow build-gdx.yml \
+              --branch lts \
+              --event workflow_dispatch \
+              --repo ${{ github.repository }} \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for build-gdx.yml run to appear in API (attempt $i/20)..."
+            sleep 30
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate build-gdx.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
+
+          echo "Watching build-gdx.yml run $RUN_ID..."
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ GDX LTS build completed successfully"
+
+      - name: Wait for regular HWE LTS build to complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow build-regular-hwe.yml \
+              --branch lts \
+              --event workflow_dispatch \
+              --repo ${{ github.repository }} \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for build-regular-hwe.yml run to appear in API (attempt $i/20)..."
+            sleep 30
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate build-regular-hwe.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
+
+          echo "Watching build-regular-hwe.yml run $RUN_ID..."
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ Regular HWE LTS build completed successfully"
+
+      - name: Wait for DX HWE LTS build to complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # No DX HWE variant in LTS — this step intentionally skipped.
+          echo "DX HWE variant removed from LTS. Skipping."
 
   verify-signatures:
     name: Verify cosign signatures
-    needs: watch-builds
+    needs: trigger-lts-builds
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -167,11 +186,9 @@ jobs:
           set -euo pipefail
 
           IMAGE_REFS=(
-            ghcr.io/projectbluefin/bluefin:lts
-            ghcr.io/projectbluefin/bluefin-dx:lts
+            ghcr.io/projectbluefin/bluefin-lts:lts
             ghcr.io/projectbluefin/bluefin-gdx:lts
-            ghcr.io/projectbluefin/bluefin:lts-hwe
-            ghcr.io/projectbluefin/bluefin-dx:lts-hwe
+            ghcr.io/projectbluefin/bluefin-lts-hwe:lts
           )
 
           for image in "${IMAGE_REFS[@]}"; do
@@ -185,20 +202,20 @@ jobs:
 
   run-upgrade-test:
     name: Upgrade test (lifecycle)
-    needs: [watch-builds, verify-signatures]
+    needs: [trigger-lts-builds, verify-signatures]
     permissions:
       packages: write
       contents: read
       id-token: write
     uses: projectbluefin/actions/.github/workflows/upgrade-test.yml@v1
     with:
-      image: ghcr.io/projectbluefin/bluefin:lts
+      image: ghcr.io/projectbluefin/bluefin-lts:lts
       suites: lifecycle
       chunked_enabled: false
 
   generate-release:
     name: Generate release
-    needs: [watch-builds, run-upgrade-test]
+    needs: [trigger-lts-builds, run-upgrade-test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -215,7 +232,7 @@ jobs:
           echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
 
   report-failure:
-    needs: [trigger-lts-builds, watch-builds, verify-signatures, run-upgrade-test, generate-release]
+    needs: [trigger-lts-builds, verify-signatures, run-upgrade-test, generate-release]
     if: always() && failure()
     runs-on: ubuntu-latest
     timeout-minutes: 5
