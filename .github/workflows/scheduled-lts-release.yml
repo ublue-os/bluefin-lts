@@ -170,7 +170,10 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # PACKAGES_TOKEN required: bluefin-lts images are linked to the
+          # projectbluefin/bluefin package, not bluefin-lts. GITHUB_TOKEN
+          # from this repo cannot read those packages. See issue #99.
+          password: ${{ secrets.PACKAGES_TOKEN }}
 
       - name: Install cosign
         run: |
