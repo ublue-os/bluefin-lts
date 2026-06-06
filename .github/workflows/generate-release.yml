@@ -2,118 +2,141 @@ name: Generate Release
 
 permissions:
   contents: write
+  packages: read
+  id-token: write  # needed for SBOM attestation in create-release
 
 on:
-  workflow_run:
-    workflows: ["Build Bluefin GDX"]
-    types:
-      - completed
-    branches:
-      - lts
+  # Triggered by scheduled-lts-release.yml after successful digest promotion.
   workflow_dispatch:
     inputs:
       target:
-        description: 'Target to generate changelog for'
+        description: 'Target variant to release'
         required: true
         default: 'lts'
         type: choice
         options:
           - lts
-          - dx
           - gdx
 
 jobs:
   generate-release:
     runs-on: ubuntu-latest
-    # Only run if the workflow was successful, on lts branch, and triggered by
-    # workflow_dispatch (meaning scheduled-lts-release.yml fired it — images were published).
-    # Push-to-lts validation builds complete successfully too but publish nothing,
-    # so we must not create a release for those.
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'lts' &&
-       github.event.workflow_run.event == 'workflow_dispatch')
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+      packages: read
+      id-token: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout lts branch
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           ref: lts
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
-        with:
-          python-version: '3.x'
-
-      - name: Install Python dependencies
+      - name: Resolve image and tag metadata
+        id: meta
+        env:
+          TARGET: ${{ inputs.target }}
         run: |
-          python -m pip install --upgrade pip
-          pip install PyYAML
+          set -euo pipefail
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y skopeo jq
+          DATE="$(date -u +%Y%m%d)"
+          TAG="lts-${DATE}"
+          TITLE="${TAG}: LTS"
 
-      - name: Determine target
-        id: target
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "target=${{ inputs.target }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "target=lts" >> "$GITHUB_OUTPUT"
-          fi
+          case "$TARGET" in
+            gdx)
+              IMAGE="ghcr.io/projectbluefin/bluefin-gdx"
+              ;;
+            *)
+              IMAGE="ghcr.io/projectbluefin/bluefin-lts"
+              ;;
+          esac
 
-      - name: Generate changelog
-        uses: hanthor/changelog-action@0f9fc8c023d1f28f69e31ad64e2161d308a56284 # master
-        with:
-          stream: ${{ steps.target.outputs.target }}
-          family: bluefin-lts
-          output-env: ./output.env
+          {
+            echo "tag=${TAG}"
+            echo "title=${TITLE}"
+            echo "image=${IMAGE}"
+            echo "image_name=$(basename "${IMAGE}")"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Read changelog outputs
-        id: changelog
-        run: |
-          # Source the output.env file to get TAG and TITLE
-          if [ -f output.env ]; then
-            # Strip surrounding double-quotes from values before writing to GITHUB_OUTPUT.
-            # changelog-action writes TITLE="some value" which stores the quotes literally
-            # in GITHUB_OUTPUT, causing bash to see TITLE=""value"" and fail with exit 127.
-            while IFS='=' read -r key value; do
-              value="${value#\"}"
-              value="${value%\"}"
-              echo "${key}=${value}" >> "$GITHUB_OUTPUT"
-            done < output.env
-          else
-            echo "output.env not found; assuming changelog generation was skipped"
-            echo "skip_release=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Create GitHub Release
-        if: steps.changelog.outputs.skip_release != 'true'
+      - name: Check if release already exists
+        id: check
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
         run: |
-          TAG="${{ steps.changelog.outputs.TAG }}"
-          TITLE="${{ steps.changelog.outputs.TITLE }}"
-
+          set -euo pipefail
           if gh release view "$TAG" --repo "${{ github.repository }}" &>/dev/null; then
             echo "Release $TAG already exists — skipping."
-            exit 0
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-          gh release create "$TAG" \
-            --repo "${{ github.repository }}" \
-            --title "$TITLE" \
-            --notes-file changelog.md \
-            --target lts
+      - name: Install skopeo
+        if: steps.check.outputs.skip != 'true'
+        run: sudo apt-get install -y --no-install-recommends skopeo
 
-      - name: Upload changelog artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - name: Log in to GHCR
+        if: steps.check.outputs.skip != 'true'
+        env:
+          GH_ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
+        run: echo "$GH_TOKEN" | skopeo login ghcr.io --username "$GH_ACTOR" --password-stdin
+
+      - name: Resolve promoted :lts digest
+        if: steps.check.outputs.skip != 'true'
+        id: digest
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+        run: |
+          set -euo pipefail
+          DIGEST=$(skopeo inspect --format '{{.Digest}}' "docker://${IMAGE}:lts")
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "Promoted digest: ${DIGEST}"
+
+      - name: Download Syft
+        if: steps.check.outputs.skip != 'true'
+        id: setup-syft
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
-          name: changelog
-          path: |
-            changelog.md
-            output.env
+          syft-version: v1.44.0
+
+      - name: Generate SBOM from promoted :lts image
+        if: steps.check.outputs.skip != 'true'
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          DIGEST: ${{ steps.digest.outputs.digest }}
+          IMAGE_NAME: ${{ steps.meta.outputs.image_name }}
+          SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
+        run: |
+          set -euo pipefail
+          mkdir -p sbom_out
+          "${SYFT_CMD}" "${IMAGE}@${DIGEST}" -o spdx-json="sbom_out/${IMAGE_NAME}.sbom.json"
+          echo "Generated SBOM at sbom_out/${IMAGE_NAME}.sbom.json"
+
+      - name: Create release
+        if: steps.check.outputs.skip != 'true'
+        uses: projectbluefin/actions/bootc-build/create-release@v1
+        with:
+          sbom-path: sbom_out/${{ steps.meta.outputs.image_name }}.sbom.json
+          tag: ${{ steps.meta.outputs.tag }}
+          title: ${{ steps.meta.outputs.title }}
+          image: ${{ steps.meta.outputs.image }}
+          digest: ${{ steps.digest.outputs.digest }}
+          repo: ${{ github.repository }}
+          project-name: Bluefin LTS
+          badge-label: LTS
+          accent-color: "#0ea5e9"
+          docs-url: https://docs.projectbluefin.io/changelogs
+          cert-identity-regexp: "https://github.com/projectbluefin/bluefin-lts/.github/workflows/"
+          notable-packages: >-
+            [
+              {"sbom_name": "kernel", "label": "Kernel"},
+              {"sbom_name": "gnome-shell", "label": "GNOME Shell"},
+              {"sbom_name": "flatpak", "label": "Flatpak"},
+              {"sbom_name": "bootc", "label": "bootc"}
+            ]
+          github-token: ${{ secrets.GITHUB_TOKEN }}

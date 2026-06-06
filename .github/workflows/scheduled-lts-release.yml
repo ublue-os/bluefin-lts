@@ -3,178 +3,160 @@ name: Scheduled LTS Release
 on:
   schedule:
     - cron: '0 6 * * 2'  # Weekly on Tuesday at 6 AM UTC (1 AM EST / 2 AM EDT)
-  workflow_dispatch:  # Allow manual triggering
-
-permissions:
-  contents: read
-  actions: write
-  packages: read
+  workflow_dispatch:  # Allow manual triggering (bypasses 7-day promotion floor)
 
 concurrency:
   group: scheduled-lts-release
   cancel-in-progress: false
 
+permissions: {}
+
 jobs:
-  trigger-lts-builds:
+  # Enforce a minimum 7-day floor between promotions to prevent churn.
+  # workflow_dispatch bypasses the floor so maintainers can force a promotion
+  # (e.g. after a hotfix or a failed previous run).
+  check-promotion-floor:
+    name: Check 7-day promotion floor
     runs-on: ubuntu-latest
-    # TODO(#94): Re-add environment: production gate once the factory has
-    # published its first build and reviewer assignments are confirmed.
-    # Allow up to 3 hours for builds to complete before timing out.
-    timeout-minutes: 180
-    steps:
-      - name: Trigger all LTS builds on lts branch
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          # Record time just before dispatch so we can find the run IDs afterward.
-          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-
-          gh workflow run build-regular.yml --ref lts -R ${{ github.repository }}
-          gh workflow run build-gdx.yml --ref lts -R ${{ github.repository }}
-          gh workflow run build-regular-hwe.yml --ref lts -R ${{ github.repository }}
-
-          echo "✅ Triggered all 3 LTS build workflows on lts branch"
-
-      - name: Wait for regular LTS build to complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          # Wait for the API to register the newly dispatched run (usually < 30s).
-          sleep 60
-
-          # Find the build-regular.yml run dispatched after our trigger time.
-          # Retry for up to 10 minutes in case of API lag.
-          RUN_ID=""
-          for i in $(seq 1 20); do
-            RUN_ID=$(gh run list \
-              --workflow build-regular.yml \
-              --branch lts \
-              --event workflow_dispatch \
-              --repo ${{ github.repository }} \
-              --limit 10 \
-              --json databaseId,createdAt \
-              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
-              | head -1)
-            [ -n "$RUN_ID" ] && break
-            echo "Waiting for build-regular.yml run to appear in API (attempt $i/20)..."
-            sleep 30
-          done
-
-          if [ -z "$RUN_ID" ]; then
-            echo "ERROR: Could not locate build-regular.yml run dispatched at $DISPATCH_TIME"
-            exit 1
-          fi
-
-          echo "Watching build-regular.yml run $RUN_ID — this takes ~60 minutes..."
-          # --exit-status causes this step to fail if the build fails,
-          # preventing a release from being generated for a broken image.
-          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
-          echo "✅ Regular LTS build completed successfully"
-
-      - name: Wait for DX LTS build to complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          # No DX variant in LTS — this step intentionally skipped.
-          echo "DX variant removed from LTS. Skipping."
-
-      - name: Wait for GDX LTS build to complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          # generate-release.yml is triggered by workflow_run on "Build Bluefin LTS GDX",
-          # making GDX the intended gate for release generation. Wait for it to complete
-          # before triggering release generation so all production images are ready.
-          RUN_ID=""
-          for i in $(seq 1 20); do
-            RUN_ID=$(gh run list \
-              --workflow build-gdx.yml \
-              --branch lts \
-              --event workflow_dispatch \
-              --repo ${{ github.repository }} \
-              --limit 10 \
-              --json databaseId,createdAt \
-              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
-              | head -1)
-            [ -n "$RUN_ID" ] && break
-            echo "Waiting for build-gdx.yml run to appear in API (attempt $i/20)..."
-            sleep 30
-          done
-
-          if [ -z "$RUN_ID" ]; then
-            echo "ERROR: Could not locate build-gdx.yml run dispatched at $DISPATCH_TIME"
-            exit 1
-          fi
-
-          echo "Watching build-gdx.yml run $RUN_ID..."
-          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
-          echo "✅ GDX LTS build completed successfully"
-
-      - name: Wait for regular HWE LTS build to complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          RUN_ID=""
-          for i in $(seq 1 20); do
-            RUN_ID=$(gh run list \
-              --workflow build-regular-hwe.yml \
-              --branch lts \
-              --event workflow_dispatch \
-              --repo ${{ github.repository }} \
-              --limit 10 \
-              --json databaseId,createdAt \
-              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
-              | head -1)
-            [ -n "$RUN_ID" ] && break
-            echo "Waiting for build-regular-hwe.yml run to appear in API (attempt $i/20)..."
-            sleep 30
-          done
-
-          if [ -z "$RUN_ID" ]; then
-            echo "ERROR: Could not locate build-regular-hwe.yml run dispatched at $DISPATCH_TIME"
-            exit 1
-          fi
-
-          echo "Watching build-regular-hwe.yml run $RUN_ID..."
-          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
-          echo "✅ Regular HWE LTS build completed successfully"
-
-      - name: Wait for DX HWE LTS build to complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          # No DX HWE variant in LTS — this step intentionally skipped.
-          echo "DX HWE variant removed from LTS. Skipping."
-
-  verify-signatures:
-    name: Verify cosign signatures
-    needs: trigger-lts-builds
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     permissions:
       contents: read
+    outputs:
+      should_promote: ${{ steps.floor.outputs.should_promote }}
+    steps:
+      - name: Check days since last stable release
+        id: floor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Manual dispatch — bypassing promotion floor."
+            echo "should_promote=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          LAST_RELEASE=$(gh release list \
+            --repo "${{ github.repository }}" \
+            --limit 1 \
+            --json createdAt \
+            --jq '.[0].createdAt // empty')
+
+          if [[ -z "$LAST_RELEASE" ]]; then
+            echo "No previous release found — first promotion, proceeding."
+            echo "should_promote=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          LAST_TS=$(date -d "$LAST_RELEASE" +%s)
+          NOW_TS=$(date +%s)
+          DAYS_SINCE=$(( (NOW_TS - LAST_TS) / 86400 ))
+
+          echo "Last stable release: $LAST_RELEASE (${DAYS_SINCE} days ago)"
+
+          if [[ "$DAYS_SINCE" -lt 7 ]]; then
+            echo "Floor not met (${DAYS_SINCE}/7 days) — skipping promotion this cycle."
+            echo "should_promote=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Floor met (${DAYS_SINCE} days) — proceeding with promotion."
+            echo "should_promote=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Resolve the exact :testing digests for all 3 LTS variants and verify they
+  # all share the same source commit SHA (org.opencontainers.image.revision).
+  resolve:
+    name: Resolve :testing digests
+    needs: [check-promotion-floor]
+    if: needs.check-promotion-floor.outputs.should_promote == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
       packages: read
+    outputs:
+      source_sha: ${{ steps.verify.outputs.source_sha }}
+      base_digest: ${{ steps.resolve-base.outputs.digest }}
+      hwe_digest: ${{ steps.resolve-hwe.outputs.digest }}
+      gdx_digest: ${{ steps.resolve-gdx.outputs.digest }}
     steps:
       - name: Log in to GHCR
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          # PACKAGES_TOKEN required: bluefin-lts images are linked to the
-          # projectbluefin/bluefin package, not bluefin-lts. GITHUB_TOKEN
-          # from this repo cannot read those packages. See issue #99.
-          password: ${{ secrets.PACKAGES_TOKEN }}
+        env:
+          GH_ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | skopeo login ghcr.io --username "$GH_ACTOR" --password-stdin
 
+      - name: Resolve bluefin-lts :testing digest
+        id: resolve-base
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/projectbluefin/bluefin-lts:testing"
+          sudo podman pull "$IMAGE"
+          DIGEST=$(sudo podman inspect "$IMAGE" --format '{{.Digest}}')
+          SHA=$(sudo podman inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "bluefin-lts :testing → digest=$DIGEST, source_sha=$SHA"
+
+      - name: Resolve bluefin-lts-hwe :testing digest
+        id: resolve-hwe
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/projectbluefin/bluefin-lts-hwe:testing"
+          sudo podman pull "$IMAGE"
+          DIGEST=$(sudo podman inspect "$IMAGE" --format '{{.Digest}}')
+          SHA=$(sudo podman inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "bluefin-lts-hwe :testing → digest=$DIGEST, source_sha=$SHA"
+
+      - name: Resolve bluefin-gdx :testing digest
+        id: resolve-gdx
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/projectbluefin/bluefin-gdx:testing"
+          sudo podman pull "$IMAGE"
+          DIGEST=$(sudo podman inspect "$IMAGE" --format '{{.Digest}}')
+          SHA=$(sudo podman inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "bluefin-gdx :testing → digest=$DIGEST, source_sha=$SHA"
+
+      - name: Verify all variants share the same source SHA
+        id: verify
+        env:
+          BASE_SHA: ${{ steps.resolve-base.outputs.sha }}
+          HWE_SHA: ${{ steps.resolve-hwe.outputs.sha }}
+          GDX_SHA: ${{ steps.resolve-gdx.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$BASE_SHA" ]]; then
+            echo "ERROR: bluefin-lts :testing has no org.opencontainers.image.revision label"
+            exit 1
+          fi
+
+          MISMATCH=0
+          [[ "$HWE_SHA" != "$BASE_SHA" ]] && { echo "ERROR: bluefin-lts-hwe SHA ($HWE_SHA) != base SHA ($BASE_SHA)"; MISMATCH=1; }
+          [[ "$GDX_SHA" != "$BASE_SHA" ]] && { echo "ERROR: bluefin-gdx SHA ($GDX_SHA) != base SHA ($BASE_SHA)"; MISMATCH=1; }
+
+          if [[ "$MISMATCH" -eq 1 ]]; then
+            echo "Variants are out of sync — skipping promotion until all variants share a common source SHA."
+            exit 1
+          fi
+
+          echo "source_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "✅ All 3 variants share source SHA: $BASE_SHA"
+
+  # Cosign-verify all 3 :testing digests before touching production tags.
+  verify-signatures:
+    name: Verify cosign signatures
+    needs: [resolve]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      packages: read
+    steps:
       - name: Install cosign
         run: |
           set -euo pipefail
@@ -183,59 +165,219 @@ jobs:
             -o /usr/local/bin/cosign
           sudo chmod +x /usr/local/bin/cosign
 
-      - name: Verify published LTS image signatures
+      - name: Verify signatures for all LTS variants
+        env:
+          BASE_DIGEST: ${{ needs.resolve.outputs.base_digest }}
+          HWE_DIGEST: ${{ needs.resolve.outputs.hwe_digest }}
+          GDX_DIGEST: ${{ needs.resolve.outputs.gdx_digest }}
         run: |
           set -euo pipefail
+          FAILED=0
 
-          IMAGE_REFS=(
-            ghcr.io/projectbluefin/bluefin-lts:lts
-            ghcr.io/projectbluefin/bluefin-gdx:lts
-            ghcr.io/projectbluefin/bluefin-lts-hwe:lts
-          )
-
-          for image in "${IMAGE_REFS[@]}"; do
-            echo "Verifying signature: ${image}"
-            cosign verify \
+          verify_digest() {
+            local ref="$1"
+            echo "Verifying signature: ${ref}"
+            if ! cosign verify \
               --certificate-identity-regexp "https://github.com/projectbluefin/bluefin-lts/.github/workflows/" \
               --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-              "${image}"
-            echo "✅ Signature verified: ${image}"
-          done
+              "${ref}" 2>/dev/null; then
+              echo "::error::Signature verification FAILED for ${ref}"
+              return 1
+            fi
+            echo "  ✅ Verified: ${ref}"
+          }
 
+          verify_digest "ghcr.io/projectbluefin/bluefin-lts@${BASE_DIGEST}"     || FAILED=$((FAILED+1))
+          verify_digest "ghcr.io/projectbluefin/bluefin-lts-hwe@${HWE_DIGEST}"  || FAILED=$((FAILED+1))
+          verify_digest "ghcr.io/projectbluefin/bluefin-gdx@${GDX_DIGEST}"      || FAILED=$((FAILED+1))
+
+          if [[ "$FAILED" -gt 0 ]]; then
+            echo "::error::${FAILED} image(s) failed signature verification — aborting promotion"
+            exit 1
+          fi
+          echo "✅ All 3 variants passed signature verification"
+
+  # Lifecycle upgrade test against the pinned :testing digest.
+  # Preserves the existing e2e guarantee before any production tag is written.
   run-upgrade-test:
     name: Upgrade test (lifecycle)
-    needs: [trigger-lts-builds, verify-signatures]
+    needs: [resolve, verify-signatures]
     permissions:
       packages: write
       contents: read
       id-token: write
     uses: projectbluefin/actions/.github/workflows/upgrade-test.yml@v1
     with:
-      image: ghcr.io/projectbluefin/bluefin-lts:lts
+      image: ghcr.io/projectbluefin/bluefin-lts@${{ needs.resolve.outputs.base_digest }}
       suites: lifecycle
       chunked_enabled: false
 
+  # Skopeo-copy all 3 variants by digest to :lts — no rebuild.
+  # The image that passed e2e is exactly the image published to production.
+  promote:
+    name: Promote :testing → :lts
+    needs: [resolve, verify-signatures, run-upgrade-test]
+    # TODO(#94): Re-add environment: production gate once reviewer assignments confirmed.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Log in to GHCR
+        env:
+          GH_ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | skopeo login ghcr.io --username "$GH_ACTOR" --password-stdin
+
+      - name: Verify source SHA has not advanced
+        env:
+          LOCKED_SHA: ${{ needs.resolve.outputs.source_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          CURRENT_SHA=$(gh api repos/${{ github.repository }}/git/ref/heads/main --jq '.object.sha')
+          if [[ "$CURRENT_SHA" != "$LOCKED_SHA" ]]; then
+            echo "ERROR: main advanced during e2e ($LOCKED_SHA → $CURRENT_SHA)"
+            echo "Untested commits would reach :lts. Aborting — rerun next cycle."
+            exit 1
+          fi
+          echo "✅ main SHA unchanged: $CURRENT_SHA"
+
+      - name: Copy all variants to :lts by digest
+        env:
+          BASE_DIGEST: ${{ needs.resolve.outputs.base_digest }}
+          HWE_DIGEST: ${{ needs.resolve.outputs.hwe_digest }}
+          GDX_DIGEST: ${{ needs.resolve.outputs.gdx_digest }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          copy_to_lts() {
+            local image="$1"
+            local digest="$2"
+            echo "Promoting ${image}@${digest} → ${image}:lts"
+            skopeo copy --all \
+              "docker://${image}@${digest}" \
+              "docker://${image}:lts"
+            echo "  ✅ ${image}:lts updated"
+          }
+
+          copy_to_lts "ghcr.io/projectbluefin/bluefin-lts"     "$BASE_DIGEST"
+          copy_to_lts "ghcr.io/projectbluefin/bluefin-lts-hwe" "$HWE_DIGEST"
+          copy_to_lts "ghcr.io/projectbluefin/bluefin-gdx"     "$GDX_DIGEST"
+
+          echo "✅ All 3 variants promoted to :lts (no rebuild)"
+
+  # Fast-forward the lts branch to the promoted source SHA so git history
+  # and changelog generation stay aligned with the live image.
+  update-lts-branch:
+    name: Fast-forward lts branch
+    needs: [resolve, promote]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Fast-forward lts to promoted source SHA
+        env:
+          SOURCE_SHA: ${{ needs.resolve.outputs.source_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh api "repos/${{ github.repository }}/git/refs/heads/lts" \
+              --method PATCH \
+              --field sha="$SOURCE_SHA" \
+              --field force=false 2>/dev/null; then
+            echo "ERROR: Could not fast-forward lts branch to $SOURCE_SHA"
+            echo "This may indicate lts has diverged. Manual intervention required."
+            exit 1
+          fi
+          echo "✅ lts branch fast-forwarded to $SOURCE_SHA"
+
   generate-release:
     name: Generate release
-    needs: [trigger-lts-builds, run-upgrade-test]
+    needs: [update-lts-branch]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       actions: write
     steps:
-      - name: Trigger release generation
+      - name: Dispatch and wait for release generation
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+
+          DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           gh workflow run generate-release.yml --ref main -f target=lts \
             -R ${{ github.repository }}
-          echo "✅ Triggered release generation (all builds + upgrade test passed)"
-          echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
+          echo "Dispatched generate-release.yml at $DISPATCH_TIME"
+
+          sleep 30
+
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow generate-release.yml \
+              --branch main \
+              --event workflow_dispatch \
+              --repo ${{ github.repository }} \
+              --limit 5 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for generate-release.yml run to appear (attempt $i/20)..."
+            sleep 15
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate generate-release.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
+
+          echo "Watching generate-release.yml run $RUN_ID..."
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ Release generated successfully"
+
+  close-failure-issue:
+    name: Close stale failure issue on success
+    needs: [promote]
+    if: needs.promote.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Close open failure issue if present
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const title = 'ci: weekly LTS release failure';
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'area/testing,kind/bug',
+              state: 'open',
+            });
+            const open = existing.data.find(i => i.title === title);
+            if (open) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+              core.info(`Closed stale failure issue #${open.number}`);
+            }
 
   report-failure:
-    needs: [trigger-lts-builds, verify-signatures, run-upgrade-test, generate-release]
-    if: always() && failure()
+    needs: [resolve, verify-signatures, run-upgrade-test, promote]
+    if: always() && failure() && needs.resolve.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
