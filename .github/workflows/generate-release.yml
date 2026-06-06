@@ -4,12 +4,7 @@ permissions:
   contents: write
 
 on:
-  workflow_run:
-    workflows: ["Build Bluefin GDX"]
-    types:
-      - completed
-    branches:
-      - lts
+  # Triggered by scheduled-lts-release.yml after successful digest promotion.
   workflow_dispatch:
     inputs:
       target:
@@ -25,15 +20,7 @@ on:
 jobs:
   generate-release:
     runs-on: ubuntu-latest
-    # Only run if the workflow was successful, on lts branch, and triggered by
-    # workflow_dispatch (meaning scheduled-lts-release.yml fired it — images were published).
-    # Push-to-lts validation builds complete successfully too but publish nothing,
-    # so we must not create a release for those.
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'lts' &&
-       github.event.workflow_run.event == 'workflow_dispatch')
+    if: github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout repository
