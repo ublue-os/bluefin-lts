@@ -36,38 +36,39 @@ Do not merge `projectbluefin/main` into the fork; rebase instead.
 
 ```bash
 gh auth token | skopeo login ghcr.io -u castrojo --password-stdin
-skopeo list-tags docker://ghcr.io/projectbluefin/bluefin
+skopeo list-tags docker://ghcr.io/projectbluefin/bluefin-lts
+skopeo list-tags docker://ghcr.io/projectbluefin/bluefin-lts-hwe
+skopeo list-tags docker://ghcr.io/projectbluefin/bluefin-gdx
 ```
 
-Images publish to `ghcr.io/projectbluefin/bluefin`.
+Images publish to:
+- `ghcr.io/projectbluefin/bluefin-lts` (base)
+- `ghcr.io/projectbluefin/bluefin-lts-hwe` (HWE kernel)
+- `ghcr.io/projectbluefin/bluefin-gdx` (NVIDIA/AI)
 
 ## Emergency rollback
 
 Use immutable dated tags as rollback sources.
 
-| Image | Floating tags with dated rollback source |
-|---|---|
-| `bluefin` | `lts`, `lts-hwe`, `lts-amd64`, `lts-hwe-amd64` |
-| `bluefin-dx` | `lts`, `lts-hwe`, `lts-amd64`, `lts-hwe-amd64` |
-| `bluefin-gdx` | `lts`, `lts-amd64` |
+| Image | Floating tag | Rollback source |
+|---|---|---|
+| `bluefin-lts` | `lts` | `lts-YYYYMMDD` |
+| `bluefin-lts-hwe` | `lts` | `lts-YYYYMMDD` |
+| `bluefin-gdx` | `lts` | `lts-YYYYMMDD` |
 
 ```bash
 GHCR_TOKEN=$(gh auth token)
 skopeo copy \
   --src-no-creds \
   --dest-creds "castrojo:${GHCR_TOKEN}" \
-  docker://ghcr.io/projectbluefin/IMAGE:FLOATING_TAG.YYYYMMDD \
-  docker://ghcr.io/projectbluefin/IMAGE:FLOATING_TAG
+  docker://ghcr.io/projectbluefin/IMAGE:lts-YYYYMMDD \
+  docker://ghcr.io/projectbluefin/IMAGE:lts
 
-skopeo inspect --no-creds docker://ghcr.io/projectbluefin/IMAGE:FLOATING_TAG \
+skopeo inspect --no-creds docker://ghcr.io/projectbluefin/IMAGE:lts \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print('Digest:', d['Digest']); print('Created:', d['Created'])"
 ```
 
 Rollback every affected floating tag, then verify digest/created time for each.
-
-## arm64 caveat
-
-`lts-arm64`, `lts-hwe-arm64`, DX arm64, and GDX arm64 have **no dated snapshots**. There is no rollback path for those tags; recovery is **fix-forward only**.
 
 ## ISO status
 

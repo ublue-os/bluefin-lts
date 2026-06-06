@@ -4,80 +4,134 @@
 
 | File | Role |
 |---|---|
-| `build-regular.yml` | caller for `bluefin` |
-| `build-dx.yml` | caller for `bluefin-dx` |
-| `build-gdx.yml` | caller for `bluefin-gdx` |
-| `build-regular-hwe.yml` | caller for HWE `bluefin` |
-| `build-dx-hwe.yml` | caller for HWE `bluefin-dx` |
-| `reusable-build-image.yml` | shared build/push/sign logic — calls `projectbluefin/actions@v1` composite actions |
-| `scheduled-lts-release.yml` | only Tuesday production dispatcher; gates GitHub Release on `upgrade-test.yml@v1`; gated by `environment: production` (2-human approval) |
+| `build-regular.yml` | caller for `bluefin-lts` |
+| `build-regular-hwe.yml` | caller for `bluefin-lts-hwe` (HWE kernel) |
+| `build-gdx.yml` | caller for `bluefin-gdx` (NVIDIA/AI) |
+| `scheduled-lts-release.yml` | only Tuesday production dispatcher; gated by `environment: production` (2-human approval); dispatches 3 build workflows on `lts` |
 | `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
 | `pr-testsuite.yml` | runs **`validate-pr@v1`** (just check, shellcheck, hadolint, pre-commit) + **e2e smoke** on every PR; only `Lint & syntax` is a required check |
-| `renovate-automerge.yml` | auto-merges Renovate PRs when pr-testsuite passes |
-| `skill-drift.yml` | warns on PRs that change CI/build/system files without updating docs/skills; watches `.github/workflows/**`, `build_scripts/**`, `system_files/**`, `Containerfile`, `Justfile` |
-| `hive-progress-sync.yml` | posts queue stats (agent-ready, claimed, p0, p1 counts) + CI status to the projectbluefin org project board hourly and on push to `main`; requires `PROJECT_TOKEN` secret |
-| `validate-renovate.yaml` | validates `.github/renovate.json5` on PRs and pushes to `main` that touch the Renovate config |
-| `post-merge-e2e.yml` | runs E2E smoke+common suites after a successful `Build Bluefin LTS` run on `main`; informational only |
-| `bonedigger.yml` | issue lifecycle automation — moves issues through `filed→approved→queued→claimed→done` states; runs on issue events and daily at 09:00 UTC |
-| ~~`build-gnome50.yml`~~ | **deleted 2026-05-30** — GNOME 50 is now the default; `lts-testing-50` tags are no longer produced |
-| ~~`create-lts-pr.yml`~~ | **deleted 2026-05-30** — promotion to `lts` is now handled automatically by GitHub Actions |
+| `renovate-automerge.yml` | auto-merges Renovate/mergeraptor PRs when pr-testsuite passes |
+| `post-merge-e2e.yml` | runs E2E smoke+common suites after a successful build on `main`; informational only |
+| `skill-drift.yml` | warns on PRs that change CI/build/system files without updating docs/skills |
+| `hive-progress-sync.yml` | posts queue stats + CI status to the projectbluefin org project board |
+| `validate-renovate.yaml` | validates `.github/renovate.json5` on relevant PRs and pushes |
+| `bonedigger.yml` | issue lifecycle automation (via `projectbluefin/common`) |
+| ~~`build-dx.yml`~~ | **deleted** — no DX variant in LTS; GDX is the NVIDIA product |
+| ~~`build-dx-hwe.yml`~~ | **deleted** — no DX HWE variant |
+| ~~`build-gnome50.yml`~~ | **deleted 2026-05-30** — GNOME 50 is now the default |
+| ~~`reusable-build-image.yml`~~ | **deleted** — replaced by `projectbluefin/actions/.github/workflows/reusable-build.yml@v1` |
+| ~~`create-lts-pr.yml`~~ | **deleted** — promotion is now via manually-reviewed PR gate (not auto-created) |
 
 ## Branches and tags
 
-| Branch | Publishes | When |
-|---|---|---|
-| `main` | `lts-testing`, `lts-hwe-testing`, `lts-testing-YYYYMMDD`, `stream10-testing`, `10-testing` | every push/merge |
-| `lts` | `lts`, `lts-hwe`, `lts-YYYYMMDD`, `stream10`, `10` | `workflow_dispatch` only |
+| Branch | Image | Tags | When |
+|---|---|---|---|
+| `main` | `bluefin-lts` | `testing`, `testing-YYYYMMDD` | every push/merge to `main` |
+| `main` | `bluefin-lts-hwe` | `testing`, `testing-YYYYMMDD` | every push/merge to `main` |
+| `main` | `bluefin-gdx` | `testing`, `testing-YYYYMMDD` | every push/merge to `main` |
+| `lts` | `bluefin-lts` | `lts`, `lts-YYYYMMDD` | `workflow_dispatch` on `lts` only |
+| `lts` | `bluefin-lts-hwe` | `lts`, `lts-YYYYMMDD` | `workflow_dispatch` on `lts` only |
+| `lts` | `bluefin-gdx` | `lts`, `lts-YYYYMMDD` | `workflow_dispatch` on `lts` only |
 
-`push` to `lts` is validation only; no publish.
+`push` to `lts` does **not** trigger any build workflow (no `push: lts` trigger exists in any caller). The merge itself fires only `create-lts-pr.yml` and bonedigger.
 
 ## Promotion flow (`main→lts`)
 
-Promotion from `main` to `lts` is **fully automated** — no manual PR needed.
-
-1. Push/merge to `main` triggers GitHub Actions, which automatically merges `main→lts`.
-2. Merge to `lts` triggers validation builds with `publish=false`.
+1. Every push to `main` triggers `create-lts-pr.yml`, which opens/updates a draft PR `main→lts`.
+2. A maintainer reviews and merges with a **regular merge commit** (not squash).
 3. `scheduled-lts-release.yml` or manual dispatch on `lts` does the real publish.
 
-**Never squash-merge promotion PRs.** It breaks the merge base and bloats every future PR. Never merge `lts→main`; never commit directly to `lts`.
+**Never squash-merge promotion PRs.** It breaks the merge base and bloats every future PR diff.
+**Never merge `lts→main`; never commit directly to `lts`.**
 
-## `publish` truth table
+## `stream_name` — how tags are determined
 
-| Event | Ref | `publish` | Result |
-|---|---|---|---|
-| `push` | `main` | true | publish testing tags |
-| `push` | `lts` | false | build only |
-| `workflow_dispatch` | `main` | true | publish testing tags |
-| `workflow_dispatch` | `lts` | true | publish production tags |
-| `pull_request` | `main` | false | CI only |
-| `merge_group` | `main` | false | CI only |
+The 3 callers delegate entirely to `projectbluefin/actions/.github/workflows/reusable-build.yml@v1`. The key input is `stream_name`:
 
-`publish` defaults to `false` in `reusable-build-image.yml`; callers must opt in.
+```yaml
+stream_name: ${{ github.ref == 'refs/heads/lts' && 'lts' || 'testing' }}
+```
 
-## Tag suffix logic
-
-| Place | Behavior |
+| `stream_name` | Tags published |
 |---|---|
-| `build_push` | non-production refs append `-testing` to `DEFAULT_TAG` |
-| `manifest` job | non-production refs append `-testing` to `DEFAULT_TAG` and `CENTOS_VERSION_SUFFIX` |
+| `testing` | `testing`, `testing-YYYYMMDD` |
+| `lts` | `lts`, `lts-YYYYMMDD` |
 
-`TAG_SUFFIX` is intentionally **not** written to `GITHUB_ENV`. Do not "fix" that; `CENTOS_VERSION_SUFFIX` already carries the suffix and adding both would create `*-testing-testing`.
+There is no separate `publish: false` gate. Callers always publish when they run. On PRs, the `detect-changes` job may skip the build entirely if no image-relevant files changed.
+
+## Event truth table
+
+| Event | Ref | Tags published | Notes |
+|---|---|---|---|
+| `push` | `main` | `testing`, `testing-YYYYMMDD` | normal CI after merge |
+| `push` | `lts` | nothing | no build callers trigger on lts push |
+| `workflow_dispatch` | `main` | `testing`, `testing-YYYYMMDD` | manual re-run |
+| `workflow_dispatch` | `lts` | `lts`, `lts-YYYYMMDD` | triggered by `scheduled-lts-release.yml` or manually |
+| `pull_request` | `main` | nothing | CI only; detect-changes may skip build entirely |
+| `merge_group` | `main` | nothing | CI only |
 
 ## Centralized CI — `projectbluefin/actions`
 
 Common CI/CD logic lives in reusable GitHub Actions at **https://github.com/projectbluefin/actions** (`@v1`).
 
-### Actions adopted by bluefin-lts
+### Reusable workflow used by bluefin-lts callers
+
+`projectbluefin/actions/.github/workflows/reusable-build.yml@v1`
+
+Inputs used by each caller:
+- `brand_name` — image name (`bluefin-lts`, `bluefin-lts-hwe`, `bluefin-gdx`)
+- `stream_name` — `testing` or `lts`
+- `image_flavors` — `'["main"]'`
+- `architecture` — `'["x86_64"]'`
+
+### Shared composite actions in bluefin-lts
 
 | Action | Where used | LTS-specific override |
 |---|---|---|
 | `bootc-build/validate-pr` | `pr-testsuite.yml` | `shellcheck-glob: "build_scripts/**/*.sh"` (lts uses `build_scripts/`, not `build_files/`) |
-| `bootc-build/detect-changes` | `build-dx.yml`, `build-regular.yml` | `filters:` input with `build_scripts/**` and `image-versions.yaml` |
-| `bootc-build/chunka` | `reusable-build-image.yml` | `force-compression: true` (CentOS Stream requires gzip→zstd migration) |
-| `bootc-build/setup-runner` | `reusable-build-image.yml` | default inputs |
-| `bootc-build/dnf-cache` | `reusable-build-image.yml` | default inputs |
-| `bootc-build/push-image` | `reusable-build-image.yml` | default inputs |
-| `bootc-build/sign-and-publish` | `reusable-build-image.yml` (build_push job + manifest job) | `signing-mode: keyless` |
+| `bootc-build/detect-changes` | `build-regular.yml`, `build-gdx.yml`, `build-regular-hwe.yml` | filters for `build_scripts/**` and `image-versions.yaml` |
+| `bootc-build/sign-and-publish` | called internally by `reusable-build.yml@v1` | `signing-mode: keyless` |
+
+## Schedule ownership
+
+`scheduled-lts-release.yml` is the **only** owner of Tuesday `0 6 * * 2` production runs. Do **not** add `schedule:` to the 3 build callers; scheduled caller runs would fire on `main`, produce `stream_name: testing`, and publish redundant testing tags.
+
+## Renovate auto-merge pipeline
+
+`renovate-automerge.yml` triggers on `workflow_run: completed: "PR Validation — testsuite"` and only proceeds when `conclusion == 'success'`. Both `renovate[bot]` and `app/mergeraptor` are accepted as PR authors.
+
+When CI passes, the flow is:
+1. Renovate (or `mergeraptor[bot]`) opens PR → `pr-testsuite.yml` runs lint + e2e smoke
+2. `renovate-automerge.yml` triggers on `workflow_run` success → calls `gh pr merge --auto --merge`
+3. Merge queue merges with `MERGE` commit (not squash)
+
+**Required status check** (ruleset 4940669): `Lint & syntax` only.
+Builds run on PRs but are **informational** — they do not block merging.
+
+## Weekly release pipeline
+
+`scheduled-lts-release.yml` job chain:
+1. `trigger-lts-builds` — **gated by `environment: production` (2 required human approvals)**; dispatches 3 build workflows on `lts` branch, then waits for each to complete
+2. `run-upgrade-test` — lifecycle upgrade test via `projectbluefin/actions/.github/workflows/upgrade-test.yml@v1`
+3. `generate-release` (needs: [trigger-lts-builds, run-upgrade-test]) — only fires if upgrade-test passes; dispatches `generate-release.yml --ref main -f target=lts`
+
+If the upgrade test fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
+
+**Production gate:** two distinct maintainers must approve in the GitHub Environments UI before any Tuesday builds run.
+
+## `generate-release.yml` trigger logic
+
+Fires in two ways:
+1. **`workflow_dispatch`** (from `scheduled-lts-release.yml`): normal production path.
+2. **`workflow_run: Build Bluefin LTS GDX`** on `lts` with `event == 'workflow_dispatch'` and `conclusion == 'success'`: catches independently-dispatched GDX runs.
+
+Do not rely on the `workflow_run` path for routine releases — always use `scheduled-lts-release.yml`.
+
+## Release-generation pitfalls
+
+- `workflow_run` chaining does not propagate from `GITHUB_TOKEN`-dispatched workflows reliably.
+- Preserve the explicit wait/poll pattern in `scheduled-lts-release.yml` before `generate-release.yml` so release creation happens after published tags exist.
+- `pr-validate.yml` in `projectbluefin/testsuite` is NOT a reusable workflow. Never call it with `uses:`.
 | `bootc-build/create-manifest` | `reusable-build-image.yml` (manifest job) | default inputs |
 
 ### bluefin vs bluefin-lts quick reference
