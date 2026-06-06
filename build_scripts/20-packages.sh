@@ -56,11 +56,6 @@ dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/ublue-os/
 dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:ublue-os:packages"
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:ublue-os:packages" install uupd
 
-dnf config-manager --add-repo "https://copr.fedorainfracloud.org/coprs/che/nerd-fonts/repo/centos-stream-${MAJOR_VERSION_NUMBER}/che-nerd-fonts-centos-stream-${MAJOR_VERSION_NUMBER}.repo"
-dnf config-manager --set-disabled "copr:copr.fedorainfracloud.org:che:nerd-fonts"
-dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
-	nerd-fonts
-
 # This is required so homebrew works indefinitely.
 # Symlinking it makes it so whenever another GCC version gets released it will break if the user has updated it without-
 # the homebrew package getting updated through our builds.
