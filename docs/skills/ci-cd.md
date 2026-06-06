@@ -210,23 +210,33 @@ Rechunking is handled internally by `projectbluefin/actions/.github/workflows/re
 
 **Do not reproduce the inline buildah invocation.** All details live in `projectbluefin/actions/bootc-build/chunka/action.yml`. If a flag needs changing, update the shared action.
 
-## GHCR Package Access — PACKAGES_TOKEN
+## GHCR Package Access — always use `github.token`, never custom PATs
 
-`ghcr.io/projectbluefin/bluefin` is linked to `projectbluefin/bluefin` (the main Bluefin repo),
-not to `projectbluefin/bluefin-lts`. `GITHUB_TOKEN` from `bluefin-lts` is denied `write_package`.
+**Policy: Custom tokens (PATs, `PACKAGES_TOKEN`, etc.) are an antipattern in this project.**
+When a workflow can't access a package, fix the package permissions — do not create a token.
 
-**Workaround:** All `podman login`/`docker login`/`oras login` steps use:
-```yaml
-PUSH_TOKEN: ${{ secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
-```
+All CI steps use only `github.token` (or `secrets.GITHUB_TOKEN`) for GHCR access.
+If you see a `PACKAGES_TOKEN` or any other secret used for registry login, that is a bug.
 
-`PACKAGES_TOKEN` is a classic OAuth token (castrojo) with `write:packages` stored as a repo secret.
+### Required package configuration (org admin, one-time setup)
 
-**To remove the workaround** (preferred long-term):
-1. Go to https://github.com/orgs/projectbluefin/packages/container/bluefin-lts/settings
-2. Under "Manage Actions access" → "Add repository" → `projectbluefin/bluefin-lts` → Write
-3. Repeat for `bluefin-lts-hwe` and `bluefin-gdx` packages
-4. Delete the `PACKAGES_TOKEN` secret; revert login steps to `secrets.GITHUB_TOKEN`
+Three GHCR packages must be linked to `projectbluefin/bluefin-lts` and grant Actions write access:
+
+| Package | Settings URL |
+|---|---|
+| `bluefin-lts` | https://github.com/orgs/projectbluefin/packages/container/bluefin-lts/settings |
+| `bluefin-lts-hwe` | https://github.com/orgs/projectbluefin/packages/container/bluefin-lts-hwe/settings |
+| `bluefin-gdx` | https://github.com/orgs/projectbluefin/packages/container/bluefin-gdx/settings |
+
+On each settings page:
+1. **Connected repository** → set to `projectbluefin/bluefin-lts`
+2. **Manage Actions access** → "Add repository" → `projectbluefin/bluefin-lts` → **Write**
+
+Once done, `github.token` from any `bluefin-lts` workflow has full package read/write — no PAT needed.
+
+> **Note:** `bluefin-lts` is currently (incorrectly) linked to `projectbluefin/bluefin` and `bluefin-gdx`
+> has no linked repo. Until an org admin fixes this, GHCR pushes from `bluefin-lts` workflows will fail
+> with `DENIED`. The fix is the two-step UI action above — not a new secret.
 
 ## SBOM rules
 
