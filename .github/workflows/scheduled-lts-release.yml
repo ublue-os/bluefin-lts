@@ -311,7 +311,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if ! gh api "repos/${{ github.repository }}/git/refs/heads/lts" \
+          REPO="${{ github.repository }}"
+          LTS_SHA=$(gh api "repos/${REPO}/git/ref/heads/lts" --jq '.object.sha')
+
+          # Check if lts already contains SOURCE_SHA (sync-main-to-lts.yml may
+          # have already merged it as a merge commit, making lts "ahead").
+          COMPARE=$(gh api "repos/${REPO}/compare/${SOURCE_SHA}...${LTS_SHA}" --jq '.status')
+          if [[ "$COMPARE" == "identical" || "$COMPARE" == "ahead" ]]; then
+            echo "✅ lts already contains ${SOURCE_SHA} (lts is ${COMPARE}) — no-op"
+            exit 0
+          fi
+
+          # lts is behind — fast-forward it
+          if ! gh api "repos/${REPO}/git/refs/heads/lts" \
               --method PATCH \
               --field sha="$SOURCE_SHA" \
               --field force=false 2>/dev/null; then
