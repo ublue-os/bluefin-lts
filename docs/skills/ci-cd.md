@@ -124,13 +124,34 @@ When E2E is fixed, the flow will be:
 
 ## Weekly release pipeline
 
-`scheduled-lts-release.yml` job chain (updated 2026-06-06):
-1. `trigger-lts-builds` — ~~gated by `environment: production`~~ gate removed (TODO #94); triggers all 3 build workflows on `lts` (`build-regular.yml`, `build-gdx.yml`, `build-regular-hwe.yml`), then sequentially waits for all 3 to complete
-2. `verify-signatures` (needs: trigger-lts-builds) — verifies cosign signatures on all 3 published images
-3. `run-upgrade-test` (needs: [trigger-lts-builds, verify-signatures]) — lifecycle upgrade test on `ghcr.io/projectbluefin/bluefin-lts:lts` via `projectbluefin/actions/.github/workflows/upgrade-test.yml@v1`; `suites: lifecycle`, `chunked_enabled: false`
-4. `generate-release` (needs: [trigger-lts-builds, run-upgrade-test]) — only fires if upgrade-test passes; dispatches `generate-release.yml --ref main -f target=lts`
+`scheduled-lts-release.yml` dispatches manually or on a Tuesday `0 6 * * 2` schedule. Job chain:
 
-If the upgrade test fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
+1. `check-promotion-floor` — 7-day minimum; bypassed by `workflow_dispatch`
+2. `resolve` — pulls `:testing` digests for all 3 variants; verifies all 3 share the same `org.opencontainers.image.revision` (CentOS bootc base SHA — see pitfalls below); locks current `main` SHA as `locked_main_sha` via the GitHub API
+3. `verify-signatures` — cosign-verifies all 3 `:testing` digests; cert-identity-regexp must be `projectbluefin/(bluefin-lts|actions)/.github/workflows/` (signing happens inside `projectbluefin/actions` reusable workflow, not the caller)
+4. `run-upgrade-test` — lifecycle test via `upgrade-test.yml@v1`; **non-blocking** (known false positive — testsuite hardcodes `ghcr.io/ublue-os/` prefix; tracked in testsuite#412 / issue #102)
+5. `promote` (`if: always() && resolve.success && verify-signatures.success && run-upgrade-test in [success,failure]`) — skopeo-copies `:testing` → `:lts` by digest; SHA guard checks `locked_main_sha` vs current `main` (fails if main advanced during e2e — re-run)
+6. `update-lts-branch` (`if: always() && promote.success`) — fast-forwards `lts` to `locked_main_sha`; no-ops if `sync-main-to-lts.yml` already created a merge commit containing the target
+7. `generate-release` (`if: always() && update-lts-branch.success`) — dispatches `generate-release.yml --ref main -f target=lts`
+8. `close-failure-issue` (`if: always() && promote.success`) — closes any open `ci: weekly LTS release failure` issue
+9. `report-failure` (`if: always() && failure()`) — opens/updates failure issue
+
+## Release pipeline pitfalls
+
+**`org.opencontainers.image.revision` is the CentOS base SHA, not the LTS repo SHA.**
+The label is inherited from `quay.io/centos-bootc/centos-bootc:c10s`. Never compare it to a `projectbluefin/bluefin-lts` commit SHA. The `resolve` job captures `locked_main_sha` from the GitHub API separately for the SHA guard and `update-lts-branch`.
+
+**GitHub Actions transitive failure propagation.**
+When a transitive ancestor fails (e.g. `run-upgrade-test`), GitHub skips all downstream jobs — even ones that only `needs:` a job that succeeded. Jobs after `promote` must use `if: always() && needs.X.result == 'success'`, not just `if: needs.X.result == 'success'`.
+
+**`lts` branch is always "ahead" of `main`.**
+`sync-main-to-lts.yml` creates a regular merge commit on `lts` for every push to `main`. The fast-forward PATCH will fail with `Update is not a fast forward`. The `update-lts-branch` step checks with the compare API and no-ops if `lts` already contains the target SHA.
+
+**`continue-on-error: true` is not valid on `uses:` jobs.**
+actionlint rejects it. Make a job non-blocking by using `if: always() && ...` conditions on the jobs that depend on it.
+
+**SHA guard fires if `main` advances during the upgrade-test window (~10 min).**
+Just re-dispatch `scheduled-lts-release.yml` once main is quiet.
 
 **Branch protection on `main`:** Required check `Lint & syntax` + linear history enforced. Matches `projectbluefin/bluefin`.
 
