@@ -178,7 +178,7 @@ jobs:
             local ref="$1"
             echo "Verifying signature: ${ref}"
             if ! cosign verify \
-              --certificate-identity-regexp "https://github.com/projectbluefin/bluefin-lts/.github/workflows/" \
+              --certificate-identity-regexp "https://github.com/projectbluefin/(bluefin-lts|actions)/.github/workflows/" \
               --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
               "${ref}" 2>/dev/null; then
               echo "::error::Signature verification FAILED for ${ref}"
