@@ -299,7 +299,7 @@ jobs:
   update-lts-branch:
     name: Fast-forward lts branch
     needs: [resolve, promote]
-    if: needs.promote.result == 'success'
+    if: always() && needs.promote.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -324,7 +324,7 @@ jobs:
   generate-release:
     name: Generate release
     needs: [update-lts-branch]
-    if: needs.update-lts-branch.result == 'success'
+    if: always() && needs.update-lts-branch.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -372,7 +372,7 @@ jobs:
   close-failure-issue:
     name: Close stale failure issue on success
     needs: [promote]
-    if: needs.promote.result == 'success'
+    if: always() && needs.promote.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
