@@ -65,6 +65,9 @@ jobs:
 
   # Resolve the exact :testing digests for all 3 LTS variants and verify they
   # all share the same source commit SHA (org.opencontainers.image.revision).
+  # NOTE: org.opencontainers.image.revision is inherited from the CentOS bootc
+  # base image (upstream SHA), not from projectbluefin/bluefin-lts. We use it
+  # only to verify cross-variant sync. The lts repo SHA is locked separately.
   resolve:
     name: Resolve :testing digests
     needs: [check-promotion-floor]
@@ -73,8 +76,10 @@ jobs:
     timeout-minutes: 15
     permissions:
       packages: read
+      contents: read
     outputs:
       source_sha: ${{ steps.verify.outputs.source_sha }}
+      locked_main_sha: ${{ steps.lock-main-sha.outputs.sha }}
       base_digest: ${{ steps.resolve-base.outputs.digest }}
       hwe_digest: ${{ steps.resolve-hwe.outputs.digest }}
       gdx_digest: ${{ steps.resolve-gdx.outputs.digest }}
@@ -85,6 +90,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "$GH_TOKEN" | skopeo login ghcr.io --username "$GH_ACTOR" --password-stdin
+
+      # Lock the projectbluefin/bluefin-lts main SHA at resolve time.
+      # org.opencontainers.image.revision is the CentOS bootc upstream SHA —
+      # not the LTS repo SHA — so we capture main separately for the promote
+      # guard and lts branch fast-forward.
+      - name: Lock current main SHA
+        id: lock-main-sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA=$(gh api repos/${{ github.repository }}/git/ref/heads/main --jq '.object.sha')
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "🔒 Locked main SHA: $SHA"
 
       - name: Resolve bluefin-lts :testing digest
         id: resolve-base
@@ -238,7 +257,7 @@ jobs:
 
       - name: Verify source SHA has not advanced
         env:
-          LOCKED_SHA: ${{ needs.resolve.outputs.source_sha }}
+          LOCKED_SHA: ${{ needs.resolve.outputs.locked_main_sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -287,7 +306,7 @@ jobs:
     steps:
       - name: Fast-forward lts to promoted source SHA
         env:
-          SOURCE_SHA: ${{ needs.resolve.outputs.source_sha }}
+          SOURCE_SHA: ${{ needs.resolve.outputs.locked_main_sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
