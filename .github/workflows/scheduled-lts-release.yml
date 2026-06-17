@@ -147,6 +147,68 @@ jobs:
           gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
           echo "✅ GDX LTS build completed successfully"
 
+      - name: Wait for regular HWE LTS build to complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow build-regular-hwe.yml \
+              --branch lts \
+              --event workflow_dispatch \
+              --repo ${{ github.repository }} \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for build-regular-hwe.yml run to appear in API (attempt $i/20)..."
+            sleep 30
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate build-regular-hwe.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
+
+          echo "Watching build-regular-hwe.yml run $RUN_ID..."
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ Regular HWE LTS build completed successfully"
+
+      - name: Wait for DX HWE LTS build to complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RUN_ID=""
+          for i in $(seq 1 20); do
+            RUN_ID=$(gh run list \
+              --workflow build-dx-hwe.yml \
+              --branch lts \
+              --event workflow_dispatch \
+              --repo ${{ github.repository }} \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
+              | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for build-dx-hwe.yml run to appear in API (attempt $i/20)..."
+            sleep 30
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate build-dx-hwe.yml run dispatched at $DISPATCH_TIME"
+            exit 1
+          fi
+
+          echo "Watching build-dx-hwe.yml run $RUN_ID..."
+          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
+          echo "✅ DX HWE LTS build completed successfully"
+
   generate-release:
     name: Generate release
     needs: trigger-lts-builds
