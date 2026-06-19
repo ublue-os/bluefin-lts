@@ -29,7 +29,7 @@ if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
     #   architecture; EL10 base 42.x lacks the necessary policy rules.
     # - gnutls: newer glib2 from COPR may depend on gnutls symbols not in base.
     dnf -y install selinux-policy selinux-policy-targeted gnutls
-    dnf -y upgrade glib2 fontconfig
+    dnf -y upgrade --skip-unavailable glib2 fontconfig
 else
     # GNOME 49 COPR (default)
     dnf copr enable -y "jreilly1821/c10s-gnome-49"
@@ -52,7 +52,7 @@ else
     #   double-registering GIRepository crashes gnome-shell at startup.
     # - gnutls: newer glib2 from COPR may depend on gnutls symbols not in base.
     dnf -y install selinux-policy selinux-policy-targeted gnutls
-    dnf -y upgrade glib2 fontconfig gobject-introspection gjs
+    dnf -y upgrade --skip-unavailable glib2 fontconfig gobject-introspection gjs
 fi
 
 # Please, dont remove this as it will break everything GNOME related
