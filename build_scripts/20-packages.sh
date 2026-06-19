@@ -52,8 +52,8 @@ dnf config-manager --set-disabled "tailscale-stable"
 dnf -y --enablerepo "tailscale-stable" install \
 	tailscale
 
-dnf -y copr enable ublue-os/packages "fedora-44-$(arch)"
-dnf -y install uupd
+dnf -y copr enable ublue-os/packages "epel-10-$(arch)"
+dnf -y --setopt=retries=5 install uupd
 dnf -y copr disable ublue-os/packages
 
 dnf -y copr enable che/nerd-fonts "centos-stream-${MAJOR_VERSION_NUMBER}-$(arch)"
