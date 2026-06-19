@@ -17,14 +17,12 @@ dnf -y --enablerepo docker-ce-stable install \
   docker-buildx-plugin \
   docker-compose-plugin
 
-dnf -y copr enable ublue-os/packages "fedora-44-$(arch)"
 dnf -y install \
   libvirt \
   libvirt-daemon-kvm \
   libvirt-nss \
   virt-install \
-  ublue-os-libvirt-workarounds
-dnf -y copr disable ublue-os/packages
+  https://download.copr.fedorainfracloud.org/results/ublue-os/packages/fedora-44-x86_64/10417407-ublue-os-libvirt-workarounds/ublue-os-libvirt-workarounds-1.1-1.fc44.noarch.rpm
 
 dnf -y --setopt=install_weak_deps=False install \
   cockpit-bridge \
