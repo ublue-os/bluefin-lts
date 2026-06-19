@@ -17,12 +17,14 @@ dnf -y --enablerepo docker-ce-stable install \
   docker-buildx-plugin \
   docker-compose-plugin
 
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install \
+dnf -y copr enable ublue-os/packages "epel-10-$(arch)"
+dnf -y install \
   libvirt \
   libvirt-daemon-kvm \
   libvirt-nss \
   virt-install \
   ublue-os-libvirt-workarounds
+dnf -y copr disable ublue-os/packages
 
 dnf -y --setopt=install_weak_deps=False install \
   cockpit-bridge \
