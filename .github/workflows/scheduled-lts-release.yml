@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   actions: write
+  packages: read
 
 concurrency:
   group: scheduled-lts-release
@@ -143,17 +144,28 @@ jobs:
           gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
           echo "✅ GDX LTS build completed successfully"
 
+  testsuite:
+    name: Testsuite — post-release smoke
+    needs: trigger-lts-builds
+    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@1bd88cf7f7eb7ef57ee079d15241a0433e9fa83c # main
+    with:
+      image: ghcr.io/${{ github.repository_owner }}/bluefin:lts
+      suites: smoke
+
+  generate-release:
+    name: Generate release
+    needs: testsuite
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
       - name: Trigger release generation
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-
-          # Build is confirmed complete — the new lts-YYYYMMDD tag is in GHCR.
-          # generate-release.yml queries GHCR for the latest tag, so it will
-          # now find the tag from this week's build instead of the previous one.
           gh workflow run generate-release.yml --ref main -f target=lts \
             -R ${{ github.repository }}
-
-          echo "✅ Triggered release generation"
+          echo "✅ Triggered release generation (e2e smoke passed)"
           echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"

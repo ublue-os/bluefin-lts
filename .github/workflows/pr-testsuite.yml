@@ -1,0 +1,34 @@
+name: PR Validation — testsuite
+
+on:
+  pull_request:
+    branches:
+      - main
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Lint & syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: false
+
+      - name: Install just
+        uses: taiki-e/install-action@ac807bed34cfaa7b1b6e98b11b170b68b54f193b # just
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Check justfile syntax
+        run: just check
+
+      - name: Shellcheck
+        run: just lint
