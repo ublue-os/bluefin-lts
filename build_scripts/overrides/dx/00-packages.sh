@@ -17,7 +17,7 @@ dnf -y --enablerepo docker-ce-stable install \
   docker-buildx-plugin \
   docker-compose-plugin
 
-dnf -y copr enable ublue-os/packages "epel-10-$(arch)"
+dnf -y copr enable ublue-os/packages "fedora-44-$(arch)"
 dnf -y install \
   libvirt \
   libvirt-daemon-kvm \
