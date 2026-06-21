@@ -92,17 +92,26 @@ Renovate PRs are fully automated — no human needed:
 Builds run on PRs but are **informational** — they do not block merging.  
 The weekly release e2e is the real quality gate for build correctness.
 
-## Weekly release pipeline (updated 2026-05-30)
+## Weekly release pipeline (updated 2026-06-21)
 
 `scheduled-lts-release.yml` job chain:
-1. `trigger-lts-builds` — triggers 5 builds on `lts`, waits for regular + dx + gdx to complete
-2. `testsuite` — e2e smoke on `ghcr.io/ublue-os/bluefin:lts` via `projectbluefin/testsuite/e2e.yml@main`
-3. `generate-release` (needs: testsuite) — only fires if e2e passes; dispatches `generate-release.yml`
+1. `trigger-lts-builds` — triggers 5 builds on `lts`, waits for regular + dx to complete (GDX is not a gate)
+2. `generate-release` (needs: trigger-lts-builds) — dispatches `generate-release.yml` on `main`
 
-If e2e fails, no GitHub Release is created. Fix-forward, investigate, re-run manually.
+The `testsuite` job was removed 2026-06-21: calling `projectbluefin/testsuite/e2e.yml` via `uses:` was causing `startup_failure` on every run since 2026-06-02. Testsuite does not belong in this repo's release pipeline.
+
+GDX is triggered by `trigger-lts-builds` but the release does **not wait** for it: GDX has a separate build stability track and its failures should not block regular+DX releases.
 
 ## Release-generation pitfalls
 
 - `workflow_run` chaining does not propagate from `GITHUB_TOKEN`-dispatched workflows reliably enough for LTS release generation.
 - If touching `scheduled-lts-release.yml`, preserve the explicit wait/poll pattern before `generate-release.yml` so release creation happens after published tags exist.
-- `pr-validate.yml` in `projectbluefin/testsuite` is NOT a reusable workflow (no `workflow_call`). Never call it with `uses:`; it is the testsuite's own linter.
+- **Never merge a promotion PR to `lts` while a release run is in progress.** The push to `lts` cancels all in-flight build workflows dispatched by the release, causing `trigger-lts-builds` to fail with exit code 1 when it tries to `gh run watch` the now-cancelled run. Always wait for the release to reach `generate-release` before touching `lts`.
+
+## GDX build notes
+
+GDX (`build_scripts/overrides/gdx/20-nvidia.sh`) uses the **EPEL** negativo17 nvidia repo, not the Fedora one. Key facts:
+
+- `ublue-os-nvidia-addons` (installed from akmods RPMs) ships `/etc/yum.repos.d/negativo17-epel-nvidia.repo` (disabled). Enable it per-command with `--enablerepo=epel-nvidia`.
+- Do **not** fetch `negativo17/repos/fedora-nvidia.repo` — that is for Fedora builds, not CentOS Stream 10.
+- Starting with the 610.x driver series, `libnvidia-ml` is no longer published as a standalone package in EPEL 10. It is merged into `nvidia-driver-libs`. Install `nvidia-driver-libs-${NVIDIA_PKG_VERSION}` instead.
