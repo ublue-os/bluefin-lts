@@ -15,7 +15,7 @@
 - Never merge `lts→main`.
 - Never commit directly to `lts`; land in `main` first.
 - `main` uses a merge queue with **MERGE** method (not squash): `gh pr merge --auto` enqueues; do not promise immediate merge.
-- Required check on `main` is `Lint & syntax` (pr-testsuite) only — builds are informational.
+- Required check on `main` is `Lint & syntax` (pr-testsuite/PR Validation) only — builds are informational.
 
 ## Fork sync pattern (`castrojo` fork)
 

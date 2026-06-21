@@ -2,7 +2,7 @@ name: Renovate Auto-merge
 
 on:
   workflow_run:
-    workflows: ["PR Validation — testsuite"]
+    workflows: ["PR Validation"]
     types: [completed]
 
 permissions:
