@@ -17,14 +17,14 @@ else
     NVIDIA_ARCH="$ARCH"
 fi
 
-FEDORA_VERSION=43 # FIXME: Figure out a way of fetching this information with coreos akmods as well.
-
-curl -fsSLo - "https://negativo17.org/repos/fedora-nvidia.repo" | sed "s/\$releasever/${FEDORA_VERSION}/g" | tee "/etc/yum.repos.d/fedora-nvidia.repo"
-dnf config-manager --set-disabled "fedora-nvidia"
-
 ### install Nvidia driver packages and dependencies
 # */
-dnf -y install --enablerepo="fedora-nvidia" \
+# ublue-os-nvidia-addons (installed from the akmods RPMs below) ships
+# /etc/yum.repos.d/negativo17-epel-nvidia.repo (disabled); we enable it
+# per-command with --enablerepo=epel-nvidia.  Do NOT use the Fedora repo here:
+# libnvidia-ml was merged into nvidia-driver-libs starting with the 610.x
+# series and is no longer published as a standalone package in EPEL 10.
+dnf -y install \
     /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
     /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
 dnf config-manager --set-enabled "nvidia-container-toolkit"
@@ -33,11 +33,11 @@ KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
 # Determine the expected package version format (epoch:version-release)
 NVIDIA_PKG_VERSION="3:${KMOD_VERSION}"
 
-dnf install -y --enablerepo="fedora-nvidia" \
+dnf install -y --enablerepo="epel-nvidia" \
     "libnvidia-fbc-${NVIDIA_PKG_VERSION}" \
-    "libnvidia-ml-${NVIDIA_PKG_VERSION}" \
     "nvidia-driver-${NVIDIA_PKG_VERSION}" \
     "nvidia-driver-cuda-${NVIDIA_PKG_VERSION}" \
+    "nvidia-driver-libs-${NVIDIA_PKG_VERSION}" \
     "nvidia-settings-${NVIDIA_PKG_VERSION}" \
     nvidia-container-toolkit
 
