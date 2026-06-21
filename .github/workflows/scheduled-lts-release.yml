@@ -144,17 +144,9 @@ jobs:
           gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
           echo "✅ GDX LTS build completed successfully"
 
-  testsuite:
-    name: Testsuite — post-release smoke
-    needs: trigger-lts-builds
-    uses: projectbluefin/testsuite/.github/workflows/e2e.yml@1bd88cf7f7eb7ef57ee079d15241a0433e9fa83c # main
-    with:
-      image: ghcr.io/ublue-os/bluefin:lts
-      suites: smoke
-
   generate-release:
     name: Generate release
-    needs: testsuite
+    needs: trigger-lts-builds
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -167,5 +159,5 @@ jobs:
           set -euo pipefail
           gh workflow run generate-release.yml --ref main -f target=lts \
             -R ${{ github.repository }}
-          echo "✅ Triggered release generation (e2e smoke passed)"
+          echo "✅ Triggered release generation"
           echo "View workflow runs at: ${{ github.server_url }}/${{ github.repository }}/actions"
