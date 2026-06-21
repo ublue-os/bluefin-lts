@@ -110,39 +110,6 @@ jobs:
           gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
           echo "✅ DX LTS build completed successfully"
 
-      - name: Wait for GDX LTS build to complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          # generate-release.yml is triggered by workflow_run on "Build Bluefin LTS GDX",
-          # making GDX the intended gate for release generation. Wait for it to complete
-          # before triggering release generation so all production images are ready.
-          RUN_ID=""
-          for i in $(seq 1 20); do
-            RUN_ID=$(gh run list \
-              --workflow build-gdx.yml \
-              --branch lts \
-              --event workflow_dispatch \
-              --repo ${{ github.repository }} \
-              --limit 10 \
-              --json databaseId,createdAt \
-              --jq ".[] | select(.createdAt >= \"$DISPATCH_TIME\") | .databaseId" \
-              | head -1)
-            [ -n "$RUN_ID" ] && break
-            echo "Waiting for build-gdx.yml run to appear in API (attempt $i/20)..."
-            sleep 30
-          done
-
-          if [ -z "$RUN_ID" ]; then
-            echo "ERROR: Could not locate build-gdx.yml run dispatched at $DISPATCH_TIME"
-            exit 1
-          fi
-
-          echo "Watching build-gdx.yml run $RUN_ID..."
-          gh run watch "$RUN_ID" --exit-status --repo ${{ github.repository }}
-          echo "✅ GDX LTS build completed successfully"
 
   generate-release:
     name: Generate release
