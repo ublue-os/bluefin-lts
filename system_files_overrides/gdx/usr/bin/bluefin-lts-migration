@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 MIGRATED_STAMP = "/etc/bluefin-lts-migrated"
-MOTD_DIR = "/etc/motd.d"
+MOTD_DIR = "/run/motd.d"   # tmpfs — auto-clears on reboot, no stale notice on migrated image
 MOTD_FILE = f"{MOTD_DIR}/50-bluefin-lts-migration"
 TARGET_REGISTRY = "ghcr.io/projectbluefin/"
 
@@ -21,7 +21,7 @@ IMAGE_MAP = {
     "bluefin-hwe":    "bluefin-lts:stable",
     "-hwe":           "bluefin-lts:stable",
 }
-DEFAULT_TARGET = "bluefin-lts:stable"
+DEFAULT_TARGET = "bluefin-lts-nvidia:stable"  # GDX-only canary — always Nvidia
 # Expected legacy origin prefix — fail closed if unrecognized
 LEGACY_REGISTRY = "ghcr.io/ublue-os/"
 
