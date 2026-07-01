@@ -53,6 +53,17 @@ def resolve_target(image_ref: str) -> str:
     return DEFAULT_TARGET
 
 
+# ponytail: clean up legacy systemd overrides to prevent Issue #391 cycles
+def cleanup_legacy_systemd() -> None:
+    stale = "/etc/systemd/system/default.target.wants/nvmefc-boot-connections.service"
+    try:
+        if os.path.lexists(stale):
+            os.remove(stale)
+            print(f"Removed stale systemd unit: {stale}")
+    except Exception as e:
+        print(f"WARNING: could not remove {stale}: {e}", file=sys.stderr)
+
+
 def main() -> int:
     if os.path.exists(MIGRATED_STAMP):
         return 0
@@ -86,6 +97,8 @@ def main() -> int:
         "   The migration will complete on your next reboot. Please do not interrupt."
     )
     print(f"Switching to {target_ref} …")
+
+    cleanup_legacy_systemd()
 
     result = subprocess.run(
         ["bootc", "switch", "--enforce-container-sigpolicy", target_ref],
