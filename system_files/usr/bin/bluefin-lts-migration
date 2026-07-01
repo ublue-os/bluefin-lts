@@ -70,7 +70,7 @@ def main() -> int:
 
     try:
         status = get_bootc_status()
-    except (subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+    except (subprocess.CalledProcessError, json.JSONDecodeError, OSError) as exc:
         print(f"ERROR: could not read bootc status: {exc}", file=sys.stderr)
         return 1
 
