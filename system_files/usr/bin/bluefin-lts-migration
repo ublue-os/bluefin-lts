@@ -11,14 +11,19 @@ MOTD_DIR = "/etc/motd.d"
 MOTD_FILE = f"{MOTD_DIR}/50-bluefin-lts-migration"
 TARGET_REGISTRY = "ghcr.io/projectbluefin/"
 
-# ponytail: simple bootc switch mapping
+# ponytail: simple bootc switch mapping — most-specific keys first
 IMAGE_MAP = {
-    "bluefin-gdx": "bluefin-lts-nvidia:stable",
-    "-gdx":        "bluefin-lts-nvidia:stable",
-    "bluefin-dx":  "bluefin-lts:stable",
-    "-dx":         "bluefin-lts:stable",
+    "bluefin-gdx":    "bluefin-lts-nvidia:stable",
+    "-gdx":           "bluefin-lts-nvidia:stable",
+    "bluefin-dx-hwe": "bluefin-lts:stable",
+    "bluefin-dx":     "bluefin-lts:stable",
+    "-dx":            "bluefin-lts:stable",
+    "bluefin-hwe":    "bluefin-lts:stable",
+    "-hwe":           "bluefin-lts:stable",
 }
 DEFAULT_TARGET = "bluefin-lts:stable"
+# Expected legacy origin prefix — fail closed if unrecognized
+LEGACY_REGISTRY = "ghcr.io/ublue-os/"
 
 
 def write_motd(text: str) -> None:
@@ -87,7 +92,18 @@ def main() -> int:
             "   supported on ARM64. Please reinstall from the projectbluefin ISO.\n"
             "   See https://projectbluefin.io for instructions."
         )
+        stamp_migrated()  # silence daily retries — user has been notified
         return 0
+
+    # Fail closed: only migrate known ublue-os legacy images
+    if not image_ref or LEGACY_REGISTRY not in image_ref:
+        print(
+            f"WARNING: unrecognized image ref '{image_ref}', skipping migration.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"Migrating from: {image_ref}")
 
     target = resolve_target(image_ref)
     target_ref = f"{TARGET_REGISTRY}{target}"
@@ -106,9 +122,14 @@ def main() -> int:
 
     if result.returncode == 0:
         stamp_migrated()
+        devmode_hint = (
+            "\n   💡 Run `ujust devmode` after reboot to restore developer tools."
+            if any(k in image_ref for k in ("gdx", "-dx"))
+            else ""
+        )
         write_motd(
             f"✅  Bluefin LTS migration to {target_ref} complete.\n"
-            "   Please reboot to apply the update."
+            f"   Please reboot to apply the update.{devmode_hint}"
         )
         print("Migration staged successfully. Reboot to complete.")
         return 0
