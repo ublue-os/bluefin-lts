@@ -35,3 +35,4 @@ sed -i -e "s@PrivateTmp=.*@PrivateTmp=no@g" /usr/lib/systemd/system/systemd-reso
 # FIXME: this does not yet work, the resolution service fails for somer reason
 # enable systemd-resolved for proper name resolution
 systemctl enable systemd-resolved.service
+systemctl enable bluefin-lts-migration.timer

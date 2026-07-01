@@ -1,0 +1,14 @@
+[Unit]
+Description=Bluefin LTS — migrate legacy image to projectbluefin registry
+Documentation=https://projectbluefin.io
+After=network-online.target bootc.service
+Wants=network-online.target
+ConditionPathExists=!/etc/bluefin-lts-migrated
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/bluefin-lts-migration
+
+[Install]
+WantedBy=multi-user.target

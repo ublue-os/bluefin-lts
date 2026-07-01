@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+"""Migrate legacy bluefin-lts images to ghcr.io/projectbluefin/."""
+
+import json
+import os
+import subprocess
+import sys
+
+MIGRATED_STAMP = "/etc/bluefin-lts-migrated"
+MOTD_DIR = "/etc/motd.d"
+MOTD_FILE = f"{MOTD_DIR}/50-bluefin-lts-migration"
+TARGET_REGISTRY = "ghcr.io/projectbluefin/"
+
+# ponytail: simple bootc switch mapping
+IMAGE_MAP = {
+    "bluefin-gdx": "bluefin-lts-nvidia:stable",
+    "-gdx":        "bluefin-lts-nvidia:stable",
+    "bluefin-dx":  "bluefin-lts:stable",
+    "-dx":         "bluefin-lts:stable",
+}
+DEFAULT_TARGET = "bluefin-lts:stable"
+
+
+def write_motd(text: str) -> None:
+    os.makedirs(MOTD_DIR, exist_ok=True)
+    with open(MOTD_FILE, "w") as f:
+        f.write(text + "\n")
+
+
+def stamp_migrated() -> None:
+    open(MIGRATED_STAMP, "w").close()
+
+
+def get_bootc_status() -> dict:
+    result = subprocess.run(
+        ["bootc", "status", "--format=json"],
+        capture_output=True, text=True, check=True,
+    )
+    return json.loads(result.stdout)
+
+
+def current_image_ref(status: dict) -> str:
+    try:
+        return status["status"]["booted"]["image"]["image"]["image"]
+    except (KeyError, TypeError):
+        return ""
+
+
+def resolve_target(image_ref: str) -> str:
+    for key, target in IMAGE_MAP.items():
+        if key in image_ref:
+            return target
+    return DEFAULT_TARGET
+
+
+def main() -> int:
+    if os.path.exists(MIGRATED_STAMP):
+        return 0
+
+    try:
+        status = get_bootc_status()
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+        print(f"ERROR: could not read bootc status: {exc}", file=sys.stderr)
+        return 1
+
+    image_ref = current_image_ref(status)
+
+    if TARGET_REGISTRY in image_ref:
+        stamp_migrated()
+        return 0
+
+    arch = os.uname().machine
+    if arch in ("aarch64", "arm64"):
+        write_motd(
+            "⚠️  Bluefin LTS migration: automatic migration to projectbluefin is not\n"
+            "   supported on ARM64. Please reinstall from the projectbluefin ISO.\n"
+            "   See https://projectbluefin.io for instructions."
+        )
+        return 0
+
+    target = resolve_target(image_ref)
+    target_ref = f"{TARGET_REGISTRY}{target}"
+
+    write_motd(
+        f"ℹ️  Bluefin LTS: your system is being migrated to {target_ref}.\n"
+        "   The migration will complete on your next reboot. Please do not interrupt."
+    )
+    print(f"Switching to {target_ref} …")
+
+    result = subprocess.run(
+        ["bootc", "switch", "--enforce-container-sigpolicy", target_ref],
+    )
+
+    if result.returncode == 0:
+        stamp_migrated()
+        write_motd(
+            f"✅  Bluefin LTS migration to {target_ref} complete.\n"
+            "   Please reboot to apply the update."
+        )
+        print("Migration staged successfully. Reboot to complete.")
+        return 0
+
+    print(f"ERROR: bootc switch failed (exit {result.returncode})", file=sys.stderr)
+    with open(MOTD_FILE, "a") as f:
+        f.write(
+            "\n⚠️  Migration attempt failed. It will be retried automatically.\n"
+            "   Check `journalctl -u bluefin-lts-migration.service` for details.\n"
+        )
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
