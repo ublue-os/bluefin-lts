@@ -318,7 +318,7 @@ jobs:
 
       - name: Attestation
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 #v4.1.0
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4.1.1
         with:
           subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.remote_image_digest }}
@@ -353,7 +353,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:e161445c05b19e668cb5cc44df2f0403329fd4f0ac892794255e328e760612a1
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:2f7a5c164eafbdbe46fe1d91bd1ab4c8cb5c2bdbd10641c3d61bd39962384cdb
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
@@ -427,7 +427,7 @@ jobs:
           echo "CENTOS_VERSION_NUMBER=${numbers_only}" >> "${GITHUB_ENV}"
 
       - name: Image Metadata
-        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         id: metadata
         with:
           tags: |
