@@ -80,6 +80,13 @@ def main() -> int:
         )
         return 1
 
+    if "bluefin-dx" in image_ref or "-dx" in image_ref:
+        print(
+            f"WARNING: DX image ref '{image_ref}', skipping HWE migration.",
+            file=sys.stderr,
+        )
+        return 1
+
     if "bluefin-hwe" not in image_ref and "-hwe" not in image_ref:
         print(
             f"WARNING: non-HWE image ref '{image_ref}', skipping migration.",
