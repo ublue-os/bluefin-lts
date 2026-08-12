@@ -22,7 +22,7 @@ jobs:
           submodules: false
 
       - name: Install just
-        uses: taiki-e/install-action@c0490f106137e0aeeac1aa8d0309826fda08c18d # just
+        uses: taiki-e/install-action@ee3af8aa47122cef937d90ff96cf130619877702 # just
 
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
