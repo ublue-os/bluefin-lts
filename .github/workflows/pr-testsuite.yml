@@ -30,5 +30,8 @@ jobs:
       - name: Check justfile syntax
         run: just check
 
+      - name: Test migration routing
+        run: python3 -m unittest discover -s tests -v
+
       - name: Shellcheck
         run: just lint
