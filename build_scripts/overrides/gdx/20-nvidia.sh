@@ -18,13 +18,18 @@ else
 fi
 
 ### install Nvidia driver packages and dependencies
-# */
-# ublue-os-nvidia-addons (installed from the akmods RPMs below) ships
-# /etc/yum.repos.d/negativo17-epel-nvidia.repo (disabled); we enable it
-# per-command with --enablerepo=epel-nvidia.  Do NOT use the Fedora repo here:
-# libnvidia-ml was merged into nvidia-driver-libs starting with the 610.x
-# series and is no longer published as a standalone package in EPEL 10.
-dnf -y install \
+# kmod-nvidia (fc43 build) requires nvidia-kmod-common from negativo17's
+# fedora-nvidia repo.  Detect the Fedora release embedded in the akmods
+# RPMs and download the matching repo file so DNF can resolve it.
+FEDORA_VERSION="${FEDORA_AKMODS_VERSION:-43}"
+AKMODS_FEDORA_VERSION="$(find /tmp/akmods-nvidia-open-rpms -name "*.rpm" -print | grep -oPm1 '(?<=\.fc)\d+' || true)"
+if [[ -n "${AKMODS_FEDORA_VERSION}" ]]; then
+    FEDORA_VERSION="${AKMODS_FEDORA_VERSION}"
+fi
+curl -fsSLo - "https://negativo17.org/repos/fedora-nvidia.repo" | sed "s/\$releasever/${FEDORA_VERSION}/g" | tee "/etc/yum.repos.d/fedora-nvidia.repo"
+dnf config-manager --set-disabled "fedora-nvidia"
+
+dnf -y install --enablerepo="fedora-nvidia" \
     /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
     /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
 dnf config-manager --set-enabled "nvidia-container-toolkit"
@@ -33,11 +38,10 @@ KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
 # Determine the expected package version format (epoch:version-release)
 NVIDIA_PKG_VERSION="3:${KMOD_VERSION}"
 
-dnf install -y --enablerepo="epel-nvidia" \
+dnf install -y --enablerepo="fedora-nvidia" \
     "libnvidia-fbc-${NVIDIA_PKG_VERSION}" \
     "nvidia-driver-${NVIDIA_PKG_VERSION}" \
     "nvidia-driver-cuda-${NVIDIA_PKG_VERSION}" \
-    "nvidia-driver-libs-${NVIDIA_PKG_VERSION}" \
     "nvidia-settings-${NVIDIA_PKG_VERSION}" \
     nvidia-container-toolkit
 
@@ -75,4 +79,4 @@ sed -i 's@omit_drivers@force_drivers@g' /usr/lib/dracut/dracut.conf.d/99-nvidia.
 sed -i 's@ nvidia @ i915 amdgpu nvidia @g' /usr/lib/dracut/dracut.conf.d/99-nvidia.conf
 
 # Make sure initramfs is rebuilt after nvidia drivers or kernel replacement
-/usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
+/usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --tmpdir /boot --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
