@@ -30,5 +30,14 @@ jobs:
       - name: Check justfile syntax
         run: just check
 
+      - name: Test migration routing
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Install signature-policy test dependencies
+        run: sudo apt-get update && sudo apt-get install -y skopeo
+
+      - name: Verify signed migration targets
+        run: ./tests/verify-migration-targets.sh
+
       - name: Shellcheck
         run: just lint
