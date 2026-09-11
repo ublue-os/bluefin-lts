@@ -37,7 +37,7 @@ just check && just lint
 | Regular | base LTS image |
 | DX | developer tools, VS Code, Docker |
 | GDX | GPU / AI tooling |
-| HWE | newer hardware enablement |
+| HWE | newer hardware enablement; regular non-DX HWE images include the legacy-to-Project-Bluefin migration timer |
 
 ## VM / disk artifacts
 

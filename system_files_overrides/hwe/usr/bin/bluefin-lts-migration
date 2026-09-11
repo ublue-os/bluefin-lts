@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+"""Migrate legacy non-DX HWE images to ghcr.io/projectbluefin/."""
+
+import json
+import os
+import subprocess
+import sys
+
+MIGRATED_STAMP = "/etc/bluefin-lts-migrated"
+MOTD_DIR = "/run/motd.d"
+MOTD_FILE = f"{MOTD_DIR}/50-bluefin-lts-migration"
+TARGET_REF = "ghcr.io/projectbluefin/bluefin-lts:stable"
+TARGET_REGISTRY = "ghcr.io/projectbluefin/"
+LEGACY_REGISTRY = "ghcr.io/ublue-os/"
+
+
+def write_motd(text: str) -> None:
+    os.makedirs(MOTD_DIR, exist_ok=True)
+    with open(MOTD_FILE, "w") as f:
+        f.write(text + "\n")
+
+
+def stamp_migrated() -> None:
+    open(MIGRATED_STAMP, "w").close()
+
+
+def get_bootc_status() -> dict:
+    result = subprocess.run(
+        ["bootc", "status", "--format=json"],
+        capture_output=True, text=True, check=True,
+    )
+    return json.loads(result.stdout)
+
+
+def current_image_ref(status: dict) -> str:
+    try:
+        return status["status"]["booted"]["image"]["image"]["image"]
+    except (KeyError, TypeError):
+        return ""
+
+
+def cleanup_legacy_systemd() -> None:
+    stale = "/etc/systemd/system/default.target.wants/nvmefc-boot-connections.service"
+    try:
+        if os.path.lexists(stale):
+            os.remove(stale)
+            print(f"Removed stale systemd unit: {stale}")
+    except OSError as exc:
+        print(f"WARNING: could not remove {stale}: {exc}", file=sys.stderr)
+
+
+def main() -> int:
+    if os.path.exists(MIGRATED_STAMP):
+        return 0
+
+    try:
+        status = get_bootc_status()
+    except (subprocess.CalledProcessError, json.JSONDecodeError, OSError) as exc:
+        print(f"ERROR: could not read bootc status: {exc}", file=sys.stderr)
+        return 1
+
+    image_ref = current_image_ref(status)
+    if TARGET_REGISTRY in image_ref:
+        stamp_migrated()
+        return 0
+
+    if os.uname().machine in ("aarch64", "arm64"):
+        write_motd(
+            "⚠️  Bluefin HWE migration: automatic migration to projectbluefin is not\n"
+            "   supported on ARM64. Please reinstall from the projectbluefin ISO.\n"
+            "   See https://projectbluefin.io for instructions."
+        )
+        stamp_migrated()
+        return 0
+
+    if not image_ref or LEGACY_REGISTRY not in image_ref:
+        print(
+            f"WARNING: unrecognized image ref '{image_ref}', skipping migration.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if "bluefin-dx" in image_ref or "-dx" in image_ref:
+        print(
+            f"WARNING: DX image ref '{image_ref}', skipping HWE migration.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if "bluefin-hwe" not in image_ref and "-hwe" not in image_ref:
+        print(
+            f"WARNING: non-HWE image ref '{image_ref}', skipping migration.",
+            file=sys.stderr,
+        )
+        return 1
+
+    write_motd(
+        f"ℹ️  Bluefin HWE: your system is being migrated to {TARGET_REF}.\n"
+        "   The migration will complete on your next reboot. Please do not interrupt."
+    )
+    print(f"Switching to {TARGET_REF} …")
+    cleanup_legacy_systemd()
+
+    result = subprocess.run(
+        ["bootc", "switch", "--enforce-container-sigpolicy", TARGET_REF],
+    )
+    if result.returncode == 0:
+        stamp_migrated()
+        write_motd(
+            f"✅  Bluefin HWE migration to {TARGET_REF} complete.\n"
+            "   Please reboot to apply the update."
+        )
+        print("Migration staged successfully. Reboot to complete.")
+        return 0
+
+    print(f"ERROR: bootc switch failed (exit {result.returncode})", file=sys.stderr)
+    with open(MOTD_FILE, "a") as f:
+        f.write(
+            "\n⚠️  Migration attempt failed. It will be retried automatically.\n"
+            "   Check `journalctl -u bluefin-lts-migration.service` for details.\n"
+        )
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
