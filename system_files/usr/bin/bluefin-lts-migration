@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -11,19 +12,15 @@ MOTD_DIR = "/run/motd.d"   # tmpfs — auto-clears on reboot, no stale notice on
 MOTD_FILE = f"{MOTD_DIR}/50-bluefin-lts-migration"
 TARGET_REGISTRY = "ghcr.io/projectbluefin/"
 
-# ponytail: simple bootc switch mapping — most-specific keys first
-IMAGE_MAP = {
-    "bluefin-gdx":    "bluefin-lts-nvidia:stable",
-    "-gdx":           "bluefin-lts-nvidia:stable",
-    "bluefin-dx-hwe": "bluefin-lts:stable",
-    "bluefin-dx":     "bluefin-lts:stable",
-    "-dx":            "bluefin-lts:stable",
-    "bluefin-hwe":    "bluefin-lts:stable",
-    "-hwe":           "bluefin-lts:stable",
+# Legacy images share repositories across their HWE tags. Only these explicit
+# image names may migrate, so a future ublue-os image cannot be switched to an
+# inappropriate Bluefin target accidentally.
+LEGACY_IMAGE_TARGETS = {
+    "bluefin": "bluefin-lts:stable",
+    "bluefin-dx": "bluefin-lts:stable",
+    "bluefin-gdx": "bluefin-lts-nvidia:stable",
 }
-DEFAULT_TARGET = "bluefin-lts-nvidia:stable"  # GDX-only canary — always Nvidia
-# Expected legacy origin prefix — fail closed if unrecognized
-LEGACY_REGISTRY = "ghcr.io/ublue-os/"
+ARM64_TARGET = "bluefin-lts:stable"
 
 
 def write_motd(text: str) -> None:
@@ -51,11 +48,19 @@ def current_image_ref(status: dict) -> str:
         return ""
 
 
-def resolve_target(image_ref: str) -> str:
-    for key, target in IMAGE_MAP.items():
-        if key in image_ref:
-            return target
-    return DEFAULT_TARGET
+def resolve_target(image_ref: str, arch: str) -> str | None:
+    match = re.search(
+        r"ghcr\.io/ublue-os/(bluefin(?:-(?:dx|gdx))?)(?:[:@]|$)", image_ref
+    )
+    if not match:
+        return None
+
+    image_name = match.group(1)
+    # No ARM64 Nvidia image exists; migrate GDX ARM64 users to the compatible
+    # regular LTS image instead of leaving them on the retired registry.
+    if image_name == "bluefin-gdx" and arch in ("aarch64", "arm64"):
+        return ARM64_TARGET
+    return LEGACY_IMAGE_TARGETS.get(image_name)
 
 
 # ponytail: clean up legacy systemd overrides to prevent Issue #391 cycles
@@ -85,18 +90,9 @@ def main() -> int:
         stamp_migrated()
         return 0
 
-    arch = os.uname().machine
-    if arch in ("aarch64", "arm64"):
-        write_motd(
-            "⚠️  Bluefin LTS migration: automatic migration to projectbluefin is not\n"
-            "   supported on ARM64. Please reinstall from the projectbluefin ISO.\n"
-            "   See https://projectbluefin.io for instructions."
-        )
-        stamp_migrated()  # silence daily retries — user has been notified
-        return 0
-
-    # Fail closed: only migrate known ublue-os legacy images
-    if not image_ref or LEGACY_REGISTRY not in image_ref:
+    # Fail closed: only migrate the known legacy Bluefin image repositories.
+    target = resolve_target(image_ref, os.uname().machine)
+    if target is None:
         print(
             f"WARNING: unrecognized image ref '{image_ref}', skipping migration.",
             file=sys.stderr,
@@ -105,7 +101,6 @@ def main() -> int:
 
     print(f"Migrating from: {image_ref}")
 
-    target = resolve_target(image_ref)
     target_ref = f"{TARGET_REGISTRY}{target}"
 
     write_motd(
