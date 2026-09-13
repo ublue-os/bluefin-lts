@@ -41,6 +41,10 @@ copy_systemfiles_for() {
 	printf "::endgroup::\n"
 }
 
+# Satisfy dracut-install when it follows the /root → /var/roothome symlink;
+# /var is a tmpfs mount during build so the target doesn't exist yet.
+mkdir -p /var/roothome
+
 run_buildscripts_for base
 
 CUSTOM_NAME="bluefin"
