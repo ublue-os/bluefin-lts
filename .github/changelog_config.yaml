@@ -73,6 +73,7 @@ templates:
     | **Docker** | {pkgrel:docker-ce} |
     | **VSCode** | {pkgrel:code} |
     | **Ramalama** | {pkgrel:ramalama} |
+    | **llmman** | {pkgrel:llmman} |
 
     ### Major GDX packages
     | Name | Version |
