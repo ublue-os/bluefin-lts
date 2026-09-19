@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily trigger for Bluefin LTS image migration
+Documentation=https://projectbluefin.io
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+Unit=bluefin-lts-migration.service
+
+[Install]
+WantedBy=timers.target
