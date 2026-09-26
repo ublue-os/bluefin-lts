@@ -22,7 +22,7 @@ fi
 # fedora-nvidia repo.  Detect the Fedora release embedded in the akmods
 # RPMs and download the matching repo file so DNF can resolve it.
 FEDORA_VERSION="${FEDORA_AKMODS_VERSION:-43}"
-AKMODS_FEDORA_VERSION="$(find /tmp/akmods-nvidia-open-rpms -name "*.rpm" -print | grep -oPm1 '(?<=\.fc)\d+' || true)"
+AKMODS_FEDORA_VERSION="$(find /tmp/akmods-nvidia-open-rpms -name "*.rpm" -print | grep -oPm1 '(?<=\.fc)\d+' | head -n1 || true)"
 if [[ -n "${AKMODS_FEDORA_VERSION}" ]]; then
     FEDORA_VERSION="${AKMODS_FEDORA_VERSION}"
 fi
