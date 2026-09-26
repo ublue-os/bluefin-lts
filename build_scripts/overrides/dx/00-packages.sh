@@ -12,7 +12,6 @@ dnf config-manager --set-disabled docker-ce-stable
 dnf -y --enablerepo docker-ce-stable install \
   docker-ce \
   docker-ce-cli \
-  docker-model-plugin \
   containerd.io \
   docker-buildx-plugin \
   docker-compose-plugin
