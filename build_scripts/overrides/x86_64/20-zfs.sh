@@ -33,4 +33,4 @@ depmod -a "${KERNEL_VRA}"
 # Autoload ZFS module
 echo "zfs" >/usr/lib/modules-load.d/zfs.conf
 
-/usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
+/usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --tmpdir /boot --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
