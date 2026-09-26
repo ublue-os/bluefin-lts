@@ -16,8 +16,8 @@ dnf -y install \
     /tmp/akmods-zfs-rpms/kmods/zfs/kmod-zfs-"${KERNEL_VRA}"-*.rpm \
     /tmp/akmods-zfs-rpms/kmods/zfs/libnvpair3-*.rpm \
     /tmp/akmods-zfs-rpms/kmods/zfs/libuutil3-*.rpm \
-    /tmp/akmods-zfs-rpms/kmods/zfs/libzfs6-*.rpm \
-    /tmp/akmods-zfs-rpms/kmods/zfs/libzpool6-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/libzfs7-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/libzpool7-*.rpm \
     /tmp/akmods-zfs-rpms/kmods/zfs/zfs-*.rpm \
     
 
