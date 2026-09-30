@@ -276,7 +276,7 @@ jobs:
 
       - name: Install ORAS
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        uses: oras-project/setup-oras@005458ad77f1c8facd38a094e4af2e69e5607ff4 # v2.0.2
 
       - name: Login to GitHub Container Registry with ORAS
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
@@ -353,7 +353,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:bfcffaf1336b26a3fd33c8cb31a86a09324d2048420d7f49b983f323b0d33e8d
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:6d63d8f5580a48e60b5c0dd9f67dd0672ea062d0eeabf0688fb10c522ee5967d
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
