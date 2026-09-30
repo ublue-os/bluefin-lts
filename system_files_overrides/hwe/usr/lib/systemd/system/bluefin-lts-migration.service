@@ -1,0 +1,15 @@
+[Unit]
+Description=Bluefin HWE — migrate legacy image to projectbluefin registry
+Documentation=https://projectbluefin.io
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/etc/bluefin-lts-migrated
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=3600
+ExecStart=/usr/bin/bluefin-lts-migration
+
+[Install]
+WantedBy=multi-user.target
