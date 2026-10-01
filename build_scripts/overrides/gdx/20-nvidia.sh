@@ -65,7 +65,7 @@ EOF
 # disable repos provided by ublue-os-nvidia-addons
 dnf config-manager --set-disabled nvidia-container-toolkit
 
-systemctl enable ublue-nvctk-cdi.service
+systemctl enable nvidia-cdi-refresh.path nvidia-cdi-refresh.service
 semodule --verbose --install /usr/share/selinux/packages/nvidia-container.pp
 
 # Universal Blue specific Initramfs fixes
