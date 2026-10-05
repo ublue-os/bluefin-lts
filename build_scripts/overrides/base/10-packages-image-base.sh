@@ -55,6 +55,9 @@ else
     dnf -y install glib2 fontconfig gobject-introspection gjs
 fi
 
+# The COPR selinux-policy overwrites rpm-ostree's subs_dist fix
+sed -i 's|^/var/home[[:space:]]\+/home$|/home /var/home|' /etc/selinux/targeted/contexts/files/file_contexts.subs_dist
+
 # Please, dont remove this as it will break everything GNOME related
 dnf versionlock add glib2 fontconfig
 
