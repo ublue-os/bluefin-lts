@@ -16,8 +16,8 @@ dnf -y install \
     /tmp/akmods-zfs-rpms/kmods/zfs/kmod-zfs-"${KERNEL_VRA}"-*.rpm \
     /tmp/akmods-zfs-rpms/kmods/zfs/libnvpair3-*.rpm \
     /tmp/akmods-zfs-rpms/kmods/zfs/libuutil3-*.rpm \
-    /tmp/akmods-zfs-rpms/kmods/zfs/libzfs6-*.rpm \
-    /tmp/akmods-zfs-rpms/kmods/zfs/libzpool6-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/libzfs7-*.rpm \
+    /tmp/akmods-zfs-rpms/kmods/zfs/libzpool7-*.rpm \
     /tmp/akmods-zfs-rpms/kmods/zfs/zfs-*.rpm \
     
 
@@ -33,4 +33,4 @@ depmod -a "${KERNEL_VRA}"
 # Autoload ZFS module
 echo "zfs" >/usr/lib/modules-load.d/zfs.conf
 
-/usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
+/usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --tmpdir /boot --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
