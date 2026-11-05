@@ -108,6 +108,16 @@ GDX is triggered by `trigger-lts-builds` but the release does **not wait** for i
 - If touching `scheduled-lts-release.yml`, preserve the explicit wait/poll pattern before `generate-release.yml` so release creation happens after published tags exist.
 - **Never merge a promotion PR to `lts` while a release run is in progress.** The push to `lts` cancels all in-flight build workflows dispatched by the release, causing `trigger-lts-builds` to fail with exit code 1 when it tries to `gh run watch` the now-cancelled run. Always wait for the release to reach `generate-release` before touching `lts`.
 
+## Legacy HWE migration
+
+Regular non-DX HWE images enable `bluefin-lts-migration.timer`. The timer migrates
+legacy x86_64 images from `ghcr.io/ublue-os/bluefin-hwe:*` to
+`ghcr.io/projectbluefin/bluefin-lts:stable` via `bootc switch`.
+
+DX-HWE and GDX images are excluded from the HWE migration path. GDX retains its
+separate NVIDIA migration path. Unknown legacy image flavors fail closed; ARM64
+users receive reinstall guidance rather than an automatic switch.
+
 ## GDX build notes
 
 GDX (`build_scripts/overrides/gdx/20-nvidia.sh`) uses the **EPEL** negativo17 nvidia repo, not the Fedora one. Key facts:
