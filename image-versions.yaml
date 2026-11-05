@@ -6,7 +6,7 @@ images:
   - name: common
     image: ghcr.io/projectbluefin/common
     tag: latest
-    digest: sha256:72f6345c3bb4dd58e1d48f1ea602a6dd1800c7c482c6cc984f48598fa90da246
+    digest: sha256:a2e4b8f76b3ffe23f452c1da54ee9f3887860c3ee114bb528f9d717a35aa20f9
   - name: brew
     image: ghcr.io/ublue-os/brew
     tag: latest
