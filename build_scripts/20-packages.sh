@@ -67,7 +67,7 @@ dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 # We could get some kind of static binary for GCC but this is the cleanest and most tested alternative. This Sucks.
 dnf -y --setopt=install_weak_deps=False install gcc
 
-if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
+if [[ "${GNOME_VERSION:-50}" == "50" ]]; then
     # Versionlock GNOME 50 components to prevent downgrades to EL10 base versions
     dnf versionlock add gnome-shell gdm mutter gnome-session-wayland-session \
         gnome-settings-daemon gnome-control-center gsettings-desktop-schemas \

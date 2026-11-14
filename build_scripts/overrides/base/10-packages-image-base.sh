@@ -12,8 +12,8 @@ dnf -y install 'dnf-command(versionlock)'
 
 /run/context/build_scripts/scripts/kernel-swap.sh
 
-if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
-    # GNOME 50 COPR
+if [[ "${GNOME_VERSION:-50}" == "50" ]]; then
+    # GNOME 50 COPR (default)
     dnf copr enable -y "jreilly1821/c10s-gnome-50"
     # libjxl 0.11 in this COPR has a different ABI than EPEL's 0.10, which breaks
     # epel-multimedia's libavcodec (needs libjxl.so.0.10).  Exclude it so EPEL wins.
@@ -31,7 +31,9 @@ if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
     dnf -y install --setopt=tsflags=noscripts selinux-policy selinux-policy-targeted gnutls
     dnf -y install glib2 fontconfig
 else
-    # GNOME 49 COPR (default)
+    # GNOME 49 COPR (rollback only: GNOME_VERSION=49 / gnome-version: "49").
+    # Kept for one release after the switch to GNOME 50; drop this branch, the
+    # gnome-shell pin below and the mutter pin together in a follow-up.
     dnf copr enable -y "jreilly1821/c10s-gnome-49"
     # gdk-pixbuf2 2.44.5 in this COPR has no built-in image format loaders (PNG,
     # JPEG, SVG, etc.) and ships no -modules subpackage.  Exclude it so the base
@@ -65,7 +67,7 @@ else
     # Pinned to a known-good build, not "newest in the COPR": it must match the
     # mutter pin below (MUTTER_GOOD). If the COPR drops or replaces this build the
     # build fails here, and both pins get bumped together.
-    # Drop this pin when LTS moves to CentOS's own GNOME 49 stack or to GNOME 50.
+    # Drop this pin together with the GNOME 49 rollback path.
     GNOME_SHELL_GOOD="49.5-100.el${MAJOR_VERSION_NUMBER}gnomeqr.el${MAJOR_VERSION_NUMBER}"
     GNOME49_REPO_ID="copr:copr.fedorainfracloud.org:jreilly1821:c10s-gnome-49"
     if [[ "$(dnf -q repoquery --repo "${GNOME49_REPO_ID}" --qf '%{version}-%{release}' "gnome-shell-${GNOME_SHELL_GOOD}")" != "${GNOME_SHELL_GOOD}" ]]; then
@@ -154,7 +156,7 @@ dnf -y install \
 	systemd-{resolved,container,oomd} \
 	libcamera{,-{v4l2,gstreamer,tools}}
 
-if [[ "${GNOME_VERSION:-49}" == "50" ]]; then
+if [[ "${GNOME_VERSION:-50}" == "50" ]]; then
     dnf -y install gnome50-el10-compat libgda
 else
     dnf -y install gnome49-el10-compat libgda
@@ -174,7 +176,7 @@ fi
 # Only affects GNOME 49; GNOME 50 uses a different COPR. gnome-shell stays at 49.5-100.
 # REMOVE THIS once c10s-gnome-49 ships a gnome-shell rebuilt against mutter >= 49.4-6
 # (tracking: tuna-os/github-copr#27, fix in tuna-os/github-copr#28).
-if [[ "${GNOME_VERSION:-49}" != "50" ]]; then
+if [[ "${GNOME_VERSION:-50}" != "50" ]]; then
     # Bump together with GNOME_SHELL_GOOD (GNOME 49 COPR block above).
     MUTTER_GOOD="49.4-4.el${MAJOR_VERSION_NUMBER}"
     echo "--- pinning mutter to ${MUTTER_GOOD} (temporary GNOME Shell crash workaround) ---"
@@ -194,7 +196,7 @@ fi
 # (GnomeQR + libgirepository-1.0) from replacing the COPR build. Fail the build
 # if anything swapped in another gnome-shell, and lock it now so the later dnf
 # calls can't replace it. Drop it with GNOME_SHELL_GOOD (see the COPR block).
-if [[ "${GNOME_VERSION:-49}" != "50" ]]; then
+if [[ "${GNOME_VERSION:-50}" != "50" ]]; then
     v="$(rpm -q --qf '%{VERSION}-%{RELEASE}' gnome-shell)"
     [[ "${v}" == "${GNOME_SHELL_GOOD}" ]] || { echo "FATAL: gnome-shell is ${v}, expected COPR ${GNOME_SHELL_GOOD}"; exit 1; }
     dnf versionlock add gnome-shell
