@@ -60,11 +60,19 @@ else
     # CS10 AppStream's gnome-shell (49.10-1.el10 and later) links
     # libgirepository-1.0 and hard-imports GnomeQR-4.0, so GNOME Shell dies at
     # startup ("Typelib file for namespace 'GnomeQR' not found") and GDM loops.
-    # Its higher version beats the COPR's 49.5-100, so name the COPR build explicitly.
+    # Its higher version beats the COPR's 49.5-100, so install an exact COPR build.
+    #
+    # Pinned to a known-good build, not "newest in the COPR": it must match the
+    # mutter pin below (MUTTER_GOOD). If the COPR drops or replaces this build the
+    # build fails here, and both pins get bumped together.
+    # Drop this pin when LTS moves to CentOS's own GNOME 49 stack or to GNOME 50.
+    GNOME_SHELL_GOOD="49.5-100.el${MAJOR_VERSION_NUMBER}gnomeqr.el${MAJOR_VERSION_NUMBER}"
     GNOME49_REPO_ID="copr:copr.fedorainfracloud.org:jreilly1821:c10s-gnome-49"
-    GNOME_SHELL_EVR="$(dnf -q repoquery --repo "${GNOME49_REPO_ID}" --latest-limit=1 --qf '%{version}-%{release}' gnome-shell)"
-    [[ -n "${GNOME_SHELL_EVR}" ]] || { echo "FATAL: no gnome-shell in ${GNOME49_REPO_ID}"; exit 1; }
-    GNOME_SHELL_PKG="gnome-shell-${GNOME_SHELL_EVR}"
+    if [[ "$(dnf -q repoquery --repo "${GNOME49_REPO_ID}" --qf '%{version}-%{release}' "gnome-shell-${GNOME_SHELL_GOOD}")" != "${GNOME_SHELL_GOOD}" ]]; then
+        echo "FATAL: gnome-shell-${GNOME_SHELL_GOOD} is not available in ${GNOME49_REPO_ID}; bump GNOME_SHELL_GOOD and MUTTER_GOOD together"
+        exit 1
+    fi
+    GNOME_SHELL_PKG="gnome-shell-${GNOME_SHELL_GOOD}"
 fi
 
 # The COPR selinux-policy overwrites rpm-ostree's subs_dist fix
@@ -167,6 +175,7 @@ fi
 # REMOVE THIS once c10s-gnome-49 ships a gnome-shell rebuilt against mutter >= 49.4-6
 # (tracking: tuna-os/github-copr#27, fix in tuna-os/github-copr#28).
 if [[ "${GNOME_VERSION:-49}" != "50" ]]; then
+    # Bump together with GNOME_SHELL_GOOD (GNOME 49 COPR block above).
     MUTTER_GOOD="49.4-4.el${MAJOR_VERSION_NUMBER}"
     echo "--- pinning mutter to ${MUTTER_GOOD} (temporary GNOME Shell crash workaround) ---"
     if [[ "$(rpm -q --qf '%{VERSION}-%{RELEASE}' mutter)" != "${MUTTER_GOOD}" ]]; then
@@ -178,12 +187,18 @@ if [[ "${GNOME_VERSION:-49}" != "50" ]]; then
     done
     dnf versionlock add mutter mutter-common
     echo "mutter pinned to ${MUTTER_GOOD} and versionlocked (TEMP)"
+fi
 
-    # Fail the build if anything swapped in a non-COPR gnome-shell, and lock it
-    # now so the later dnf calls can't replace it.
+# gnome-shell pin (GNOME 49 only; NOT part of the TEMPORARY mutter block above).
+# Keep this when the mutter pin goes: it stops CS10 AppStream's gnome-shell
+# (GnomeQR + libgirepository-1.0) from replacing the COPR build. Fail the build
+# if anything swapped in another gnome-shell, and lock it now so the later dnf
+# calls can't replace it. Drop it with GNOME_SHELL_GOOD (see the COPR block).
+if [[ "${GNOME_VERSION:-49}" != "50" ]]; then
     v="$(rpm -q --qf '%{VERSION}-%{RELEASE}' gnome-shell)"
-    [[ "${v}" == "${GNOME_SHELL_EVR}" ]] || { echo "FATAL: gnome-shell is ${v}, expected COPR ${GNOME_SHELL_EVR}"; exit 1; }
+    [[ "${v}" == "${GNOME_SHELL_GOOD}" ]] || { echo "FATAL: gnome-shell is ${v}, expected COPR ${GNOME_SHELL_GOOD}"; exit 1; }
     dnf versionlock add gnome-shell
+    echo "gnome-shell pinned to ${GNOME_SHELL_GOOD} and versionlocked"
 fi
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
