@@ -53,6 +53,18 @@ else
     # - gnutls: newer glib2 from COPR may depend on gnutls symbols not in base.
     dnf -y install --setopt=tsflags=noscripts selinux-policy selinux-policy-targeted gnutls
     dnf -y install glib2 fontconfig gobject-introspection gjs
+
+    # gnome-shell MUST come from this COPR, never from CentOS AppStream.
+    # The COPR build is linked against libgirepository-2.0 (matching the COPR
+    # gjs/glib2 above) and stubs out GnomeQR, which has no typelib on EL10/EPEL10.
+    # CS10 AppStream's gnome-shell (49.10-1.el10 and later) links
+    # libgirepository-1.0 and hard-imports GnomeQR-4.0, so GNOME Shell dies at
+    # startup ("Typelib file for namespace 'GnomeQR' not found") and GDM loops.
+    # Its higher version beats the COPR's 49.5-100, so name the COPR build explicitly.
+    GNOME49_REPO_ID="copr:copr.fedorainfracloud.org:jreilly1821:c10s-gnome-49"
+    GNOME_SHELL_EVR="$(dnf -q repoquery --repo "${GNOME49_REPO_ID}" --latest-limit=1 --qf '%{version}-%{release}' gnome-shell)"
+    [[ -n "${GNOME_SHELL_EVR}" ]] || { echo "FATAL: no gnome-shell in ${GNOME49_REPO_ID}"; exit 1; }
+    GNOME_SHELL_PKG="gnome-shell-${GNOME_SHELL_EVR}"
 fi
 
 # The COPR selinux-policy overwrites rpm-ostree's subs_dist fix
@@ -111,7 +123,7 @@ dnf -y install \
 	"gnome-remote-desktop" \
 	"gnome-session-wayland-session" \
 	"gnome-settings-daemon" \
-	"gnome-shell" \
+	"${GNOME_SHELL_PKG:-gnome-shell}" \
 	"gnome-user-docs" \
 	"gvfs-fuse" \
 	"gvfs-goa" \
@@ -166,6 +178,12 @@ if [[ "${GNOME_VERSION:-49}" != "50" ]]; then
     done
     dnf versionlock add mutter mutter-common
     echo "mutter pinned to ${MUTTER_GOOD} and versionlocked (TEMP)"
+
+    # Fail the build if anything swapped in a non-COPR gnome-shell, and lock it
+    # now so the later dnf calls can't replace it.
+    v="$(rpm -q --qf '%{VERSION}-%{RELEASE}' gnome-shell)"
+    [[ "${v}" == "${GNOME_SHELL_EVR}" ]] || { echo "FATAL: gnome-shell is ${v}, expected COPR ${GNOME_SHELL_EVR}"; exit 1; }
+    dnf versionlock add gnome-shell
 fi
 
 # This package adds "[systemd] Failed Units: *" to the bashrc startup
