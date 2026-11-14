@@ -2,6 +2,14 @@
 
 set -xeuo pipefail
 
+# GNOME_VERSION picks the desktop stack: 50 (default) or 49 (rollback). This is
+# the first script that reads it. Every later check is "== 50 or else 49", so a
+# typo would silently build the 49 rollback. Fail here instead.
+case "${GNOME_VERSION:-50}" in
+    49|50) ;;
+    *) echo "FATAL: GNOME_VERSION must be 49 or 50, got '${GNOME_VERSION}'"; exit 1 ;;
+esac
+
 ARCH=$(uname -m)
 
 # This is the base for a minimal GNOME system on CentOS Stream.
@@ -17,8 +25,11 @@ if [[ "${GNOME_VERSION:-50}" == "50" ]]; then
     dnf copr enable -y "jreilly1821/c10s-gnome-50"
     # libjxl 0.11 in this COPR has a different ABI than EPEL's 0.10, which breaks
     # epel-multimedia's libavcodec (needs libjxl.so.0.10).  Exclude it so EPEL wins.
+    # avahi: the COPR's 0.9~rc2-8 is a stale mass rebuild that outranks CentOS's
+    # 0.9~rc2-7.el10 but lacks its security fixes. avahi-daemon is enabled and
+    # LAN-facing, so take it from CentOS. Nothing in the COPR needs the -8 build.
     GNOME50_REPO=$(find /etc/yum.repos.d/ -name "*jreilly1821*gnome-50*" | head -1)
-    echo "exclude=libjxl*" >> "${GNOME50_REPO}"
+    echo "exclude=libjxl* avahi*" >> "${GNOME50_REPO}"
 
     # These upgrades MUST happen before the GNOME group install.
     # - glib2: EL10 ships 2.80.x; GNOME 49/50 require newer API symbols.
