@@ -1,8 +1,12 @@
 name: Build Bluefin GNOME 50 (testing)
 
 # Builds bluefin and bluefin-dx lts-testing-50 / lts-hwe-testing-50 using
-# the same full build pipeline as GNOME 49, selecting GNOME 50 packages
-# via the gnome-version input. Only runs on main branch pushes.
+# the same full build pipeline, selecting GNOME 50 packages via the
+# gnome-version input. Only runs on main branch pushes.
+#
+# GNOME 50 is now the default for every LTS build, so these -50 tags
+# duplicate the main builds. Kept for one release so existing -50 users keep
+# getting updates; remove this workflow together with the GNOME 49 rollback path.
 #
 # pull_request and merge_group triggers intentionally omitted: the GNOME 50
 # build currently fails with a dracut cross-device link error (EXDEV) on
