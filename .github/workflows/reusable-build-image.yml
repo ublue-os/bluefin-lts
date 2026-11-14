@@ -59,10 +59,10 @@ on:
         type: string
         default: ""
       gnome-version:
-        description: "GNOME major version to build (49 or 50)"
+        description: "GNOME major version to build: 50 (default) or 49 (rollback, pinned gnome-shell/mutter)"
         required: false
         type: string
-        default: "49"
+        default: "50"
     secrets:
       SIGNING_SECRET:
         description: "The private key used to sign the image"
