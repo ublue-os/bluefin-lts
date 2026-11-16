@@ -10,7 +10,7 @@ HARDCODED_RPM_MONTH="12"
 sed -i "/picture-uri/ s/${HARDCODED_RPM_MONTH}/$(date +%m)/" "/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override"
 glib-compile-schemas /usr/share/glib-2.0/schemas
 
-# November wallpaper: this common pin ships 11-bluefin.xml without its SVGs (same workaround as Bluefin)
+# November wallpaper: the wallpapers image ships 11-bluefin.xml without its SVGs (same workaround as Bluefin)
 ARTWORK_URL="https://raw.githubusercontent.com/projectbluefin/artwork/f784bbe296ca224b70058807b3c6cb180516ac84/wallpapers/11-bluefin"
 curl -fsSL --retry 3 -o /tmp/11-bluefin-day.svg "${ARTWORK_URL}/11-bluefin-day.svg"
 curl -fsSL --retry 3 -o /tmp/11-bluefin-night.svg "${ARTWORK_URL}/11-bluefin-night.svg"
