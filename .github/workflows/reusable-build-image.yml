@@ -139,15 +139,23 @@ jobs:
         shell: bash
         run: just check
 
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
-
-      # The wallpapers are copied into the image as-is, so check the pinned digest is signed by ublue-os
-      - name: Verify wallpapers image
+      - name: Get wallpapers image ref
+        id: wallpapers
         shell: bash
         run: |
           ref="$(yq -r '.images[] | select(.name == "bluefin-wallpapers-gnome") | .image + "@" + .digest' image-versions.yaml)"
-          cosign verify --key cosign.pub "${ref}" > /dev/null
+          echo "ref=${ref}" >> "${GITHUB_OUTPUT}"
+
+      # The wallpapers are copied into the image as-is, so check the pinned digest is signed by ublue-os.
+      # Needs cosign v3: new wallpaper digests are signed with sigstore bundles only (no legacy .sig tag).
+      # Image signing further down still uses cosign-installer and is not affected.
+      - name: Verify wallpapers image
+        uses: docker://ghcr.io/sigstore/cosign/cosign:v3.1.4@sha256:0f06154836d2de34f887a5c273506d52ca43edaa1d9e53e6510fa78a48f69c2d
+        env:
+          # $HOME in the action container is not writable by the image's nonroot user
+          TUF_ROOT: /tmp/sigstore
+        with:
+          args: verify --key cosign.pub ${{ steps.wallpapers.outputs.ref }}
 
       - name: Build Image
         id: build-image
