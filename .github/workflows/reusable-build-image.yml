@@ -139,6 +139,16 @@ jobs:
         shell: bash
         run: just check
 
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+
+      # The wallpapers are copied into the image as-is, so check the pinned digest is signed by ublue-os
+      - name: Verify wallpapers image
+        shell: bash
+        run: |
+          ref="$(yq -r '.images[] | select(.name == "bluefin-wallpapers-gnome") | .image + "@" + .digest' image-versions.yaml)"
+          cosign verify --key cosign.pub "${ref}" > /dev/null
+
       - name: Build Image
         id: build-image
         shell: bash

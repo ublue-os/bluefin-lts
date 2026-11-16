@@ -2,19 +2,26 @@ ARG MAJOR_VERSION="${MAJOR_VERSION:-c10s}"
 ARG BASE_IMAGE_SHA="${BASE_IMAGE_SHA:-sha256-feea845d2e245b5e125181764cfbc26b6dacfb3124f9c8d6a2aaa4a3f91082ed}"
 ARG ENABLE_HWE="${ENABLE_HWE:-0}"
 ARG AKMODS_VERSION="${AKMODS_VERSION:-centos-10}"
-ARG COMMON_IMAGE_REF
+ARG WALLPAPERS_IMAGE_REF
 ARG BREW_IMAGE_REF
 # Upstream mounts akmods-zfs and akmods-nvidia-open; select their tag via AKMODS_VERSION
 FROM ghcr.io/ublue-os/akmods-zfs:${AKMODS_VERSION} AS akmods_zfs
 FROM ghcr.io/ublue-os/akmods-nvidia-open:${AKMODS_VERSION} AS akmods_nvidia_open
-FROM ${COMMON_IMAGE_REF} AS common
+FROM ${WALLPAPERS_IMAGE_REF} AS wallpapers-src
 FROM ${BREW_IMAGE_REF} AS brew
+
+# Wallpapers: same layout and path fix that projectbluefin/common applied
+FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION AS wallpapers
+COPY --from=wallpapers-src / /out/usr/share
+RUN mkdir -p /out/usr/share/backgrounds/bluefin && \
+    mv /out/usr/share/*.jxl /out/usr/share/*.xml /out/usr/share/backgrounds/bluefin && \
+    sed -i 's|~\/\.local\/share|\/usr\/share|' /out/usr/share/backgrounds/bluefin/*.xml /out/usr/share/gnome-background-properties/*.xml
+
 FROM scratch AS context
 
 COPY system_files /files
 COPY --from=brew /system_files /files
-COPY --from=common /system_files/shared /files
-COPY --from=common /system_files/bluefin /files
+COPY --from=wallpapers /out /files
 COPY system_files_overrides /overrides
 COPY build_scripts /build_scripts
 

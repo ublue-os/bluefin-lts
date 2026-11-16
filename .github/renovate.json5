@@ -49,9 +49,9 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
-      // projectbluefin/common is not built for LTS; a human reviews every bump
+      // Wallpapers are copied into the image as-is; a human reviews every bump
       "matchUpdateTypes": ["pin", "digest", "pinDigest"],
-      "matchDepNames": ["ghcr.io/projectbluefin/common"],
+      "matchDepNames": ["ghcr.io/ublue-os/bluefin-wallpapers-gnome"],
       "automerge": false
     }
   ]
