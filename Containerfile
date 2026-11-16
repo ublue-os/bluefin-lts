@@ -24,7 +24,9 @@ FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION
 ARG ENABLE_DX="${ENABLE_DX:-0}"
 ARG ENABLE_GDX="${ENABLE_GDX:-0}"
 ARG ENABLE_HWE="${ENABLE_HWE:-0}"
-ARG GNOME_VERSION="${GNOME_VERSION:-49}"
+# GNOME 50 (jreilly1821/c10s-gnome-50) is the default. GNOME_VERSION=49 still
+# builds the pinned GNOME 49 stack as a rollback for one release.
+ARG GNOME_VERSION="${GNOME_VERSION:-50}"
 ARG IMAGE_NAME="${IMAGE_NAME:-bluefin}"
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
 ARG MAJOR_VERSION="${MAJOR_VERSION:-lts}"

@@ -109,7 +109,8 @@ _ensure-yq:
     fi
 
 # Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kernel_pin="" $gnome_version="49": _ensure-yq
+# gnome_version: 50 (default) or 49 (rollback: pinned gnome-shell 49.5-100 + mutter 49.4-4)
+build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kernel_pin="" $gnome_version="50": _ensure-yq
     #!/usr/bin/env bash
 
     # Get Version
