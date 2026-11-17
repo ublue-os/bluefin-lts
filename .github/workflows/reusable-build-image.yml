@@ -139,6 +139,24 @@ jobs:
         shell: bash
         run: just check
 
+      - name: Get wallpapers image ref
+        id: wallpapers
+        shell: bash
+        run: |
+          ref="$(yq -r '.images[] | select(.name == "bluefin-wallpapers-gnome") | .image + "@" + .digest' image-versions.yaml)"
+          echo "ref=${ref}" >> "${GITHUB_OUTPUT}"
+
+      # The wallpapers are copied into the image as-is, so check the pinned digest is signed by ublue-os.
+      # Needs cosign v3: new wallpaper digests are signed with sigstore bundles only (no legacy .sig tag).
+      # Image signing further down still uses cosign-installer and is not affected.
+      - name: Verify wallpapers image
+        uses: docker://ghcr.io/sigstore/cosign/cosign:v3.1.4@sha256:0f06154836d2de34f887a5c273506d52ca43edaa1d9e53e6510fa78a48f69c2d
+        env:
+          # $HOME in the action container is not writable by the image's nonroot user
+          TUF_ROOT: /tmp/sigstore
+        with:
+          args: verify --key cosign.pub ${{ steps.wallpapers.outputs.ref }}
+
       - name: Build Image
         id: build-image
         shell: bash
@@ -353,7 +371,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:833c48f1faf32c90e6f9501a2410a9aa28ceb2c594102edd4470053c30efa089
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:e9b8c3739e5fb5fc778843a2ce74f8620588c9ddc9c44918cead527abcb0b628
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
