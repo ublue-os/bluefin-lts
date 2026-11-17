@@ -12,6 +12,20 @@ esac
 
 ARCH=$(uname -m)
 
+# Enable the same compose repos during our build that the centos-bootc image
+# uses during its build.  This avoids downgrading packages in the image that
+# have strict NVR requirements.
+# Keep this before the first dnf transaction. The base image comes from a newer
+# compose than the public mirrors often carry, and the group installs below would
+# otherwise pull older subpackages and downgrade what the base image ships
+# (nftables 1.1.7 -> 1.1.5 against libnftnl 1.3.2 broke nft and firewalld).
+curl --retry 3 -Lo "/etc/yum.repos.d/compose.repo" "https://gitlab.com/redhat/centos-stream/containers/bootc/-/raw/c${MAJOR_VERSION_NUMBER}s/cs.repo"
+sed -i \
+	-e "s@- (BaseOS|AppStream)@& - Compose@" \
+	-e "s@\(baseos\|appstream\)@&-compose@" \
+	/etc/yum.repos.d/compose.repo
+cat /etc/yum.repos.d/compose.repo
+
 # This is the base for a minimal GNOME system on CentOS Stream.
 
 # This thing slows down downloads A LOT for no reason
