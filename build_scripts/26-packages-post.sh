@@ -46,6 +46,11 @@ sed -i 's|^IPv6_rpfilter=.*|IPv6_rpfilter=loose|g' /etc/firewalld/firewalld.conf
 grep -F -e "DefaultZone=FedoraWorkstation" /etc/firewalld/firewalld.conf
 grep -F -e "IPv6_rpfilter=loose" /etc/firewalld/firewalld.conf
 
+# firewalld (FirewallBackend=nftables) and rootful podman (netavark) both need a
+# working libnftables. Fail the build if nftables doesn't match libnftnl.
+nft --version
+python3 -c 'import nftables; nftables.Nftables()'
+
 depmod -a "$(ls -1 /lib/modules/ | tail -1)"
 
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage
