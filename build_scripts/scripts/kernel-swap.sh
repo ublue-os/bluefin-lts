@@ -45,6 +45,19 @@ done
 
 dnf -y install "${RPM_NAMES[@]}"
 
+# Fedora kernels (HWE/GDX) are built with CONFIG_MODPROBE_PATH="/usr/bin/modprobe",
+# because Fedora merged /usr/sbin into /usr/bin. CentOS Stream 10 only ships
+# /usr/sbin/modprobe, so without this every kernel-side module autoload
+# (request_module) fails silently: dm-crypt on LUKS boots, filesystems,
+# nftables, crypto. udev loads still work because they use libkmod directly.
+# Create the path the kernel expects. This runs before any dracut call, so the
+# link also lands in the initramfs. No-op for the CentOS kernel.
+KERNEL_MODPROBE_PATH="$(sed -n 's/^CONFIG_MODPROBE_PATH="\(.*\)"$/\1/p' "/usr/lib/modules/${CACHED_VERSION}/config")"
+if [[ -n "${KERNEL_MODPROBE_PATH}" && ! -e "${KERNEL_MODPROBE_PATH}" ]]; then
+  echo "Kernel expects modprobe at ${KERNEL_MODPROBE_PATH}; linking it to /usr/bin/kmod"
+  ln -sr /usr/bin/kmod "${KERNEL_MODPROBE_PATH}"
+fi
+
 # HWE-specific: Install common akmods
 # These are not in the base mounts, so we download them via skopeo
 if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
