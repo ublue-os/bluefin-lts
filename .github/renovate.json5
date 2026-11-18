@@ -28,6 +28,19 @@
       ],
       datasourceTemplate: 'docker',
     },
+    // ChairLift's helper, PolicyKit policy and GSettings schemas come from
+    // this release; keep it level with the ublue-os/tap chairlift cask.
+    {
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^Containerfile$/',
+      ],
+      matchStrings: [
+        'ARG CHAIRLIFT_RELEASE=(?<currentValue>v\\S+)',
+      ],
+      depNameTemplate: 'projectbluefin/chairlift',
+      datasourceTemplate: 'github-releases',
+    },
     ],
 
   "packageRules": [
@@ -52,6 +65,14 @@
       // Wallpapers are copied into the image as-is; a human reviews every bump
       "matchUpdateTypes": ["pin", "digest", "pinDigest"],
       "matchDepNames": ["ghcr.io/ublue-os/bluefin-wallpapers-gnome"],
+      "automerge": false
+    },
+    {
+      // The ChairLift GUI comes from the ublue-os/tap cask, which its own bump
+      // workflow updates within a day of a release. Wait so the image does not
+      // ship a helper newer than the GUI users can install, and review by hand.
+      "matchDepNames": ["projectbluefin/chairlift"],
+      "minimumReleaseAge": "2 days",
       "automerge": false
     }
   ]

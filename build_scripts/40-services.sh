@@ -22,6 +22,27 @@ systemctl enable tailscaled.service
 systemctl enable uupd.timer
 systemctl enable ublue-system-setup.service
 systemctl --global enable ublue-user-setup.service
+# Installs the OS-managed Homebrew packages (ChairLift) at login. A user
+# preset is not applied to existing users, so enable it globally.
+systemctl --global enable brew-preinstall.service
+# The ChairLift icons come from system_files; refresh the hicolor cache so
+# users without the cask's ~/.local copy (everyone but UID 1000) see them.
+gtk-update-icon-cache -f -t /usr/share/icons/hicolor
+# ChairLift: fail the build if the image half of the ublue-os/tap chairlift
+# cask is missing
+for i in bin/chairlift-helper bin/brew-preinstall libexec/brew-preinstall libexec/bootc-update-stage; do
+    test -x "/usr/$i"
+done
+for i in livery updates firstrun printers; do
+    test -f "/usr/share/glib-2.0/schemas/io.projectbluefin.chairlift.${i}.gschema.xml"
+done
+test -f /usr/share/polkit-1/actions/io.projectbluefin.chairlift.ublue.policy
+test -f /usr/share/polkit-1/actions/io.projectbluefin.chairlift.bootc.policy
+grep -qx 'cask "ublue-os/tap/chairlift"' /usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile
+test -f /usr/share/chairlift/config.yml
+test -f /usr/share/chairlift/channels.yml
+test "$(systemctl --global is-enabled brew-preinstall.service)" = enabled
+grep -aq io.projectbluefin.chairlift /usr/share/icons/hicolor/icon-theme.cache
 systemctl mask bootc-fetch-apply-updates.timer bootc-fetch-apply-updates.service
 systemctl disable sshd.service
 
