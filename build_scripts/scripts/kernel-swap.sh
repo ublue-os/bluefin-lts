@@ -9,7 +9,7 @@ set ${CI:+-x} -euo pipefail
 ### Kernel Swap - Install kernel from mounted akmods containers
 ### Containerfile provides the correct kernel via AKMODS_VERSION:
 ###   - centos-10 for standard builds
-###   - coreos-stable-42 for HWE builds
+###   - coreos-stable-<COREOS_STABLE_VERSION> for HWE/GDX builds (see Justfile)
 # */
 
 KERNEL_NAME="kernel"
@@ -45,6 +45,19 @@ done
 
 dnf -y install "${RPM_NAMES[@]}"
 
+# Fedora kernels (HWE/GDX) are built with CONFIG_MODPROBE_PATH="/usr/bin/modprobe",
+# because Fedora merged /usr/sbin into /usr/bin. CentOS Stream 10 only ships
+# /usr/sbin/modprobe, so without this every kernel-side module autoload
+# (request_module) fails silently: dm-crypt on LUKS boots, filesystems,
+# nftables, crypto. udev loads still work because they use libkmod directly.
+# Create the path the kernel expects. This runs before any dracut call, so the
+# link also lands in the initramfs. No-op for the CentOS kernel.
+KERNEL_MODPROBE_PATH="$(sed -n 's/^CONFIG_MODPROBE_PATH="\(.*\)"$/\1/p' "/usr/lib/modules/${CACHED_VERSION}/config")"
+if [[ -n "${KERNEL_MODPROBE_PATH}" && ! -e "${KERNEL_MODPROBE_PATH}" ]]; then
+  echo "Kernel expects modprobe at ${KERNEL_MODPROBE_PATH}; linking it to /usr/bin/kmod"
+  ln -sr /usr/bin/kmod "${KERNEL_MODPROBE_PATH}"
+fi
+
 # HWE-specific: Install common akmods
 # These are not in the base mounts, so we download them via skopeo
 if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
@@ -54,9 +67,15 @@ if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
   KERNEL_VERSION=$(rpm -q kernel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}')
   echo "Detected kernel version: ${KERNEL_VERSION}"
   
-  # Use the same akmods flavor and Fedora version as coreos-stable-42
+  # Use the same akmods flavor and Fedora version as the mounted coreos-stable
+  # kernel. Take the Fedora version from the kernel's dist tag (e.g. fc44) so the
+  # Justfile's coreos_stable_version is the only place to bump.
   AKMODS_FLAVOR="coreos-stable"
-  FEDORA_VERSION="43"
+  FEDORA_VERSION="$(sed -nE 's/.*\.fc([0-9]+)\..*/\1/p' <<<"${KERNEL_VERSION}")"
+  if [[ -z "${FEDORA_VERSION}" ]]; then
+    echo "ERROR: Could not read the Fedora version from kernel ${KERNEL_VERSION}"
+    exit 1
+  fi
   
   # Create writable directory for common akmods downloads (tmpfs /tmp is mounted)
   COMMON_AKMODS_DIR="/run/common-akmods"
