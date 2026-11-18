@@ -59,3 +59,21 @@ echo "add_dracutmodules+=\" resume \"" >/etc/dracut.conf.d/resume.conf
 KERNEL_SUFFIX=""
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --tmpdir /boot --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
+
+# The kernel execs CONFIG_MODPROBE_PATH for every kernel-side module autoload
+# (dm-crypt when unlocking LUKS, filesystems, nftables, crypto). Fedora kernels
+# (HWE/GDX) expect /usr/bin/modprobe, which CentOS doesn't ship; kernel-swap.sh
+# links it. Fail the build if that path is missing from the image or initramfs.
+KERNEL_MODPROBE_PATH="$(sed -n 's/^CONFIG_MODPROBE_PATH="\(.*\)"$/\1/p' "/lib/modules/$QUALIFIED_KERNEL/config")"
+if [[ -n "${KERNEL_MODPROBE_PATH}" ]]; then
+    if [[ ! -x "${KERNEL_MODPROBE_PATH}" ]]; then
+        echo "FATAL: kernel ${QUALIFIED_KERNEL} expects modprobe at ${KERNEL_MODPROBE_PATH}, which is not in the image"
+        exit 1
+    fi
+    INITRD_MODPROBE="$(readlink -f "$(dirname "${KERNEL_MODPROBE_PATH}")")/$(basename "${KERNEL_MODPROBE_PATH}")"
+    INITRD_FILES="$(lsinitrd "/lib/modules/$QUALIFIED_KERNEL/initramfs.img")"
+    if ! grep -qE " ${INITRD_MODPROBE#/}( |$)" <<<"${INITRD_FILES}"; then
+        echo "FATAL: initramfs for ${QUALIFIED_KERNEL} has no ${INITRD_MODPROBE}"
+        exit 1
+    fi
+fi
