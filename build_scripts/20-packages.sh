@@ -61,6 +61,11 @@ dnf -y copr disable che/nerd-fonts
 dnf -y --enablerepo "copr:copr.fedorainfracloud.org:che:nerd-fonts" install \
 	nerd-fonts
 
+# adw-gtk3-theme is not in EPEL 10. It is a noarch theme with no dependencies,
+# so install the Fedora build. Without it GTK3 apps have no dark theme to use.
+dnf -y install \
+	https://kojipkgs.fedoraproject.org/packages/adw-gtk3-theme/6.5/1.fc44/noarch/adw-gtk3-theme-6.5-1.fc44.noarch.rpm
+
 # This is required so homebrew works indefinitely.
 # Symlinking it makes it so whenever another GCC version gets released it will break if the user has updated it without-
 # the homebrew package getting updated through our builds.
