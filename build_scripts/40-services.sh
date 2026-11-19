@@ -47,6 +47,12 @@ if [ "${ENABLE_DX:-0}" != "1" ] && [ "${ENABLE_GDX:-0}" != "1" ]; then
     # Installs the OS-managed Homebrew packages (ChairLift) at login. A user
     # preset is not applied to existing users, so enable it globally.
     systemctl --global enable brew-preinstall.service
+    # Compass is installed by brew-preinstall on non-DX images. A user preset
+    # is not applied to existing users, so enable its unit globally too.
+    systemctl --global enable compass.service
+    test -f /usr/share/ublue-os/homebrew/preinstall.d/compass.Brewfile
+    test -f /usr/lib/systemd/user/compass.service
+    test "$(systemctl --global is-enabled compass.service)" = enabled
     # The ChairLift icons come from the image; refresh the hicolor cache so
     # users without the cask's ~/.local copy (everyone but UID 1000) see them.
     gtk-update-icon-cache -f -t /usr/share/icons/hicolor
@@ -65,6 +71,10 @@ else
     test ! -e /usr/share/ublue-os/homebrew/preinstall.d
     if systemctl --global is-enabled brew-preinstall.service; then
         echo "brew-preinstall.service is enabled on a DX image"
+        exit 1
+    fi
+    if systemctl --global is-enabled compass.service; then
+        echo "compass.service is enabled on a DX image"
         exit 1
     fi
 fi
