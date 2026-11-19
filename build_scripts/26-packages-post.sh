@@ -77,3 +77,25 @@ if [[ -n "${KERNEL_MODPROBE_PATH}" ]]; then
         exit 1
     fi
 fi
+
+# HWE/GDX: kernel-swap.sh installs xone, openrazer and v4l2loopback from the
+# ublue-os/akmods image. Fail the build if one of them is missing or was built
+# for another kernel, so a change in that image cannot drop them silently.
+if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
+    # One module from each package. akmods has no openrazer build for aarch64.
+    COMMON_KMODS=(xone_gip v4l2loopback)
+    if [[ "$(uname -m)" == "x86_64" ]]; then
+        COMMON_KMODS+=(razerkbd)
+    fi
+    for kmod in "${COMMON_KMODS[@]}"; do
+        KMOD_FILE="$(modinfo -k "$QUALIFIED_KERNEL" -F filename "$kmod")" || {
+            echo "FATAL: kernel module ${kmod} is not installed for ${QUALIFIED_KERNEL}"
+            exit 1
+        }
+        KMOD_VERMAGIC="$(modinfo -k "$QUALIFIED_KERNEL" -F vermagic "$kmod")"
+        if [[ "${KMOD_FILE}" != "/lib/modules/${QUALIFIED_KERNEL}/extra/"* || "${KMOD_VERMAGIC%% *}" != "${QUALIFIED_KERNEL}" ]]; then
+            echo "FATAL: kernel module ${kmod} (${KMOD_FILE}, vermagic ${KMOD_VERMAGIC}) does not match ${QUALIFIED_KERNEL}"
+            exit 1
+        fi
+    done
+fi
