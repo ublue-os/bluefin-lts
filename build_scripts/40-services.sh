@@ -22,6 +22,7 @@ systemctl enable tailscaled.service
 systemctl enable uupd.timer
 systemctl enable ublue-system-setup.service
 systemctl --global enable ublue-user-setup.service
+systemctl --global enable ublue-gtk3-theme-sync.service
 # ChairLift: build.sh copies it on non-DX images only (not dx, not gdx).
 # Fail the build if a non-DX image misses any of the image half of the
 # projectbluefin/tap chairlift cask, or a DX image has any of it.
