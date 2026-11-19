@@ -6,6 +6,9 @@ ARG WALLPAPERS_IMAGE_REF
 ARG BREW_IMAGE_REF
 # Upstream mounts akmods-zfs and akmods-nvidia-open; select their tag via AKMODS_VERSION
 FROM ghcr.io/ublue-os/akmods-zfs:${AKMODS_VERSION} AS akmods_zfs
+# ZFS userspace always comes from the CentOS build. On HWE/GDX the coreos-stable
+# userspace is a Fedora build that can need newer libraries than CentOS has.
+FROM ghcr.io/ublue-os/akmods-zfs:centos-10 AS akmods_zfs_userspace
 FROM ghcr.io/ublue-os/akmods-nvidia-open:${AKMODS_VERSION} AS akmods_nvidia_open
 FROM ${WALLPAPERS_IMAGE_REF} AS wallpapers-src
 FROM ${BREW_IMAGE_REF} AS brew
@@ -105,6 +108,7 @@ RUN --mount=type=tmpfs,dst=/opt \
   --mount=type=tmpfs,dst=/boot \
   --mount=type=bind,from=akmods_zfs,src=/rpms,dst=/tmp/akmods-zfs-rpms \
   --mount=type=bind,from=akmods_zfs,src=/kernel-rpms,dst=/tmp/kernel-rpms \
+  --mount=type=bind,from=akmods_zfs_userspace,src=/rpms,dst=/tmp/akmods-zfs-userspace-rpms \
   --mount=type=bind,from=akmods_nvidia_open,src=/rpms,dst=/tmp/akmods-nvidia-open-rpms \
   --mount=type=bind,from=context,source=/,target=/run/context \
   /run/context/build_scripts/build.sh
