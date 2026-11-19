@@ -2,12 +2,12 @@ images:
   - name: centos-bootc
     image: quay.io/centos-bootc/centos-bootc
     tag: c10s
-    digest: sha256:eff8ca918765d8bcc06979fc3109aa3ddf1febe936c5e0e5a8c1db029c7ed4ce
-  - name: common
-    image: ghcr.io/projectbluefin/common
+    digest: sha256:0df2ed8fd881b36b34f559c59eb5c4a51992f69b1ce05203307ce29ed1a76f87
+  - name: bluefin-wallpapers-gnome
+    image: ghcr.io/ublue-os/bluefin-wallpapers-gnome
     tag: latest
-    digest: sha256:6d5b38d6ba7f588e36f38f1e6063b4260793cd215665233004eb9ccc80af3354
+    digest: sha256:4747d2a8234fc31c5be89ac87dd7527e04af2fb06401611f682525e68f4e209f
   - name: brew
     image: ghcr.io/ublue-os/brew
     tag: latest
-    digest: sha256:e9a72571b7644b6277f0638b6a3c5e497e265e1098ab91224567acbdeb8b74ea
+    digest: sha256:9e0492dbc471258657564c94dae18b58dd96ddb998a06f2b15e8209efb48042b

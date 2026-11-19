@@ -10,6 +10,17 @@ HARDCODED_RPM_MONTH="12"
 sed -i "/picture-uri/ s/${HARDCODED_RPM_MONTH}/$(date +%m)/" "/usr/share/glib-2.0/schemas/zz0-bluefin-modifications.gschema.override"
 glib-compile-schemas /usr/share/glib-2.0/schemas
 
+# November wallpaper: the wallpapers image ships 11-bluefin.xml without its SVGs (same workaround as Bluefin)
+ARTWORK_URL="https://raw.githubusercontent.com/projectbluefin/artwork/f784bbe296ca224b70058807b3c6cb180516ac84/wallpapers/11-bluefin"
+curl -fsSL --retry 3 -o /tmp/11-bluefin-day.svg "${ARTWORK_URL}/11-bluefin-day.svg"
+curl -fsSL --retry 3 -o /tmp/11-bluefin-night.svg "${ARTWORK_URL}/11-bluefin-night.svg"
+echo "7833a5c6ff095998551f564704597e786849fd5f4367947b47968681b01c218a  /tmp/11-bluefin-day.svg" | sha256sum -c -
+echo "deab0feafa53c1c215165e6513431d5832a81f9aefdea2372265e85b26512d51  /tmp/11-bluefin-night.svg" | sha256sum -c -
+install -Dm0644 -t /usr/share/backgrounds/bluefin/ /tmp/11-bluefin-day.svg /tmp/11-bluefin-night.svg
+# The Settings picker entry (gnome-background-properties/11-bluefin.xml) names these two
+ln -sf 11-bluefin-day.svg /usr/share/backgrounds/bluefin/11-bluefin.svg
+ln -sf 11-bluefin-night.svg /usr/share/backgrounds/bluefin/11-bluefin-dark.svg
+
 # Rebuild gdk-pixbuf loader cache so all installed loaders are registered
 gdk-pixbuf-query-loaders-64 --update-cache
 
@@ -35,6 +46,11 @@ sed -i 's|^IPv6_rpfilter=.*|IPv6_rpfilter=loose|g' /etc/firewalld/firewalld.conf
 grep -F -e "DefaultZone=FedoraWorkstation" /etc/firewalld/firewalld.conf
 grep -F -e "IPv6_rpfilter=loose" /etc/firewalld/firewalld.conf
 
+# firewalld (FirewallBackend=nftables) and rootful podman (netavark) both need a
+# working libnftables. Fail the build if nftables doesn't match libnftnl.
+nft --version
+python3 -c 'import nftables; nftables.Nftables()'
+
 depmod -a "$(ls -1 /lib/modules/ | tail -1)"
 
 # Generate initramfs image after installing Bluefin branding because of Plymouth subpackage
@@ -43,3 +59,21 @@ echo "add_dracutmodules+=\" resume \"" >/etc/dracut.conf.d/resume.conf
 KERNEL_SUFFIX=""
 QUALIFIED_KERNEL="$(rpm -qa | grep -P 'kernel-(|'"$KERNEL_SUFFIX"'-)(\d+\.\d+\.\d+)' | sed -E 's/kernel-(|'"$KERNEL_SUFFIX"'-)//' | tail -n 1)"
 /usr/bin/dracut --no-hostonly --kver "$QUALIFIED_KERNEL" --reproducible --tmpdir /boot --zstd -v --add ostree -f "/lib/modules/$QUALIFIED_KERNEL/initramfs.img"
+
+# The kernel execs CONFIG_MODPROBE_PATH for every kernel-side module autoload
+# (dm-crypt when unlocking LUKS, filesystems, nftables, crypto). Fedora kernels
+# (HWE/GDX) expect /usr/bin/modprobe, which CentOS doesn't ship; kernel-swap.sh
+# links it. Fail the build if that path is missing from the image or initramfs.
+KERNEL_MODPROBE_PATH="$(sed -n 's/^CONFIG_MODPROBE_PATH="\(.*\)"$/\1/p' "/lib/modules/$QUALIFIED_KERNEL/config")"
+if [[ -n "${KERNEL_MODPROBE_PATH}" ]]; then
+    if [[ ! -x "${KERNEL_MODPROBE_PATH}" ]]; then
+        echo "FATAL: kernel ${QUALIFIED_KERNEL} expects modprobe at ${KERNEL_MODPROBE_PATH}, which is not in the image"
+        exit 1
+    fi
+    INITRD_MODPROBE="$(readlink -f "$(dirname "${KERNEL_MODPROBE_PATH}")")/$(basename "${KERNEL_MODPROBE_PATH}")"
+    INITRD_FILES="$(lsinitrd "/lib/modules/$QUALIFIED_KERNEL/initramfs.img")"
+    if ! grep -qE " ${INITRD_MODPROBE#/}( |$)" <<<"${INITRD_FILES}"; then
+        echo "FATAL: initramfs for ${QUALIFIED_KERNEL} has no ${INITRD_MODPROBE}"
+        exit 1
+    fi
+fi

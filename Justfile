@@ -3,9 +3,9 @@ export image_name := env("IMAGE_NAME", "bluefin")
 export centos_version := env("CENTOS_VERSION", "stream10")
 export default_tag := env("DEFAULT_TAG", "lts")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
-export coreos_stable_version := env("COREOS_STABLE_VERSION", "43")
+export coreos_stable_version := env("COREOS_STABLE_VERSION", "44")
 export HOME := env("HOME", "")
-export common_image := env("COMMON_IMAGE", "ghcr.io/projectbluefin/common:latest")
+export wallpapers_image := env("WALLPAPERS_IMAGE", "ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest")
 export brew_image := env("BREW_IMAGE", "ghcr.io/ublue-os/brew:latest")
 
 alias build-vm := build-qcow2
@@ -109,19 +109,20 @@ _ensure-yq:
     fi
 
 # Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kernel_pin="" $gnome_version="49": _ensure-yq
+# gnome_version: 50 (default) or 49 (rollback: pinned gnome-shell 49.5-100 + mutter 49.4-4)
+build $target_image=image_name $tag=default_tag $dx="0" $gdx="0" $hwe="0" $kernel_pin="" $gnome_version="50": _ensure-yq
     #!/usr/bin/env bash
 
     # Get Version
     ver="${tag}-${centos_version}.$(date +%Y%m%d)"
 
-    common_image_sha=$(yq -r '.images[] | select(.name == "common") | .digest' image-versions.yaml)
-    common_image_ref="${common_image}@${common_image_sha}"
+    wallpapers_image_sha=$(yq -r '.images[] | select(.name == "bluefin-wallpapers-gnome") | .digest' image-versions.yaml)
+    wallpapers_image_ref="${wallpapers_image}@${wallpapers_image_sha}"
     brew_image_sha=$(yq -r '.images[] | select(.name == "brew") | .digest' image-versions.yaml)
     brew_image_ref="${brew_image}@${brew_image_sha}"
 
     BUILD_ARGS=()
-    BUILD_ARGS+=("--build-arg" "COMMON_IMAGE_REF=${common_image_ref}")
+    BUILD_ARGS+=("--build-arg" "WALLPAPERS_IMAGE_REF=${wallpapers_image_ref}")
     BUILD_ARGS+=("--build-arg" "BREW_IMAGE_REF=${brew_image_ref}")
     BUILD_ARGS+=("--build-arg" "MAJOR_VERSION=${centos_version}")
     BUILD_ARGS+=("--build-arg" "IMAGE_NAME=${image_name}")
