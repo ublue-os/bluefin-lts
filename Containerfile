@@ -17,10 +17,11 @@ RUN mkdir -p /out/usr/share/backgrounds/bluefin && \
     mv /out/usr/share/*.jxl /out/usr/share/*.xml /out/usr/share/backgrounds/bluefin && \
     sed -i 's|~\/\.local\/share|\/usr\/share|' /out/usr/share/backgrounds/bluefin/*.xml /out/usr/share/gnome-background-properties/*.xml
 
-# ChairLift (Control Center): the GUI comes from the ublue-os/tap chairlift
-# cask, which brew-preinstall installs at login and brew-upgrade keeps current. A
-# cask cannot install root-owned files, so the image ships the pkexec helper,
-# its PolicyKit policy and the GSettings schemas from the same release. The
+# ChairLift (Control Center), non-DX images only: the GUI comes from the
+# projectbluefin/tap chairlift cask, which brew-preinstall installs at login
+# and brew-upgrade keeps current. A cask cannot install root-owned files, so
+# the image ships the pkexec helper, its PolicyKit policy and the GSettings
+# schemas from the same release. The
 # release's checksums.txt is checked against its Sigstore bundle (signed by
 # ChairLift's release workflow for exactly this tag) and the archive against
 # checksums.txt, so a bump only changes CHAIRLIFT_RELEASE. Same steps as
@@ -80,8 +81,8 @@ FROM scratch AS context
 COPY system_files /files
 COPY --from=brew /system_files /files
 COPY --from=wallpapers /out /files
-COPY --from=chairlift /out /files
 COPY system_files_overrides /overrides
+COPY --from=chairlift /out /overrides/chairlift
 COPY build_scripts /build_scripts
 
 ARG MAJOR_VERSION="${MAJOR_VERSION:-c10s}"

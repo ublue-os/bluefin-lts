@@ -47,6 +47,12 @@ mkdir -p /var/roothome
 
 run_buildscripts_for base
 
+# ChairLift (Control Center) and brew-preinstall ship on non-DX images only.
+# On DX and GDX they would overlap with the DX tooling and confuse more than help.
+if [ "$ENABLE_DX" != "1" ] && [ "$ENABLE_GDX" != "1" ]; then
+	copy_systemfiles_for chairlift
+fi
+
 CUSTOM_NAME="bluefin"
 copy_systemfiles_for ../files
 run_buildscripts_for ..
