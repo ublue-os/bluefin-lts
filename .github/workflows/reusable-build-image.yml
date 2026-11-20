@@ -54,7 +54,7 @@ on:
         type: string
         default: ""
       kernel-pin:
-        description: "The kernel version to pin (e.g. 6.19.12-200.fc43)"
+        description: "The kernel version to pin (e.g. 7.2.11-300.fc45)"
         required: false
         type: string
         default: ""

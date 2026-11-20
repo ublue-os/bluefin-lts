@@ -32,6 +32,11 @@ dnf config-manager --set-disabled "fedora-nvidia"
 dnf -y install --enablerepo="fedora-nvidia" \
     /tmp/akmods-nvidia-open-rpms/kmods/kmod-nvidia-"${KERNEL_VRA}"-*.rpm \
     /tmp/akmods-nvidia-open-rpms/ublue-os/*.rpm
+# From Fedora 45 on, ublue-os-nvidia-addons ships its repo files in
+# /usr/share/dnf5/repos.d, which CentOS's dnf doesn't read. Copy the one used here.
+if [[ ! -f /etc/yum.repos.d/nvidia-container-toolkit.repo && -f /usr/share/dnf5/repos.d/nvidia-container-toolkit.repo ]]; then
+    cp /usr/share/dnf5/repos.d/nvidia-container-toolkit.repo /etc/yum.repos.d/
+fi
 dnf config-manager --set-enabled "nvidia-container-toolkit"
 # Get the kmod-nvidia version to ensure driver packages match
 KMOD_VERSION="$(rpm -q --queryformat '%{VERSION}' kmod-nvidia)"
