@@ -54,7 +54,7 @@ on:
         type: string
         default: ""
       kernel-pin:
-        description: "The kernel version to pin (e.g. 6.19.12-200.fc43)"
+        description: "The kernel version to pin (e.g. 7.2.11-300.fc45)"
         required: false
         type: string
         default: ""
@@ -128,7 +128,7 @@ jobs:
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # v10
 
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           submodules: recursive
 
@@ -294,7 +294,7 @@ jobs:
 
       - name: Install ORAS
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
-        uses: oras-project/setup-oras@5e2f2482b30b0cb3e14e67f89a80c88c659a7c63 # v2.0.3
+        uses: oras-project/setup-oras@ac735097e22fe643015b0d19645f7c9a69942128 # v2.0.4
 
       - name: Login to GitHub Container Registry with ORAS
         if: ${{ github.ref == 'refs/heads/lts' && inputs.publish }}
@@ -371,7 +371,7 @@ jobs:
       - generate_matrix
       - build_push
     container:
-      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:580c9ae79c0229cc381475fbfbed0d91fab5d6606e57cd78732f9836de109e90
+      image:  cgr.dev/chainguard/wolfi-base:latest@sha256:be019c1c74fe69204a42c4e10bc4d886a49bf5403ffa74374ef7baa408fc9a26
       options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
