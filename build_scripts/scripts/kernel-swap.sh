@@ -94,26 +94,36 @@ if [[ "${ENABLE_HWE:-0}" -eq 1 || "${ENABLE_GDX:-0}" -eq 1 ]]; then
   # Install common akmods if they exist
   if [[ -d "$COMMON_AKMODS_DIR"/rpms ]]; then
     echo "Available common akmods packages:"
-    ls -lh "$COMMON_AKMODS_DIR"/rpms/ || true
+    ls -lh "$COMMON_AKMODS_DIR"/rpms/common/ || true
     ls -lh "$COMMON_AKMODS_DIR"/rpms/kmods/ || true
     
-    echo "Installing common akmods with dependencies..."
-    # Install both the -kmod-common packages (from rpms/) and kmod-* packages (from rpms/kmods/)
-    dnf -y install \
-      "$COMMON_AKMODS_DIR"/rpms/*xone*.rpm \
-      "$COMMON_AKMODS_DIR"/rpms/*openrazer*.rpm \
-      "$COMMON_AKMODS_DIR"/rpms/*framework-laptop*.rpm \
-      "$COMMON_AKMODS_DIR"/rpms/*v4l2loopback*.rpm \
-      "$COMMON_AKMODS_DIR"/rpms/kmods/*xone*.rpm \
-      "$COMMON_AKMODS_DIR"/rpms/kmods/*openrazer*.rpm \
-      "$COMMON_AKMODS_DIR"/rpms/kmods/*framework-laptop*.rpm \
-      "$COMMON_AKMODS_DIR"/rpms/kmods/*v4l2loopback*.rpm \
-      || echo "Warning: Some common akmods failed to install (non-critical)"
+    # akmods ships each kmod-<name> in rpms/kmods/ and its userspace or
+    # -kmod-common package in rpms/common/. Not every kmod is built for every
+    # arch (openrazer has no aarch64 build), so collect only the ones that exist.
+    # Without nullglob a pattern that matches nothing reaches dnf as a literal
+    # path and dnf drops the whole transaction.
+    COMMON_AKMODS_RPMS=()
+    shopt -s nullglob
+    for kmod in xone openrazer v4l2loopback; do
+      kmod_rpms=("$COMMON_AKMODS_DIR"/rpms/kmods/kmod-"${kmod}"-*.rpm)
+      if [[ ${#kmod_rpms[@]} -eq 0 ]]; then
+        echo "Skipping ${kmod}: not built for $(uname -m) in the akmods image"
+        continue
+      fi
+      COMMON_AKMODS_RPMS+=("${kmod_rpms[@]}" "$COMMON_AKMODS_DIR"/rpms/common/*"${kmod}"*.rpm)
+    done
+    shopt -u nullglob
+    
+    # A real dnf error fails the build. 26-packages-post.sh checks the modules.
+    if [[ ${#COMMON_AKMODS_RPMS[@]} -gt 0 ]]; then
+      echo "Installing common akmods with dependencies..."
+      dnf -y install "${COMMON_AKMODS_RPMS[@]}"
+    fi
   else
     echo "Warning: No rpms directory found in common akmods container"
   fi
   echo "Installed common akmods packages:"
-  rpm -qa | grep -E 'xone|openrazer|framework|v4l2loopback' || true
+  rpm -qa | grep -E 'xone|openrazer|v4l2loopback' || true
   # Cleanup
   rm -rf "$COMMON_AKMODS_DIR"
 else
