@@ -8,7 +8,7 @@ ARG BREW_IMAGE_REF
 FROM ghcr.io/ublue-os/akmods-zfs:${AKMODS_VERSION} AS akmods_zfs
 # ZFS userspace always comes from the CentOS build. On HWE/GDX the coreos-stable
 # userspace is a Fedora build that can need newer libraries than CentOS has.
-FROM ghcr.io/ublue-os/akmods-zfs:centos-10 AS akmods_zfs_userspace
+FROM ghcr.io/ublue-os/akmods-zfs:centos-10@sha256:cbd658bc4e2c84e5bf918a4e58d99c0be00f835cb6c25cf72f2e60523224cfba AS akmods_zfs_userspace
 FROM ghcr.io/ublue-os/akmods-nvidia-open:${AKMODS_VERSION} AS akmods_nvidia_open
 FROM ${WALLPAPERS_IMAGE_REF} AS wallpapers-src
 FROM ${BREW_IMAGE_REF} AS brew
