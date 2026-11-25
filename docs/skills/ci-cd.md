@@ -105,8 +105,8 @@ GDX is triggered by `trigger-lts-builds` but the release does **not wait** for i
 ## Release-generation pitfalls
 
 - `workflow_run` chaining does not propagate from `GITHUB_TOKEN`-dispatched workflows reliably enough for LTS release generation.
-- If touching `scheduled-lts-release.yml`, preserve the explicit wait/poll pattern before `generate-release.yml` so release creation happens after published tags exist.
-- **Never merge a promotion PR to `lts` while a release run is in progress.** The push to `lts` cancels all in-flight build workflows dispatched by the release, causing `trigger-lts-builds` to fail with exit code 1 when it tries to `gh run watch` the now-cancelled run. Always wait for the release to reach `generate-release` before touching `lts`.
+- If touching `scheduled-lts-release.yml`, preserve the explicit wait/poll pattern before `generate-release.yml` so release creation happens after published tags exist. The wait and retry logic lives in `scripts/lts-build-wait.sh` and is covered by `scripts/test-lts-build-wait.sh`.
+- **Never merge a promotion PR to `lts` while a release run is in progress.** The push to `lts` cancels all in-flight build workflows dispatched by the release. The wait helper sees the `cancelled` conclusion and fails `trigger-lts-builds`, so no release is generated. Always wait for the release to reach `generate-release` before touching `lts`.
 
 ## GDX build notes
 
