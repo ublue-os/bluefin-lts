@@ -21,9 +21,8 @@ jobs:
     timeout-minutes: 180
     steps:
       - name: Check out release tooling
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: main
           persist-credentials: false
 
       - name: Trigger all LTS builds on lts branch
@@ -38,7 +37,7 @@ jobs:
           echo "BUILD_DEADLINE=$(( $(date +%s) + (JOB_TIMEOUT_MINUTES - POLL_MARGIN_MINUTES) * 60 ))" >> "$GITHUB_ENV"
 
           # Record time just before dispatch so we can find the run IDs afterward.
-          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          echo "DISPATCH_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
           gh workflow run build-regular.yml --ref lts -R "$REPO"
           gh workflow run build-dx.yml --ref lts -R "$REPO"

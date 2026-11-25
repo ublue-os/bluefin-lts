@@ -32,3 +32,6 @@ jobs:
 
       - name: Shellcheck
         run: just lint
+
+      - name: LTS build wait helper tests
+        run: ./scripts/test-lts-build-wait.sh

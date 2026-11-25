@@ -6,7 +6,7 @@ ERR_FILE=$(mktemp)
 trap 'rm -f "$ERR_FILE"' EXIT
 
 is_transient_api_error() {
-  grep -Eqi 'HTTP (429|5[0-9][0-9])|rate limit exceeded|secondary rate limit|abuse detection|error connecting to|connection reset|i/o timeout|TLS handshake timeout|unexpected EOF|(^|: )EOF($| )' "$1"
+  grep -Eqi 'HTTP (429|5[0-9][0-9])|rate limit exceeded|secondary rate limit|abuse detection|error connecting to|connection refused|connection reset|context deadline exceeded|i/o timeout|TLS handshake timeout|unexpected EOF|(^|: )EOF($| )' "$1"
 }
 
 find_lts_run() {
