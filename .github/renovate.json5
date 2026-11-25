@@ -56,6 +56,12 @@
       "matchUpdateTypes": ["digest", "pin", "pinDigest"]
     },
     {
+      // GNOME Shell extension submodules track upstream branch heads and are
+      // built into the image; a human reviews every bump, as on Bluefin.
+      "matchManagers": ["git-submodules"],
+      "automerge": false
+    },
+    {
       // Auto-merge minor/patch version bumps for GitHub Actions (e.g. cosign-installer v3.8 → v3.9)
       "automerge": true,
       "matchManagers": ["github-actions"],
