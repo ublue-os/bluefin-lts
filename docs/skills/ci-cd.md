@@ -14,7 +14,6 @@
 | `create-lts-pr.yml` | opens/updates draft `main→lts` promotion PR |
 | `generate-release.yml` | creates GitHub Release — only after e2e smoke passes |
 | `pr-testsuite.yml` | runs `just check` + `just lint` on every PR; the only required check |
-| `renovate-automerge.yml` | auto-merges Renovate PRs when pr-testsuite passes |
 
 ## Branches and tags
 
@@ -80,13 +79,15 @@ If nothing is pushed, nothing should sign.
 
 `scheduled-lts-release.yml` is the **only** owner of Tuesday `0 6 * * 2` production runs. Do **not** add `schedule:` to the 5 build callers; scheduled caller runs on `main`, evaluates `publish=false`, and wastes runners.
 
-## Renovate auto-merge pipeline (added 2026-05-30)
+## Renovate auto-merge pipeline
 
-Renovate PRs are fully automated — no human needed:
+Renovate merges its own PRs through GitHub's native auto-merge. This repo has no workflow that merges Renovate PRs; `.github/renovate.json5` is the single policy.
 
-1. Renovate opens PR → `pr-testsuite.yml` runs `just check` + `just lint` (~5 min)
-2. `renovate-automerge.yml` triggers on `workflow_run` success → calls `gh pr merge --auto --merge`
-3. Merge queue merges with `MERGE` commit (not squash)
+1. Renovate opens a PR against `main` and enables auto-merge only when the matching `packageRules` entry allows it.
+2. `pr-testsuite.yml` runs `just check` + `just lint` (~5 min).
+3. GitHub's merge queue merges with `MERGE` commit (not squash) once the required check passes.
+
+`platformAutomerge` is enabled at the top of `.github/renovate.json5`. Digest, pin, and GitHub Actions minor/patch updates auto-merge. Git submodule bumps (GNOME Shell extensions), wallpapers, and ChairLift bumps stay manual via later `automerge: false` rules; the submodule rule landed in #2267 after extension bumps merged with red builds.
 
 **Required status check** (ruleset 4940669): `Lint & syntax` only.  
 Builds run on PRs but are **informational** — they do not block merging.  
