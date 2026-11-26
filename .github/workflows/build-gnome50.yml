@@ -8,10 +8,14 @@ name: Build Bluefin GNOME 50 (testing)
 # duplicate the main builds. Kept for one release so existing -50 users keep
 # getting updates; remove this workflow together with the GNOME 49 rollback path.
 #
-# pull_request and merge_group triggers intentionally omitted: the GNOME 50
-# build currently fails with a dracut cross-device link error (EXDEV) on
-# GitHub Actions runners, which blocks all Renovate PRs from auto-merging.
-# This workflow runs post-merge (push) only until the build issue is resolved.
+# pull_request and merge_group triggers are intentionally omitted. These
+# builds duplicate main, and their check names collide with the required
+# checks and merge queue, so this workflow runs post-merge (push) only.
+#
+# An earlier revision blamed EXDEV for PR-suite failures. It is an error
+# dnf ignores, seen in green builds on both architectures. The explicit
+# dracut in 26-packages-post.sh writes a valid initramfs. The 11-21 to
+# 11-24 failures were a missing blur-my-shell zip.
 
 permissions:
   contents: read
