@@ -22,7 +22,7 @@ jobs:
           submodules: false
 
       - name: Install just
-        uses: taiki-e/install-action@262ea96a68a4effc27379c07c676063a76c6e740 # just
+        uses: taiki-e/install-action@5432f8b996f2a2df09f7de1e73cca78d8e825929 # just
 
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
@@ -32,3 +32,6 @@ jobs:
 
       - name: Shellcheck
         run: just lint
+
+      - name: LTS build wait helper tests
+        run: ./scripts/test-lts-build-wait.sh
