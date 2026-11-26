@@ -150,7 +150,7 @@ jobs:
       # Needs cosign v3: new wallpaper digests are signed with sigstore bundles only (no legacy .sig tag).
       # Image signing further down still uses cosign-installer and is not affected.
       - name: Verify wallpapers image
-        uses: docker://ghcr.io/sigstore/cosign/cosign:v3.1.4@sha256:0f06154836d2de34f887a5c273506d52ca43edaa1d9e53e6510fa78a48f69c2d
+        uses: docker://ghcr.io/sigstore/cosign/cosign:v3.1.5@sha256:191099139868a6cd02abae63f2919e0915dcaa7bcc22bda6fbd11fd0dd5599e7
         env:
           # $HOME in the action container is not writable by the image's nonroot user
           TUF_ROOT: /tmp/sigstore

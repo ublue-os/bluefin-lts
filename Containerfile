@@ -29,7 +29,7 @@ RUN mkdir -p /out/usr/share/backgrounds/bluefin && \
 # ChairLift's release workflow for exactly this tag) and the archive against
 # checksums.txt, so a bump only changes CHAIRLIFT_RELEASE. Same steps as
 # projectbluefin/common's Containerfile.
-FROM ghcr.io/sigstore/cosign/cosign:v3.1.4@sha256:0f06154836d2de34f887a5c273506d52ca43edaa1d9e53e6510fa78a48f69c2d AS cosign
+FROM ghcr.io/sigstore/cosign/cosign:v3.1.5@sha256:191099139868a6cd02abae63f2919e0915dcaa7bcc22bda6fbd11fd0dd5599e7 AS cosign
 FROM quay.io/centos-bootc/centos-bootc:$MAJOR_VERSION AS chairlift
 ARG CHAIRLIFT_RELEASE=v26.11.8
 ARG TARGETARCH
